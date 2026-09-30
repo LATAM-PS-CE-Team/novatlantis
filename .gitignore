@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.env
+data-generator/output/citizens_100k.ndjson
+data-generator/output/citizens_100k.parquet

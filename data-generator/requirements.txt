@@ -1,0 +1,7 @@
+numpy>=1.26.0
+Faker>=24.0.0
+pandas>=2.2.0
+pyarrow>=15.0.0
+google-cloud-firestore>=2.16.0
+google-cloud-spanner>=3.44.0
+cryptography>=42.0.0

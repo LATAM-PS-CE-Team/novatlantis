@@ -1,0 +1,7 @@
+{
+  "name": "@novatlantis/shared-ui",
+  "version": "1.0.0",
+  "description": "Design System corporativo de Novatlantis - Tailwind CSS & Material You Tokens",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

@@ -1,0 +1,18 @@
+{
+  "name": "novatlantis",
+  "version": "1.0.0",
+  "private": true,
+  "description": "República Digital de Novatlantis (NOVATLANTIS • LIBERTAS IN DIGITALI) — Ecossistema Soberano AI-First no Google Cloud",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/billebr/novatlantis.git"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "generate:citizens": "python3 data-generator/generate_citizens.py --count 100000 --project-id novatlantis",
+    "deploy:argolis": "bash infra/argolis/cloudrun-deploy.sh"
+  }
+}

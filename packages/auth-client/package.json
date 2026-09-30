@@ -1,0 +1,16 @@
+{
+  "name": "@novatlantis/auth-client",
+  "version": "1.0.0",
+  "description": "SDK de autenticação centralizada OIDC/JWT, validação biométrica NIST e resolução síncrona de idioma de Novatlantis",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0"
+  }
+}
