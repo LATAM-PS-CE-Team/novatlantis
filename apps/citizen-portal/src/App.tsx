@@ -47,50 +47,187 @@ import {
   Shield as ShieldIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
-import { TopNavUserWidget } from './components/TopNavUserWidget';
+import { TopNavUserWidget, SupportedLanguage, resolveInitialLanguage } from './components/TopNavUserWidget';
 import { novatlantisTheme } from './theme';
 
-type Language = 'pt-BR' | 'es-419' | 'en-US';
+type Language = SupportedLanguage;
 type CitizenTab = 'identity' | 'family_address' | 'health' | 'education' | 'urban' | 'treasury';
 
 const LANDING_PORTAL_URL = 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app';
 const GOV_BACKSTAGE_URL = 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app';
 
-const CITIZEN_MENU_ITEMS: { id: CitizenTab; title: string; subtitle: string }[] = [
+const CITIZEN_MENU_ITEMS: {
+  id: CitizenTab;
+  title: Record<Language, string>;
+  subtitle: Record<Language, string>;
+}[] = [
   {
     id: 'identity',
-    title: '1. Carteira Soberana NID & Biometria NIST',
-    subtitle: 'Credencial Mod-11, chave Ed25519 e auditoria'
+    title: {
+      'pt-BR': '1. Carteira Soberana NID & Biometria NIST',
+      'es-419': '1. Credencial Soberana NID y Biometría NIST',
+      'en-US': '1. Sovereign NID Wallet & NIST Biometrics'
+    },
+    subtitle: {
+      'pt-BR': 'Credencial Mod-11, chave Ed25519 e auditoria',
+      'es-419': 'Credencial Mod-11, clave Ed25519 y auditoría',
+      'en-US': 'Mod-11 credential, Ed25519 key, and audit trail'
+    }
   },
   {
     id: 'family_address',
-    title: '2. Grafo Familiar & Endereço Soberano',
-    subtitle: 'Vínculos civis e atualização de domicílio'
+    title: {
+      'pt-BR': '2. Grafo Familiar & Endereço Soberano',
+      'es-419': '2. Grafo Familiar y Domicilio Soberano',
+      'en-US': '2. Family Graph & Sovereign Address'
+    },
+    subtitle: {
+      'pt-BR': 'Vínculos civis e atualização de domicílio',
+      'es-419': 'Vínculos civiles y actualización de domicilio',
+      'en-US': 'Civil relationships and residence update'
+    }
   },
   {
     id: 'health',
-    title: '3. Saúde HL7 & Telemedicina 24/7',
-    subtitle: 'Prontuário clínico, alergias e teleconsulta IA'
+    title: {
+      'pt-BR': '3. Saúde HL7 & Telemedicina 24/7',
+      'es-419': '3. Salud HL7 y Telemedicina 24/7',
+      'en-US': '3. HL7 Healthcare & 24/7 Telemedicine'
+    },
+    subtitle: {
+      'pt-BR': 'Prontuário clínico, alergias e teleconsulta IA',
+      'es-419': 'Historia clínica, alergias y teleconsulta IA',
+      'en-US': 'Clinical health record, allergies, and AI teleconsultation'
+    }
   },
   {
     id: 'education',
-    title: '4. Educação & Notas Escolares (GDP)',
-    subtitle: 'Boletim por matéria, frequência e tutoria IA'
+    title: {
+      'pt-BR': '4. Educação & Notas Escolares (GDP)',
+      'es-419': '4. Educación y Calificaciones Escolares (GDP)',
+      'en-US': '4. Education & School Grades (GDP)'
+    },
+    subtitle: {
+      'pt-BR': 'Boletim por matéria, frequência e tutoria IA',
+      'es-419': 'Boletín por materia, asistencia y tutoría IA',
+      'en-US': 'Subject report card, attendance, and AI tutoring'
+    }
   },
   {
     id: 'urban',
-    title: '5. Zeladoria 311 & Emergência 911',
-    subtitle: 'Abertura de chamados urbanos e resgate tático'
+    title: {
+      'pt-BR': '5. Zeladoria 311 & Emergência 911',
+      'es-419': '5. Mantenimiento 311 y Emergencia 911',
+      'en-US': '5. 311 Urban Services & 911 Emergency'
+    },
+    subtitle: {
+      'pt-BR': 'Abertura de chamados urbanos e resgate tático',
+      'es-419': 'Apertura de reportes urbanos y rescate táctico',
+      'en-US': 'Open urban service tickets and tactical dispatch'
+    }
   },
   {
     id: 'treasury',
-    title: '6. Economia, Empresa 45s & Passaporte ICAO',
-    subtitle: 'Constituição de empresa, UBI e passaporte digital'
+    title: {
+      'pt-BR': '6. Economia, Empresa 45s & Passaporte ICAO',
+      'es-419': '6. Economía, Empresa 45s y Pasaporte OACI',
+      'en-US': '6. Economy, 45s Company & ICAO Passport'
+    },
+    subtitle: {
+      'pt-BR': 'Constituição de empresa, UBI e passaporte digital',
+      'es-419': 'Constitución de empresa, RBU y pasaporte digital',
+      'en-US': 'Company incorporation, UBI, and digital passport'
+    }
   }
 ];
 
+const CITIZEN_PORTAL_I18N: Record<
+  Language,
+  {
+    officialBanner: string;
+    backToHome: string;
+    govTitle: string;
+    portalBadge: string;
+    activeModulePrefix: string;
+    govSubtitleAnon: string;
+    drawerTitle: string;
+    drawerAnonSub: string;
+    drawerLangTitle: string;
+    drawerModulesHeading: string;
+    drawerBackHomeSub: string;
+    gateTitle: string;
+    gateBody: string;
+    gateSignInBtn: string;
+    gatePublicChatBtn: string;
+    switchModuleBtn: string;
+    authenticatedBadge: string;
+  }
+> = {
+  'pt-BR': {
+    officialBanner: 'Um site oficial do Governo da República Digital de Novatlantis • Portal do Cidadão',
+    backToHome: 'Voltar à Home Page (Concierge Nacional)',
+    govTitle: 'Governo da República de Novatlantis',
+    portalBadge: 'Portal do Cidadão',
+    activeModulePrefix: 'Módulo Ativo (☰)',
+    govSubtitleAnon: 'Chancelaria Digital • Autoatendimento Soberano • AlloyDB & GDP (100.000 Cidadãos)',
+    drawerTitle: 'Menu do Cidadão (☰)',
+    drawerAnonSub: 'Sessão Não Iniciada',
+    drawerLangTitle: 'IDIOMA DO PORTAL (I18N)',
+    drawerModulesHeading: 'MÓDULOS INTERNOS DO PERFIL & SERVIÇOS',
+    drawerBackHomeSub: 'Fazer perguntas públicas no portal principal',
+    gateTitle: 'Autenticação Necessária para Serviços Pessoais',
+    gateBody:
+      'Nenhum usuário está logado no momento. Para consultar dúvidas gerais sem precisar de login, utilize o Concierge IA na Home Page. Para acessar sua Carteira NID, Prontuário de Saúde HL7, Boletim Escolar ou solicitar serviços oficiais, entre com seu NID abaixo.',
+    gateSignInBtn: 'Entrar com NID Agora',
+    gatePublicChatBtn: 'Ir ao Chat Público (Sem Login)',
+    switchModuleBtn: 'Alternar Módulo (☰)',
+    authenticatedBadge: 'Cidadão Autenticado'
+  },
+  'es-419': {
+    officialBanner: 'Un sitio oficial del Gobierno de la República Digital de Novatlantis • Portal del Ciudadano',
+    backToHome: 'Volver a la Página Principal (Concierge Nacional)',
+    govTitle: 'Gobierno de la República de Novatlantis',
+    portalBadge: 'Portal del Ciudadano',
+    activeModulePrefix: 'Módulo Activo (☰)',
+    govSubtitleAnon: 'Cancillería Digital • Autoservicio Soberano • AlloyDB y GDP (100.000 Ciudadanos)',
+    drawerTitle: 'Menú del Ciudadano (☰)',
+    drawerAnonSub: 'Sesión No Iniciada',
+    drawerLangTitle: 'IDIOMA DEL PORTAL (I18N)',
+    drawerModulesHeading: 'MÓDULOS INTERNOS DEL PERFIL Y SERVICIOS',
+    drawerBackHomeSub: 'Hacer preguntas públicas en el portal principal',
+    gateTitle: 'Autenticación Requerida para Servicios Personales',
+    gateBody:
+      'Ningún usuario ha iniciado sesión en este momento. Para consultar dudas generales sin iniciar sesión, utilice el Concierge IA en la Página Principal. Para acceder a su Credencial NID, Historia Clínica HL7, Boletín Escolar o solicitar servicios oficiales, ingrese con su NID abajo.',
+    gateSignInBtn: 'Ingresar con NID Ahora',
+    gatePublicChatBtn: 'Ir al Chat Público (Sin Login)',
+    switchModuleBtn: 'Cambiar Módulo (☰)',
+    authenticatedBadge: 'Ciudadano Autenticado'
+  },
+  'en-US': {
+    officialBanner: 'An official website of the Government of the Digital Republic of Novatlantis • Citizen Portal',
+    backToHome: 'Back to Home Page (National Concierge)',
+    govTitle: 'Government of the Republic of Novatlantis',
+    portalBadge: 'Citizen Portal',
+    activeModulePrefix: 'Active Module (☰)',
+    govSubtitleAnon: 'Digital Chancellery • Sovereign Self-Service • AlloyDB & GDP (100,000 Citizens)',
+    drawerTitle: 'Citizen Menu (☰)',
+    drawerAnonSub: 'Session Not Started',
+    drawerLangTitle: 'PORTAL LANGUAGE (I18N)',
+    drawerModulesHeading: 'INTERNAL PROFILE & SERVICE MODULES',
+    drawerBackHomeSub: 'Ask public questions on the main portal',
+    gateTitle: 'Authentication Required for Personal Services',
+    gateBody:
+      'No user is currently signed in. To ask general questions without signing in, use the AI Concierge on the Home Page. To access your NID Wallet, HL7 Health Record, School Report Card, or request official services, sign in with your NID below.',
+    gateSignInBtn: 'Sign in with NID Now',
+    gatePublicChatBtn: 'Go to Public Chat (No Login)',
+    switchModuleBtn: 'Switch Module (☰)',
+    authenticatedBadge: 'Authenticated Citizen'
+  }
+};
+
 export default function App() {
-  const [lang, setLang] = useState<Language>('pt-BR');
+  const [lang, setLang] = useState<Language>(() => resolveInitialLanguage());
+  const t = CITIZEN_PORTAL_I18N[lang] || CITIZEN_PORTAL_I18N['pt-BR'];
   const [activeTab, setActiveTab] = useState<CitizenTab>('identity');
   const [hamburgerOpen, setHamburgerOpen] = useState(false);
   const [loginTriggerCount, setLoginTriggerCount] = useState(0);
@@ -98,6 +235,13 @@ export default function App() {
   const [dossier, setDossier] = useState<any>(null);
   const [dashboard, setDashboard] = useState<any>(null);
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('novatlantis_lang', newLang);
+    }
+  };
 
   // Forms
   const [newAddressId, setNewAddressId] = useState('');
@@ -123,7 +267,12 @@ export default function App() {
       setDossier(data);
       setNewAddressId(data.citizen.address_id || 'ADDR-NOV-2026-101');
       setNewDistrict(data.citizen.district || 'Distrito Tecnológico');
-      if (data.citizen.native_language && ['pt-BR', 'es-419', 'en-US'].includes(data.citizen.native_language)) {
+      if (
+        data.citizen.native_language &&
+        ['pt-BR', 'es-419', 'en-US'].includes(data.citizen.native_language) &&
+        typeof window !== 'undefined' &&
+        !window.localStorage.getItem('novatlantis_lang_explicit')
+      ) {
         setLang(data.citizen.native_language as Language);
       }
       loadDashboard(data.citizen.nid);
@@ -277,21 +426,21 @@ export default function App() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
               <img src="/assets/flag.jpg" alt="Bandeira de Novatlantis" className="h-3.5 w-5 object-cover border border-slate-300 rounded-sm" />
               <Typography variant="caption" sx={{ color: '#1f2937', fontWeight: 600, fontSize: '0.76rem' }}>
-                Um site oficial do Governo da República Digital de Novatlantis • Portal do Cidadão
+                {t.officialBanner}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <a
-                href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+                href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
                 className="text-[#0a2240] hover:underline flex items-center gap-1 text-xs font-semibold"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Voltar à Home Page (Concierge Nacional)
+                <ArrowLeft className="w-3.5 h-3.5" /> {t.backToHome}
               </a>
             </Box>
           </Container>
         </Box>
 
-        {/* 2. CABEÇALHO ESTILO AMERICA.GOV COM BOTÃO HAMBÚRGUER (☰) E APENAS WIDGET DO USUÁRIO À DIREITA */}
+        {/* 2. CABEÇALHO ESTILO AMERICA.GOV COM BOTÃO HAMBÚRGUER (☰) E SELETOR DE IDIOMAS + WIDGET DO USUÁRIO À DIREITA */}
         <AppBar
           position="sticky"
           color="inherit"
@@ -354,10 +503,10 @@ export default function App() {
                         lineHeight: 1.15
                       }}
                     >
-                      Governo da República de Novatlantis
+                      {t.govTitle}
                     </Typography>
                     <Chip
-                      label="Portal do Cidadão"
+                      label={t.portalBadge}
                       size="small"
                       sx={{
                         bgcolor: '#0a2240',
@@ -377,21 +526,28 @@ export default function App() {
                     }}
                   >
                     {citizen
-                      ? `Módulo Ativo (☰): ${activeMenuObj.title}`
-                      : 'Chancelaria Digital • Autoatendimento Soberano • AlloyDB & GDP (100.000 Cidadãos)'}
+                      ? `${t.activeModuleLabel}: ${activeMenuObj.title[lang]}`
+                      : t.defaultSubline}
                   </Typography>
                 </Box>
               </Box>
 
-              {/* APENAS O STATUS DO USUÁRIO COM A FOTO / LOGIN NID */}
+              {/* SELETOR DE IDIOMAS GLOBAL (PT/ES/EN) + STATUS DO USUÁRIO COM A FOTO / LOGIN NID */}
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <TopNavUserWidget
                   currentNid={citizen?.nid}
                   openLoginTrigger={loginTriggerCount}
-                  citizenPortalUrl={ window.location.origin }
+                  citizenPortalUrl={window.location.origin}
                   govBackstageUrl={GOV_BACKSTAGE_URL}
-                  onUserAuthenticated={(nid, _user, token) => {
+                  lang={lang}
+                  onLanguageChange={handleLanguageChange}
+                  onUserAuthenticated={(nid, user, token) => {
                     if (token) setSsoToken(token);
+                    if (user?.native_language && ['pt-BR', 'es-419', 'en-US'].includes(user.native_language)) {
+                      if (!localStorage.getItem('novatlantis_lang_explicit')) {
+                        setLang(user.native_language as Language);
+                      }
+                    }
                     loadCitizen(nid);
                   }}
                   onUserLoggedOut={() => {
@@ -426,10 +582,10 @@ export default function App() {
           >
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                Menu do Cidadão (☰)
+                {t.drawerTitle}
               </Typography>
               <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
-                {citizen ? `${citizen.full_name} (${citizen.nid})` : 'Sessão Não Iniciada'}
+                {citizen ? `${citizen.full_name} (${citizen.nid})` : t.drawerUnauthenticated}
               </Typography>
             </Box>
             <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
@@ -440,7 +596,7 @@ export default function App() {
           <List sx={{ py: 1.5 }}>
             <Box sx={{ px: 2.5, py: 0.75 }}>
               <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-                MÓDULOS INTERNOS DO PERFIL & SERVIÇOS
+                {t.drawerModulesHeader}
               </Typography>
             </Box>
 
@@ -455,8 +611,8 @@ export default function App() {
                 sx={{ py: 1.35 }}
               >
                 <ListItemText
-                  primary={item.title}
-                  secondary={item.subtitle}
+                  primary={item.title[lang]}
+                  secondary={item.subtitle[lang]}
                   primaryTypographyProps={{ fontWeight: activeTab === item.id ? 800 : 600, fontSize: '0.88rem', color: '#0a2240' }}
                   secondaryTypographyProps={{ fontSize: '0.75rem' }}
                 />
@@ -467,17 +623,51 @@ export default function App() {
 
             <ListItemButton
               component="a"
-              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
             >
               <ListItemIcon>
                 <ArrowBackIcon sx={{ color: '#0a2240' }} />
               </ListItemIcon>
               <ListItemText
-                primary="Voltar à Home Page (Concierge IA)"
-                secondary="Fazer perguntas públicas no portal principal"
+                primary={t.drawerBackHome}
+                secondary={t.drawerBackHomeSub}
                 primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem' }}
               />
             </ListItemButton>
+
+            <Divider sx={{ my: 1.5 }} />
+
+            {/* Seletor de Idiomas Oficial dentro do Menu Hambúrguer */}
+            <Box sx={{ px: 2.5, py: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em', display: 'block', mb: 1 }}>
+                IDIOMA / IDIOMA / LANGUAGE
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {([
+                  { code: 'pt-BR', label: 'Português' },
+                  { code: 'es-419', label: 'Español' },
+                  { code: 'en-US', label: 'English' }
+                ] as { code: Language; label: string }[]).map((opt) => (
+                  <Button
+                    key={opt.code}
+                    size="small"
+                    variant={lang === opt.code ? 'contained' : 'outlined'}
+                    onClick={() => handleLanguageChange(opt.code)}
+                    sx={{
+                      flex: 1,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      bgcolor: lang === opt.code ? '#0a2240' : 'transparent',
+                      borderColor: '#0a2240',
+                      color: lang === opt.code ? '#ffffff' : '#0a2240'
+                    }}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
           </List>
         </Drawer>
 
@@ -512,12 +702,10 @@ export default function App() {
               variant="h4"
               sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
             >
-              Autenticação Necessária para Serviços Pessoais
+              {t.authRequiredTitle}
             </Typography>
             <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
-              Nenhum usuário está logado no momento. Para consultar dúvidas gerais sem precisar de login, utilize o{' '}
-              <strong>Concierge IA na Home Page</strong>. Para acessar sua Carteira NID, Prontuário de Saúde HL7,
-              Boletim Escolar ou solicitar serviços oficiais, entre com seu NID abaixo.
+              {t.authRequiredDesc}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Button
@@ -535,12 +723,12 @@ export default function App() {
                   '&:hover': { bgcolor: '#163a66' }
                 }}
               >
-                Entrar com NID Agora
+                {t.loginNowBtn}
               </Button>
               <Button
                 variant="outlined"
                 size="large"
-                href={LANDING_PORTAL_URL}
+                href={`${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
                 sx={{
                   borderColor: '#0a2240',
                   color: '#0a2240',
@@ -550,7 +738,7 @@ export default function App() {
                   px: 3
                 }}
               >
-                Ir ao Chat Público (Sem Login)
+                {t.publicChatBtn}
               </Button>
             </Box>
           </Paper>
@@ -586,19 +774,19 @@ export default function App() {
                     borderRadius: 2
                   }}
                 >
-                  Alternar Módulo (☰)
+                  {t.switchModuleBtn}
                 </Button>
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
-                    {activeMenuObj.title}
+                    {activeMenuObj.title[lang]}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {activeMenuObj.subtitle}
+                    {activeMenuObj.subtitle[lang]}
                   </Typography>
                 </Box>
               </Box>
               <Chip
-                label={`Cidadão Autenticado: ${citizen.full_name} (${citizen.nid})`}
+                label={`${t.authenticatedChip}: ${citizen.full_name} (${citizen.nid})`}
                 size="small"
                 color="success"
                 variant="outlined"

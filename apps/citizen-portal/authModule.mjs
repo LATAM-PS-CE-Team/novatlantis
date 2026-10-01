@@ -919,6 +919,10 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
     const avatarUrl = body.avatar_url ? String(body.avatar_url) : current.avatarUrl;
     const email = body.email ? String(body.email).trim().toLowerCase() : current.email;
     const district = body.district ? String(body.district).trim() : current.district;
+    const nativeLang =
+      body.native_language && ['pt-BR', 'es-419', 'en-US'].includes(String(body.native_language))
+        ? String(body.native_language)
+        : current.native_language;
 
     db.prepare(`
       INSERT INTO citizen_profiles (nid, avatar_url, phone_number, social_name, bio, updated_at)
@@ -940,6 +944,9 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
     }
     if (district) {
       db.prepare('UPDATE dim_citizens SET district = ? WHERE nid = ?').run(district, targetNid);
+    }
+    if (nativeLang) {
+      db.prepare('UPDATE dim_citizens SET native_language = ? WHERE nid = ?').run(nativeLang, targetNid);
     }
 
     await syncCitizenProfileToAlloyDB(targetNid, avatarUrl, phoneNumber, socialName, bio, email);

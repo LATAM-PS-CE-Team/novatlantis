@@ -48,49 +48,192 @@ import {
   UserCheck
 } from 'lucide-react';
 import { novatlantisTheme } from './theme';
-import { TopNavUserWidget } from './components/TopNavUserWidget';
+import { TopNavUserWidget, SupportedLanguage, resolveInitialLanguage } from './components/TopNavUserWidget';
 
-type Language = 'pt-BR' | 'es-419' | 'en-US';
+type Language = SupportedLanguage;
 type BackstageTab = 'pm_cabinet' | 'iam360' | 'health_mgmt' | 'edu_mgmt' | 'ops_311_911' | 'justice_datalake';
 
 const LANDING_PORTAL_URL = 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app';
 const CITIZEN_PORTAL_URL = 'https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app';
 
-const BACKSTAGE_MENU_ITEMS: { id: BackstageTab; title: string; subtitle: string }[] = [
+const BACKSTAGE_MENU_ITEMS: { id: BackstageTab; title: Record<Language, string>; subtitle: Record<Language, string> }[] = [
   {
     id: 'pm_cabinet',
-    title: '1. Gabinete Primeiro-Ministro & Secretário-Geral',
-    subtitle: 'Comando executivo da nação e KPIs soberanos'
+    title: {
+      'pt-BR': '1. Gabinete Primeiro-Ministro & Secretário-Geral',
+      'es-419': '1. Gabinete del Primer Ministro y Secretario General',
+      'en-US': '1. Prime Minister & Secretary-General Cabinet'
+    },
+    subtitle: {
+      'pt-BR': 'Comando executivo da nação e KPIs soberanos',
+      'es-419': 'Comando ejecutivo de la nación y KPIs soberanos',
+      'en-US': 'National executive command and sovereign KPIs'
+    }
   },
   {
     id: 'iam360',
-    title: '2. Identidade 360 (Gestão RBAC/ABAC)',
-    subtitle: 'Concessão e revogação de acesso administrativo'
+    title: {
+      'pt-BR': '2. Identidade 360 (Gestão RBAC/ABAC)',
+      'es-419': '2. Identidad 360 (Gestión RBAC/ABAC)',
+      'en-US': '2. Identity 360 (RBAC/ABAC Management)'
+    },
+    subtitle: {
+      'pt-BR': 'Concessão e revogação de acesso administrativo',
+      'es-419': 'Concesión y revocación de acceso administrativo',
+      'en-US': 'Granting and revoking administrative access'
+    }
   },
   {
     id: 'health_mgmt',
-    title: '3. Gestão da Saúde (Hospitais & Médicos)',
-    subtitle: 'Rede hospitalar HL7 FHIR e fila de telemedicina'
+    title: {
+      'pt-BR': '3. Gestão da Saúde (Hospitais & Médicos)',
+      'es-419': '3. Gestión de Salud (Hospitales y Médicos)',
+      'en-US': '3. Healthcare Management (Hospitals & Doctors)'
+    },
+    subtitle: {
+      'pt-BR': 'Rede hospitalar HL7 FHIR e fila de telemedicina',
+      'es-419': 'Red hospitalaria HL7 FHIR y cola de telemedicina',
+      'en-US': 'HL7 FHIR hospital network and telemedicine queue'
+    }
   },
   {
     id: 'edu_mgmt',
-    title: '4. Gestão da Educação (Escolas, Provas & Notas)',
-    subtitle: 'Lançamento de notas, frequência e avaliações'
+    title: {
+      'pt-BR': '4. Gestão da Educação (Escolas, Provas & Notas)',
+      'es-419': '4. Gestión de Educación (Escuelas, Exámenes y Notas)',
+      'en-US': '4. Education Management (Schools, Exams & Grades)'
+    },
+    subtitle: {
+      'pt-BR': 'Lançamento de notas, frequência e avaliações',
+      'es-419': 'Registro de calificaciones, asistencia y evaluaciones',
+      'en-US': 'Grade entry, attendance, and national assessments'
+    }
   },
   {
     id: 'ops_311_911',
-    title: '5. Comando 311 & 911 (Demandas do Cidadão)',
-    subtitle: 'Resolução de chamados urbanos e despacho tático'
+    title: {
+      'pt-BR': '5. Comando 311 & 911 (Demandas do Cidadão)',
+      'es-419': '5. Comando 311 y 911 (Demandas Ciudadanas)',
+      'en-US': '5. 311 & 911 Command (Citizen Requests)'
+    },
+    subtitle: {
+      'pt-BR': 'Resolução de chamados urbanos e despacho tático',
+      'es-419': 'Resolución de reportes urbanos y despacho táctico',
+      'en-US': 'Urban ticket resolution and tactical dispatch'
+    }
   },
   {
     id: 'justice_datalake',
-    title: '6. Justiça, Tesouro, AlloyDB & GDP 100k',
-    subtitle: 'Explorador de 100.000 cidadãos e auditoria fiscal'
+    title: {
+      'pt-BR': '6. Justiça, Tesouro, AlloyDB & GDP 100k',
+      'es-419': '6. Justicia, Tesoro, AlloyDB y GDP 100k',
+      'en-US': '6. Justice, Treasury, AlloyDB & GDP 100k'
+    },
+    subtitle: {
+      'pt-BR': 'Explorador de 100.000 cidadãos e auditoria fiscal',
+      'es-419': 'Explorador de 100.000 ciudadanos y auditoría fiscal',
+      'en-US': '100,000-citizen explorer and fiscal audit'
+    }
   }
 ];
 
+const BACKSTAGE_I18N: Record<
+  Language,
+  {
+    officialBanner: string;
+    homeLink: string;
+    citizenPortalLink: string;
+    govTitle: string;
+    portalBadge: string;
+    activeEnvLabel: string;
+    defaultSubline: string;
+    drawerTitle: string;
+    drawerAuthRequired: string;
+    drawerEnvsHeader: string;
+    drawerBackHome: string;
+    drawerBackHomeSub: string;
+    authWallTitle: string;
+    authWallDesc: string;
+    loginPublicServantBtn: string;
+    backHomeBtn: string;
+    switchEnvBtn: string;
+    authenticatedServantChip: string;
+  }
+> = {
+  'pt-BR': {
+    officialBanner: 'Um site oficial do Governo da República Digital de Novatlantis • Backstage Governamental',
+    homeLink: 'Home Page (Concierge IA)',
+    citizenPortalLink: 'Portal do Cidadão',
+    govTitle: 'Governo da República de Novatlantis',
+    portalBadge: 'Backstage Governamental & Identidade 360',
+    activeEnvLabel: 'Ambiente Ativo (☰)',
+    defaultSubline: 'Chancelaria Digital • Agente Orquestrador de Estado • Módulo de Usuários GDF (100.000 Cidadãos)',
+    drawerTitle: 'Menu do Backstage (☰)',
+    drawerAuthRequired: 'Autenticação Necessária',
+    drawerEnvsHeader: 'AMBIENTES ADMINISTRATIVOS DO ESTADO',
+    drawerBackHome: 'Voltar à Home Page (Concierge IA)',
+    drawerBackHomeSub: 'Portal Principal da Nação',
+    authWallTitle: 'Backstage Governamental • Identidade 360',
+    authWallDesc:
+      'Nenhum servidor público está logado no momento. O acesso ao Backstage Governamental exige autenticação com um NID que possua nomeação ativa na aplicação Identidade 360 (Primeiro-Ministro, Secretário-Geral, Gestor IAM 360, Médico, Professor ou Comando 311/911).',
+    loginPublicServantBtn: 'Entrar com NID (Servidor Público)',
+    backHomeBtn: 'Voltar à Home Page',
+    switchEnvBtn: 'Alternar Ambiente (☰)',
+    authenticatedServantChip: 'Servidor Autenticado'
+  },
+  'es-419': {
+    officialBanner: 'Un sitio oficial del Gobierno de la República Digital de Novatlantis • Backstage Gubernamental',
+    homeLink: 'Página Principal (Concierge IA)',
+    citizenPortalLink: 'Portal del Ciudadano',
+    govTitle: 'Gobierno de la República de Novatlantis',
+    portalBadge: 'Backstage Gubernamental e Identidad 360',
+    activeEnvLabel: 'Entorno Activo (☰)',
+    defaultSubline: 'Cancillería Digital • Agente Orquestador de Estado • Módulo de Usuarios GDF (100.000 Ciudadanos)',
+    drawerTitle: 'Menú del Backstage (☰)',
+    drawerAuthRequired: 'Autenticación Requerida',
+    drawerEnvsHeader: 'ENTORNOS ADMINISTRATIVOS DEL ESTADO',
+    drawerBackHome: 'Volver a la Página Principal (Concierge IA)',
+    drawerBackHomeSub: 'Portal Principal de la Nación',
+    authWallTitle: 'Backstage Gubernamental • Identidad 360',
+    authWallDesc:
+      'Ningún servidor público ha iniciado sesión en este momento. El acceso al Backstage Gubernamental requiere autenticación con un NID que posea nombramiento activo en la aplicación Identidad 360 (Primer Ministro, Secretario General, Gestor IAM 360, Médico, Profesor o Comando 311/911).',
+    loginPublicServantBtn: 'Ingresar con NID (Servidor Público)',
+    backHomeBtn: 'Volver a la Página Principal',
+    switchEnvBtn: 'Cambiar Entorno (☰)',
+    authenticatedServantChip: 'Servidor Autenticado'
+  },
+  'en-US': {
+    officialBanner: 'An official website of the Government of the Digital Republic of Novatlantis • Government Backstage',
+    homeLink: 'Home Page (AI Concierge)',
+    citizenPortalLink: 'Citizen Portal',
+    govTitle: 'Government of the Republic of Novatlantis',
+    portalBadge: 'Government Backstage & Identity 360',
+    activeEnvLabel: 'Active Environment (☰)',
+    defaultSubline: 'Digital Chancellery • State Orchestrator Agent • GDF User Module (100,000 Citizens)',
+    drawerTitle: 'Backstage Menu (☰)',
+    drawerAuthRequired: 'Authentication Required',
+    drawerEnvsHeader: 'STATE ADMINISTRATIVE ENVIRONMENTS',
+    drawerBackHome: 'Back to Home Page (AI Concierge)',
+    drawerBackHomeSub: 'Main National Portal',
+    authWallTitle: 'Government Backstage • Identity 360',
+    authWallDesc:
+      'No public servant is currently signed in. Access to the Government Backstage requires authentication with an NID holding an active appointment in Identity 360 (Prime Minister, Secretary-General, IAM 360 Manager, Doctor, Teacher, or 311/911 Command).',
+    loginPublicServantBtn: 'Sign In with NID (Public Servant)',
+    backHomeBtn: 'Back to Home Page',
+    switchEnvBtn: 'Switch Environment (☰)',
+    authenticatedServantChip: 'Authenticated Servant'
+  }
+};
+
 export default function App() {
-  const [lang, setLang] = useState<Language>('pt-BR');
+  const [lang, setLang] = useState<Language>(() => resolveInitialLanguage());
+  const t = BACKSTAGE_I18N[lang] || BACKSTAGE_I18N['pt-BR'];
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang);
+    localStorage.setItem('novatlantis_lang', newLang);
+    localStorage.setItem('novatlantis_lang_explicit', '1');
+  };
   const [backstageTab, setBackstageTab] = useState<BackstageTab>('pm_cabinet');
   const [hamburgerOpen, setHamburgerOpen] = useState(false);
   const [loginTriggerCount, setLoginTriggerCount] = useState(0);
@@ -309,27 +452,27 @@ export default function App() {
             <Stack direction="row" spacing={1.5} alignItems="center">
               <img src="/assets/flag.jpg" alt="Bandeira" className="h-3.5 w-5 object-cover border border-slate-300 rounded-sm" />
               <Typography variant="caption" sx={{ color: '#1f2937', fontWeight: 600, fontSize: '0.76rem' }}>
-                Um site oficial do Governo da República Digital de Novatlantis • Backstage Governamental
+                {t.officialBanner}
               </Typography>
             </Stack>
             <Stack direction="row" spacing={2.5} alignItems="center">
               <a
-                href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+                href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
                 className="text-[#0a2240] hover:underline flex items-center gap-1 text-xs font-semibold"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Home Page (Concierge IA)
+                <ArrowLeft className="w-3.5 h-3.5" /> {t.homeLink}
               </a>
               <a
-                href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : CITIZEN_PORTAL_URL}
+                href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${CITIZEN_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
                 className="text-[#0a2240] hover:underline flex items-center gap-1 text-xs font-semibold"
               >
-                <UserCheck className="w-3.5 h-3.5" /> Portal do Cidadão
+                <UserCheck className="w-3.5 h-3.5" /> {t.citizenPortalLink}
               </a>
             </Stack>
           </Container>
         </Box>
 
-        {/* 2. CABEÇALHO DO BACKSTAGE GOVERNAMENTAL (Design System america.gov + Botão Hambúrguer ☰) */}
+        {/* 2. CABEÇALHO DO BACKSTAGE GOVERNAMENTAL (Design System america.gov + Botão Hambúrguer ☰ + Seletor de Idiomas) */}
         <AppBar
           position="sticky"
           elevation={0}
@@ -382,10 +525,10 @@ export default function App() {
                         lineHeight: 1.15
                       }}
                     >
-                      Governo da República de Novatlantis
+                      {t.govTitle}
                     </Typography>
                     <Chip
-                      label="Backstage Governamental & Identidade 360"
+                      label={t.portalBadge}
                       size="small"
                       sx={{
                         bgcolor: '#0a2240',
@@ -405,8 +548,8 @@ export default function App() {
                     }}
                   >
                     {currentUser?.backstage_allowed
-                      ? `Ambiente Ativo (☰): ${activeMenuObj.title}`
-                      : 'Chancelaria Digital • Agente Orquestrador de Estado • Módulo de Usuários GDF (100.000 Cidadãos)'}
+                      ? `${t.activeEnvLabel}: ${activeMenuObj.title[lang]}`
+                      : t.defaultSubline}
                   </Typography>
                 </Box>
               </Stack>
@@ -417,8 +560,15 @@ export default function App() {
                   openLoginTrigger={loginTriggerCount}
                   citizenPortalUrl={CITIZEN_PORTAL_URL}
                   govBackstageUrl={window.location.origin}
-                  onUserAuthenticated={(nid, _user, token) => {
+                  lang={lang}
+                  onLanguageChange={handleLanguageChange}
+                  onUserAuthenticated={(nid, user, token) => {
                     if (token) setSsoToken(token);
+                    if (user?.native_language && ['pt-BR', 'es-419', 'en-US'].includes(user.native_language)) {
+                      if (!localStorage.getItem('novatlantis_lang_explicit')) {
+                        setLang(user.native_language as Language);
+                      }
+                    }
                     loadUserSession(nid);
                   }}
                   onUserLoggedOut={() => {
@@ -452,10 +602,10 @@ export default function App() {
           >
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                Menu do Backstage (☰)
+                {t.drawerTitle}
               </Typography>
               <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
-                {currentUser ? `${currentUser.full_name} (${currentUser.effective_role_code})` : 'Autenticação Necessária'}
+                {currentUser ? `${currentUser.full_name} (${currentUser.effective_role_code})` : t.drawerAuthRequired}
               </Typography>
             </Box>
             <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
@@ -466,7 +616,7 @@ export default function App() {
           <List sx={{ py: 1.5 }}>
             <Box sx={{ px: 2.5, py: 0.75 }}>
               <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-                AMBIENTES ADMINISTRATIVOS DO ESTADO
+                {t.drawerEnvsHeader}
               </Typography>
             </Box>
 
@@ -481,8 +631,8 @@ export default function App() {
                 sx={{ py: 1.35 }}
               >
                 <ListItemText
-                  primary={item.title}
-                  secondary={item.subtitle}
+                  primary={item.title[lang]}
+                  secondary={item.subtitle[lang]}
                   primaryTypographyProps={{
                     fontWeight: backstageTab === item.id ? 800 : 600,
                     fontSize: '0.88rem',
@@ -497,17 +647,51 @@ export default function App() {
 
             <ListItemButton
               component="a"
-              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
             >
               <ListItemIcon>
                 <ArrowBackIcon sx={{ color: '#0a2240' }} />
               </ListItemIcon>
               <ListItemText
-                primary="Voltar à Home Page (Concierge IA)"
-                secondary="Portal Principal da Nação"
+                primary={t.drawerBackHome}
+                secondary={t.drawerBackHomeSub}
                 primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem' }}
               />
             </ListItemButton>
+
+            <Divider sx={{ my: 1.5 }} />
+
+            {/* Seletor de Idiomas Oficial dentro do Menu Hambúrguer */}
+            <Box sx={{ px: 2.5, py: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em', display: 'block', mb: 1 }}>
+                IDIOMA / IDIOMA / LANGUAGE
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {([
+                  { code: 'pt-BR', label: 'Português' },
+                  { code: 'es-419', label: 'Español' },
+                  { code: 'en-US', label: 'English' }
+                ] as { code: Language; label: string }[]).map((opt) => (
+                  <Button
+                    key={opt.code}
+                    size="small"
+                    variant={lang === opt.code ? 'contained' : 'outlined'}
+                    onClick={() => handleLanguageChange(opt.code)}
+                    sx={{
+                      flex: 1,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      bgcolor: lang === opt.code ? '#0a2240' : 'transparent',
+                      borderColor: '#0a2240',
+                      color: lang === opt.code ? '#ffffff' : '#0a2240'
+                    }}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
           </List>
         </Drawer>
 
@@ -546,12 +730,10 @@ export default function App() {
               variant="h4"
               sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
             >
-              Backstage Governamental • Identidade 360
+              {t.authWallTitle}
             </Typography>
             <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
-              Nenhum servidor público está logado no momento. O acesso ao Backstage Governamental exige autenticação
-              com um NID que possua nomeação ativa na aplicação <strong>Identidade 360</strong> (Primeiro-Ministro,
-              Secretário-Geral, Gestor IAM 360, Médico, Professor ou Comando 311/911).
+              {t.authWallDesc}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Button
@@ -569,12 +751,12 @@ export default function App() {
                   '&:hover': { bgcolor: '#163a66' }
                 }}
               >
-                Entrar com NID (Servidor Público)
+                {t.loginPublicServantBtn}
               </Button>
               <Button
                 variant="outlined"
                 size="large"
-                href={LANDING_PORTAL_URL}
+                href={`${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
                 sx={{
                   borderColor: '#0a2240',
                   color: '#0a2240',
@@ -584,7 +766,7 @@ export default function App() {
                   px: 3
                 }}
               >
-                Voltar à Home Page
+                {t.backHomeBtn}
               </Button>
             </Box>
           </Paper>
@@ -611,7 +793,7 @@ export default function App() {
 
             <div className="flex flex-wrap gap-3 pt-2">
               <a
-                href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : CITIZEN_PORTAL_URL}
+                href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${CITIZEN_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
                 className="bg-[#002046] text-white px-5 py-2.5 rounded text-xs font-bold hover:bg-[#00356e] transition flex items-center gap-2"
               >
                 Ir para o Portal do Cidadão ({currentUser.full_name})
@@ -658,19 +840,19 @@ export default function App() {
                       borderRadius: 2
                     }}
                   >
-                    Alternar Ambiente (☰)
+                    {t.switchEnvBtn}
                   </Button>
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
-                      {activeMenuObj.title}
+                      {activeMenuObj.title[lang]}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {activeMenuObj.subtitle}
+                      {activeMenuObj.subtitle[lang]}
                     </Typography>
                   </Box>
                 </Box>
                 <Chip
-                  label={`Servidor Autenticado: ${currentUser.full_name} (${currentUser.effective_role_code})`}
+                  label={`${t.authenticatedServantChip}: ${currentUser.full_name} (${currentUser.effective_role_code})`}
                   size="small"
                   color="success"
                   variant="outlined"

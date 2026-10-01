@@ -9,16 +9,25 @@
 
 ---
 
-## 1. Visão Geral da Nação AI-First (Material UI + AlloyDB + Government Data Platform)
+## 1. Visão Geral da Nação AI-First (Design System `america.gov` + Material UI + AlloyDB + Government Data Platform)
 
-A **República Digital de Novatlantis** (`novatlantis.gov.cloud`) é uma nação soberana nativa da era agêntica, projetada sob o paradigma estético e funcional **Sovereign Civic** com **Material UI (`@mui/material` v6)** (inspirado na austeridade institucional do **GOV.UK** e na interoperabilidade da **e-Estonia**), operando integralmente sobre o **Google Cloud (Projeto Argolis: `novatlantis`)**.
+A **República Digital de Novatlantis** (`novatlantis.gov.cloud`) é uma nação soberana nativa da era agêntica, projetada com inspiração direta na estética editorial e austera do portal oficial **[america.gov](https://america.gov/)** combinada com **Material UI (`@mui/material` v6)**, **AlloyDB for PostgreSQL** e **Government Data Platform (GDP)**, operando integralmente sobre o **Google Cloud (Projeto Argolis: `novatlantis`)**.
 
-A arquitetura do Estado é composta por:
-- **3 Aplicações Full-Stack Completas e Independentes** (cada uma com seu próprio **Frontend React + Material UI (`@mui/material`)** e **Backend Node.js 22 conectado ao AlloyDB for PostgreSQL via Direct VPC Egress**);
-- **Banco de Dados Transacional Soberano no AlloyDB for PostgreSQL**:
-  - **Cluster:** `projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster`
-  - **Instância Primária:** `projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster/instances/novatlantis-primary-01` (`10.223.28.2:5432`, PostgreSQL 15 + `vector` extension)
-- **Government Data Platform (GDP)** ([`government-data-platform/`](./government-data-platform)) baseado na arquitetura oficial [`googlecloudplatform/education-data-platform`](https://github.com/googlecloudplatform/education-data-platform), implantado no BigQuery e Cloud Storage do projeto `novatlantis` com **100.000 cidadãos** e todas as tabelas relacionais e views analíticas.
+### Pilares Arquiteturais e de Experiência do Cidadão:
+1. **Arquitetura Unificada de Idiomas (i18n Nativo em 100% das Páginas — `Português`, `Español`, `English`):**
+   - Botão seletor global de idiomas (`🌐 PT | ES | EN`) sempre visível no cabeçalho superior (`TopNavUserWidget`), dentro do Menu Hambúrguer (`☰`) de todas as aplicações e nas configurações do Perfil Soberano.
+   - Resolução automática em 3 camadas:
+     1. Override explícito do usuário no cabeçalho/menu (`localStorage.novatlantis_lang` ou parâmetro `?lang=pt-BR|es-419|en-US` propagado via SSO entre portais);
+     2. Idioma nativo (`native_language`) registrado no perfil do cidadão autenticado no AlloyDB / GDF (`45% pt-BR`, `45% es-419`, `10% en-US`);
+     3. Detecção automática via `navigator.language` / `Accept-Language`.
+2. **Design System Editorial `america.gov` & Navegação via Menu Hambúrguer (`☰`):**
+   - Paleta cívica de alto contraste (`#fcfbf9` Warm Cream, `#0a2240` Deep Navy, `#991b1b` Crimson Accent) e tipografia editorial (`Merriweather` + `Public Sans` + `JetBrains Mono`).
+   - Navegação limpa com **Menu Hambúrguer (`☰`)** tanto nos cabeçalhos dos portais quanto dentro do **Modal de Perfil Soberano ("Mais Opções do Perfil")**, permitindo alternar entre Carteira Digital NID, Dados Cadastrais & Foto Oficial (com compressão automática e persistência no banco `citizen_profiles`), Segurança & Senha e Preferências sem travamentos.
+3. **Autenticação Zero-Trust Sem Login Automático & Concierge IA Público:**
+   - **Nenhum usuário inicia logado por padrão.** Qualquer visitante pode utilizar livremente o **Concierge IA Nacional** na Home Page para tirar dúvidas públicas em Português, Espanhol ou Inglês sem precisar de login.
+   - Quando o usuário solicita um serviço pessoal ou transacional (Carteira NID, Prontuário de Saúde HL7, Boletim Escolar, Zeladoria 311, SOS 911 ou Backstage Governamental), o portal solicita autenticação soberana (`NID` + Senha com troca obrigatória no primeiro acesso).
+4. **3 Aplicações Full-Stack Completas e Independentes** (cada uma com seu próprio **Frontend React + Material UI** e **Backend Node.js 22 conectado ao AlloyDB for PostgreSQL via Direct VPC Egress**).
+5. **Banco de Dados Transacional Soberano no AlloyDB for PostgreSQL (`10.223.28.2:5432`)** + **Government Data Platform (GDP)** no BigQuery e Cloud Storage com **100.000 cidadãos**.
 
 ---
 
@@ -26,9 +35,9 @@ A arquitetura do Estado é composta por:
 
 | Aplicação Full-Stack | Diretório no Monorepo | Serviço Cloud Run (`novatlantis`) | Papel Institucional & Funcionalidades |
 | :--- | :--- | :--- | :--- |
-| **1. Portal Principal da Nação + Chat do Agente Orquestrador** | [`apps/landing-portal`](./apps/landing-portal) | [`https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app) | **Página Principal da Nação (Material UI)**: Cabeçalho institucional ampliado com **Governo da República de Novatlantis • Portal Principal da Nação** e widget de status do usuário com foto (`TopNavUserWidget`), painel ao vivo do **AlloyDB + Government Data Platform**, matriz de eventos da vida e **Barra de Busca Central controlada pelo Agente Orquestrador de Estado**. |
-| **2. Portal do Cidadão (Autoatendimento 360°)** | [`apps/citizen-portal`](./apps/citizen-portal) | [`https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva do Cidadão (Material UI)**: Utiliza a base de 100.000 cidadãos no AlloyDB/GDP como módulo de usuários. Inclui Carteira Soberana NID (Mod-11 + Biometria NIST), Grafo Familiar Read-Only (`rel_family_graph`), gestão de endereço, Prontuário de Saúde HL7 e Telemedicina com IA, Boletim Escolar por matéria, Zeladoria 311, SOS 911, abertura de empresa em 45s e Passaporte ICAO. |
-| **3. Backstage Governamental & Identidade 360** | [`apps/gov-backstage`](./apps/gov-backstage) | [`https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app`](https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva de Servidores e Gestores Públicos (Material UI)**: Controlada pela aplicação **Identidade 360 (RBAC/ABAC)**. Inclui o Gabinete do Primeiro-Ministro (`jopoco`) e Secretário-Geral, Gestão de Identidades 360, Gestão de Hospitais e Médicos, Gestão de Escolas, Professores, Provas e Notas, Comando 311/911 e Explorador AlloyDB & GDP de 100k cidadãos. |
+| **1. Portal Principal da Nação + Concierge IA Nacional** | [`apps/landing-portal`](./apps/landing-portal) | [`https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app) | **Home Page Estilo `america.gov` (Material UI)**: Faixa oficial governamental, cabeçalho com Menu Hambúrguer (`☰`), seletor global de idiomas (`PT | ES | EN`) e widget de usuário (`TopNavUserWidget`). Hero com **Concierge IA Nacional** aberto para perguntas públicas sem login e grade de serviços essenciais. |
+| **2. Portal do Cidadão (Autoatendimento 360°)** | [`apps/citizen-portal`](./apps/citizen-portal) | [`https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva do Cidadão (Material UI)**: Navegação interna via Menu Hambúrguer (`☰`) e suporte a `PT | ES | EN`. Inclui Carteira Soberana NID (Mod-11 + Biometria NIST + Upload de Foto persistido no banco), Grafo Familiar Read-Only (`rel_family_graph`), Prontuário de Saúde HL7 e Telemedicina com IA, Boletim Escolar, Zeladoria 311, SOS 911, Empresas em 45s e Passaporte ICAO. |
+| **3. Backstage Governamental & Identidade 360** | [`apps/gov-backstage`](./apps/gov-backstage) | [`https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app`](https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva de Servidores e Gestores Públicos (Material UI)**: Navegação entre os 6 ambientes administrativos via Menu Hambúrguer (`☰`) com suporte a `PT | ES | EN` e controle **Identidade 360 (RBAC/ABAC)**. Inclui Gabinete do Primeiro-Ministro (`jopoco`), Gestão IAM 360, Gestão de Hospitais e Médicos, Gestão de Escolas/Provas/Notas, Comando 311/911 e Explorador AlloyDB & GDP 100k. |
 
 ---
 
@@ -39,7 +48,7 @@ A arquitetura do Estado é composta por:
 - **Primary Instance URI:** `projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster/instances/novatlantis-primary-01`
 - **Private Services Access IP (VPC `novatlantis-vpc`):** `10.223.28.2:5432`
 - **Schema DDL:** [`data-generator/sql/01_novatlantis_alloydb_schema.sql`](./data-generator/sql/01_novatlantis_alloydb_schema.sql)
-- **Endpoint de Telemetria ao Vivo:** `GET /api/v1/alloydb/status` e `GET /api/v1/gdp/status`
+- **Persistência de Perfil e Foto Oficial:** `PUT /api/v1/profile/me` realiza `UPSERT` na tabela `citizen_profiles` (`photo_url`, `social_name`, `preferred_contact`, `accessibility_needs`) e sincroniza `native_language` em `dim_citizens` tanto no AlloyDB quanto no banco embarcado SQLite WAL.
 
 ### 3.2 Government Data Platform (`government-data-platform/`)
 Baseado em [`googlecloudplatform/education-data-platform`](https://github.com/googlecloudplatform/education-data-platform) e provisionado em produção no projeto `novatlantis`:

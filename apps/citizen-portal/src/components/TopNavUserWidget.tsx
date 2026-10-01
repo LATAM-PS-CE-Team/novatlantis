@@ -3,6 +3,7 @@ import {
   Avatar,
   Box,
   Button,
+  ButtonGroup,
   Chip,
   CircularProgress,
   Collapse,
@@ -14,6 +15,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -22,6 +24,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
   Alert
 } from '@mui/material';
@@ -43,8 +46,29 @@ import {
   Launch as LaunchIcon,
   AdminPanelSettings as AdminIcon,
   Save as SaveIcon,
-  DeleteOutline as DeleteOutlineIcon
+  DeleteOutline as DeleteOutlineIcon,
+  Language as LanguageIcon
 } from '@mui/icons-material';
+
+export type SupportedLanguage = 'pt-BR' | 'es-419' | 'en-US';
+
+export function resolveInitialLanguage(): SupportedLanguage {
+  if (typeof window === 'undefined') return 'pt-BR';
+  const params = new URLSearchParams(window.location.search);
+  const urlLang = params.get('lang');
+  if (urlLang === 'pt-BR' || urlLang === 'es-419' || urlLang === 'en-US') {
+    window.localStorage.setItem('novatlantis_lang', urlLang);
+    return urlLang;
+  }
+  const saved = window.localStorage.getItem('novatlantis_lang');
+  if (saved === 'pt-BR' || saved === 'es-419' || saved === 'en-US') {
+    return saved;
+  }
+  const nav = (navigator.language || '').toLowerCase();
+  if (nav.startsWith('es')) return 'es-419';
+  if (nav.startsWith('en')) return 'en-US';
+  return 'pt-BR';
+}
 
 export interface AuthUserProfile {
   nid: string;
@@ -86,9 +110,164 @@ interface TopNavUserWidgetProps {
   loginReasonMessage?: string | null;
   citizenPortalUrl?: string;
   govBackstageUrl?: string;
+  lang?: SupportedLanguage;
+  onLanguageChange?: (lang: SupportedLanguage) => void;
 }
 
 type ProfileSection = 'PERSONAL_DATA' | 'PASSWORD_SECURITY' | 'FAMILY_READONLY' | 'SECURITY_ACCESS';
+
+const WIDGET_I18N: Record<
+  SupportedLanguage,
+  {
+    checking: string;
+    signInWithNid: string;
+    authTitle: string;
+    authSubtitle: string;
+    nidOrEmailLabel: string;
+    passwordLabel: string;
+    fillInitialPassword: string;
+    simulateFirstLogin: string;
+    quickTestTitle: string;
+    signInContinue: string;
+    authenticating: string;
+    menuBtn: string;
+    closeMenuBtn: string;
+    profileTitle: string;
+    secPersonal: string;
+    secPassword: string;
+    secFamily: string;
+    secIdentity360: string;
+    chooseSavePhoto: string;
+    savingPhoto: string;
+    restoreDefaultPhoto: string;
+    socialNameLabel: string;
+    emailLabel: string;
+    phoneLabel: string;
+    districtLabel: string;
+    nativeLangLabel: string;
+    bioLabel: string;
+    moreProfileOptions: string;
+    hideProfileOptions: string;
+    saveProfileBtn: string;
+    savingProfileBtn: string;
+    openCitizenPortal: string;
+    openBackstage: string;
+    logoutBtn: string;
+    switchCitizenBtn: string;
+  }
+> = {
+  'pt-BR': {
+    checking: 'Verificando...',
+    signInWithNid: 'Entrar com NID',
+    authTitle: 'Identidade Digital Soberana (NID)',
+    authSubtitle: 'República de Novatlantis • Autenticação Unificada AlloyDB',
+    nidOrEmailLabel: 'Identificador Nacional (NID) ou E-mail',
+    passwordLabel: 'Senha de Acesso',
+    fillInitialPassword: 'Preencher Senha Inicial do NID',
+    simulateFirstLogin: 'Simular 1º Acesso (OTP)',
+    quickTestTitle: 'CREDENCIAIS RÁPIDAS PARA TESTE (CLIQUE PARA PREENCHER):',
+    signInContinue: 'Entrar e Continuar',
+    authenticating: 'Autenticando no AlloyDB...',
+    menuBtn: 'Menu',
+    closeMenuBtn: 'Fechar Menu ✕',
+    profileTitle: 'Perfil Soberano do Cidadão',
+    secPersonal: 'Dados Cadastrais & Foto Oficial',
+    secPassword: 'Segurança & Alteração de Senha',
+    secFamily: 'Núcleo Familiar (Somente Leitura)',
+    secIdentity360: 'Credenciais Identidade 360 & Portais',
+    chooseSavePhoto: 'Escolher e Salvar Nova Foto (WEBP / PNG / JPG)',
+    savingPhoto: 'Salvando Foto no Banco...',
+    restoreDefaultPhoto: 'Restaurar Padrão',
+    socialNameLabel: 'Nome de Exibição / Nome Social',
+    emailLabel: 'E-mail Cadastral Soberano',
+    phoneLabel: 'Telefone Soberano de Contato',
+    districtLabel: 'Distrito Oficial de Residência',
+    nativeLangLabel: 'Idioma Nativo / Preferencial (i18n)',
+    bioLabel: 'Observações Cadastrais / Bio',
+    moreProfileOptions: 'Mais Opções do Perfil (☰)',
+    hideProfileOptions: 'Ocultar Mais Opções do Perfil',
+    saveProfileBtn: 'Salvar Dados e Foto no AlloyDB',
+    savingProfileBtn: 'Gravando no AlloyDB...',
+    openCitizenPortal: 'Abrir Portal do Cidadão',
+    openBackstage: 'Abrir Backstage',
+    logoutBtn: 'Encerrar Sessão (Logout)',
+    switchCitizenBtn: 'Alternar para Outro Cidadão (NID)'
+  },
+  'es-419': {
+    checking: 'Verificando...',
+    signInWithNid: 'Ingresar con NID',
+    authTitle: 'Identidad Digital Soberana (NID)',
+    authSubtitle: 'República de Novatlantis • Autenticación Unificada AlloyDB',
+    nidOrEmailLabel: 'Identificador Nacional (NID) o Correo',
+    passwordLabel: 'Contraseña de Acceso',
+    fillInitialPassword: 'Completar Contraseña Inicial del NID',
+    simulateFirstLogin: 'Simular 1er Acceso (OTP)',
+    quickTestTitle: 'CREDENCIALES RÁPIDAS DE PRUEBA (CLIC PARA COMPLETAR):',
+    signInContinue: 'Ingresar y Continuar',
+    authenticating: 'Autenticando en AlloyDB...',
+    menuBtn: 'Menú',
+    closeMenuBtn: 'Cerrar Menú ✕',
+    profileTitle: 'Perfil Soberano del Ciudadano',
+    secPersonal: 'Datos Personales y Foto Oficial',
+    secPassword: 'Seguridad y Cambio de Contraseña',
+    secFamily: 'Núcleo Familiar (Solo Lectura)',
+    secIdentity360: 'Credenciales Identidad 360 y Portales',
+    chooseSavePhoto: 'Elegir y Guardar Nueva Foto (WEBP / PNG / JPG)',
+    savingPhoto: 'Guardando Foto en Base de Datos...',
+    restoreDefaultPhoto: 'Restaurar Predeterminada',
+    socialNameLabel: 'Nombre Social / de Visualización',
+    emailLabel: 'Correo Electrónico Soberano',
+    phoneLabel: 'Teléfono Soberano de Contacto',
+    districtLabel: 'Distrito Oficial de Residencia',
+    nativeLangLabel: 'Idioma Nativo / Preferido (i18n)',
+    bioLabel: 'Observaciones Registrales / Bio',
+    moreProfileOptions: 'Más Opciones del Perfil (☰)',
+    hideProfileOptions: 'Ocultar Más Opciones del Perfil',
+    saveProfileBtn: 'Guardar Datos y Foto en AlloyDB',
+    savingProfileBtn: 'Guardando en AlloyDB...',
+    openCitizenPortal: 'Abrir Portal del Ciudadano',
+    openBackstage: 'Abrir Backstage',
+    logoutBtn: 'Cerrar Sesión (Logout)',
+    switchCitizenBtn: 'Cambiar a Otro Ciudadano (NID)'
+  },
+  'en-US': {
+    checking: 'Checking...',
+    signInWithNid: 'Sign in with NID',
+    authTitle: 'Sovereign Digital Identity (NID)',
+    authSubtitle: 'Republic of Novatlantis • AlloyDB Unified Authentication',
+    nidOrEmailLabel: 'National Identifier (NID) or Email',
+    passwordLabel: 'Access Password',
+    fillInitialPassword: 'Fill Initial NID Password',
+    simulateFirstLogin: 'Simulate 1st Login (OTP)',
+    quickTestTitle: 'QUICK TEST CREDENTIALS (CLICK TO AUTO-FILL):',
+    signInContinue: 'Sign In & Continue',
+    authenticating: 'Authenticating on AlloyDB...',
+    menuBtn: 'Menu',
+    closeMenuBtn: 'Close Menu ✕',
+    profileTitle: 'Sovereign Citizen Profile',
+    secPersonal: 'Personal Data & Official Photo',
+    secPassword: 'Security & Password Change',
+    secFamily: 'Family Nucleus (Read-Only)',
+    secIdentity360: 'Identity 360 Credentials & Portals',
+    chooseSavePhoto: 'Choose & Save New Photo (WEBP / PNG / JPG)',
+    savingPhoto: 'Saving Photo to Database...',
+    restoreDefaultPhoto: 'Restore Default',
+    socialNameLabel: 'Display Name / Social Name',
+    emailLabel: 'Sovereign Registered Email',
+    phoneLabel: 'Sovereign Contact Phone',
+    districtLabel: 'Official Residence District',
+    nativeLangLabel: 'Native / Preferred Language (i18n)',
+    bioLabel: 'Registration Notes / Bio',
+    moreProfileOptions: 'More Profile Options (☰)',
+    hideProfileOptions: 'Hide More Profile Options',
+    saveProfileBtn: 'Save Data & Photo to AlloyDB',
+    savingProfileBtn: 'Saving to AlloyDB...',
+    openCitizenPortal: 'Open Citizen Portal',
+    openBackstage: 'Open Backstage',
+    logoutBtn: 'Sign Out (Logout)',
+    switchCitizenBtn: 'Switch to Another Citizen (NID)'
+  }
+};
 
 /**
  * Redimensiona e comprime imagens selecionadas pelo usuário para um DataURL JPEG/WEBP otimizado (máx 360x360),
@@ -102,7 +281,6 @@ async function compressImageFileToDataUrl(file: File): Promise<{ dataUrl: string
       const rawDataUrl = String(reader.result || '');
       const img = new Image();
       img.onerror = () => {
-        // Fallback para o DataURL original caso o navegador não decodifique no canvas
         resolve({ dataUrl: rawDataUrl, mimeType: file.type || 'image/jpeg' });
       };
       img.onload = () => {
@@ -148,8 +326,14 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   openLoginTrigger = 0,
   loginReasonMessage = null,
   citizenPortalUrl = 'https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app',
-  govBackstageUrl = 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app'
+  govBackstageUrl = 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app',
+  lang: propLang,
+  onLanguageChange
 }) => {
+  const [internalLang, setInternalLang] = useState<SupportedLanguage>(() => resolveInitialLanguage());
+  const activeLang: SupportedLanguage = propLang || internalLang;
+  const t = WIDGET_I18N[activeLang] || WIDGET_I18N['pt-BR'];
+
   const [user, setUser] = useState<AuthUserProfile | null>(null);
   const [ssoToken, setSsoToken] = useState<string | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
@@ -178,6 +362,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editDistrict, setEditDistrict] = useState('');
+  const [editNativeLang, setEditNativeLang] = useState<SupportedLanguage>('pt-BR');
   const [editBio, setEditBio] = useState('');
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -196,13 +381,37 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberRecord[]>([]);
   const [loadingFamily, setLoadingFamily] = useState(false);
 
+  const handleSelectLanguage = (newLang: SupportedLanguage, markExplicitOverride = true) => {
+    setInternalLang(newLang);
+    setEditNativeLang(newLang);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('novatlantis_lang', newLang);
+      if (markExplicitOverride) {
+        window.localStorage.setItem('novatlantis_lang_explicit', '1');
+      }
+    }
+    if (onLanguageChange) {
+      onLanguageChange(newLang);
+    }
+  };
+
   const syncFormStateFromUser = (u: AuthUserProfile) => {
     setEditSocialName(u.social_name || u.full_name || u.name || '');
     setEditEmail(u.email || '');
     setEditPhone(u.phone_number || '');
     setEditDistrict(u.district || '');
+    const userLang =
+      u.native_language === 'es-419' || u.native_language === 'en-US' || u.native_language === 'pt-BR'
+        ? (u.native_language as SupportedLanguage)
+        : 'pt-BR';
+    setEditNativeLang(userLang);
     setEditBio(u.bio || '');
     setPendingAvatarUrl(u.avatarUrl || u.avatar_url || null);
+
+    // Camada 1 de i18n: se o usuário autenticado possui native_language e não fez override explícito manual, aplica o idioma do banco
+    if (typeof window !== 'undefined' && !window.localStorage.getItem('novatlantis_lang_explicit')) {
+      handleSelectLanguage(userLang, false);
+    }
   };
 
   const fetchProfileSession = async () => {
@@ -496,6 +705,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
         email: editEmail.trim(),
         phone_number: editPhone.trim(),
         district: editDistrict.trim(),
+        native_language: editNativeLang,
         bio: editBio.trim()
       };
       if (pendingAvatarUrl !== null) {
@@ -515,8 +725,9 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
           avatarUrl: data.user.avatarUrl || data.user.avatar_url || pendingAvatarUrl || null
         };
         setUser(updatedUser);
+        handleSelectLanguage(editNativeLang, true);
         syncFormStateFromUser(updatedUser);
-        setProfileStatusMsg('Perfil e foto oficial gravados com sucesso no banco de dados (AlloyDB + GDF)!');
+        setProfileStatusMsg('Perfil, idioma e foto oficial gravados com sucesso no banco de dados (AlloyDB + GDF)!');
         if (onUserAuthenticated) {
           onUserAuthenticated(updatedUser.nid, updatedUser, ssoToken || undefined);
         }
@@ -546,10 +757,8 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     setUploadingAvatar(true);
     try {
       const { dataUrl, mimeType } = await compressImageFileToDataUrl(file);
-      // Atualiza preview imediatamente
       setPendingAvatarUrl(dataUrl);
 
-      // Salva imediatamente no banco de dados (SQLite + AlloyDB)
       const res = await fetch('/api/v1/profile/me/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -651,20 +860,75 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   };
 
   const buildPortalUrlWithSso = (baseUrl: string) => {
-    if (!ssoToken) return baseUrl;
+    const params = new URLSearchParams();
+    if (ssoToken) params.set('sso_token', ssoToken);
+    if (activeLang) params.set('lang', activeLang);
+    const qs = params.toString();
+    if (!qs) return baseUrl;
     const sep = baseUrl.includes('?') ? '&' : '?';
-    return `${baseUrl}${sep}sso_token=${encodeURIComponent(ssoToken)}`;
+    return `${baseUrl}${sep}${qs}`;
   };
 
   const displayedAvatar = pendingAvatarUrl || user?.avatarUrl || user?.avatar_url || '/assets/pm_portrait.jpg';
 
   return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+    <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
+      {/* SELETOR GLOBAL DE IDIOMAS (PT-BR / ES-419 / EN-US) PRESENTE EM 100% DAS PÁGINAS */}
+      <Paper
+        variant="outlined"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.5,
+          px: 0.75,
+          py: 0.35,
+          borderRadius: 999,
+          borderColor: '#cbd5e1',
+          bgcolor: '#ffffff'
+        }}
+      >
+        <LanguageIcon sx={{ fontSize: 16, color: '#0a2240', ml: 0.5, mr: 0.25 }} />
+        <ButtonGroup variant="text" size="small" aria-label="Seletor de Idioma da República de Novatlantis">
+          {(
+            [
+              { code: 'pt-BR', short: 'PT', title: 'Português (pt-BR)' },
+              { code: 'es-419', short: 'ES', title: 'Español (es-419)' },
+              { code: 'en-US', short: 'EN', title: 'English (en-US)' }
+            ] as { code: SupportedLanguage; short: string; title: string }[]
+          ).map((item) => {
+            const isSelected = activeLang === item.code;
+            return (
+              <Tooltip key={item.code} title={item.title} arrow>
+                <Button
+                  onClick={() => handleSelectLanguage(item.code, true)}
+                  sx={{
+                    minWidth: 34,
+                    px: 1,
+                    py: 0.25,
+                    fontSize: '0.74rem',
+                    fontWeight: isSelected ? 800 : 600,
+                    borderRadius: '999px !important',
+                    border: 'none !important',
+                    bgcolor: isSelected ? '#0a2240' : 'transparent',
+                    color: isSelected ? '#ffffff' : '#334155',
+                    '&:hover': {
+                      bgcolor: isSelected ? '#163a66' : '#f1f5f9'
+                    }
+                  }}
+                >
+                  {item.short}
+                </Button>
+              </Tooltip>
+            );
+          })}
+        </ButtonGroup>
+      </Paper>
+
       {loadingSession ? (
         <Box sx={{ px: 2, py: 0.75, display: 'flex', alignItems: 'center', gap: 1 }}>
           <CircularProgress size={15} sx={{ color: '#0a2240' }} />
           <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500 }}>
-            Verificando...
+            {t.checking}
           </Typography>
         </Box>
       ) : !user ? (
@@ -694,7 +958,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
             }
           }}
         >
-          Entrar com NID
+          {t.signInWithNid}
         </Button>
       ) : (
         <Paper
@@ -784,10 +1048,10 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
             <ShieldIcon sx={{ color: '#93c5fd' }} />
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                Identidade Digital Soberana (NID)
+                {t.authTitle}
               </Typography>
               <Typography variant="caption" sx={{ color: '#cbd5e1', display: 'block' }}>
-                República de Novatlantis • Autenticação Unificada AlloyDB
+                {t.authSubtitle}
               </Typography>
             </Box>
           </Box>
@@ -812,7 +1076,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
           {authStep === 'LOGIN' && (
             <Box component="form" onSubmit={handleLoginSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
-                label="Identificador Nacional (NID) ou E-mail"
+                label={t.nidOrEmailLabel}
                 value={nidInput}
                 onChange={(e) => setNidInput(e.target.value)}
                 placeholder="Ex: NID-000-0000-0001-9 ou admin@jopoco.altostrat.com"
@@ -823,7 +1087,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
               />
 
               <TextField
-                label="Senha de Acesso"
+                label={t.passwordLabel}
                 type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
@@ -841,7 +1105,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   onClick={() => lookupPostalInitialPassword(nidInput)}
                   sx={{ textTransform: 'none' }}
                 >
-                  Preencher Senha Inicial do NID
+                  {t.fillInitialPassword}
                 </Button>
                 <Button
                   size="small"
@@ -851,13 +1115,13 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   onClick={() => resetCitizenToFirstLogin(nidInput)}
                   sx={{ textTransform: 'none' }}
                 >
-                  Simular 1º Acesso (OTP)
+                  {t.simulateFirstLogin}
                 </Button>
               </Box>
 
               <Paper variant="outlined" sx={{ p: 1.75, bgcolor: '#f8fafc', borderRadius: 2 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 1 }}>
-                  CREDENCIAIS RÁPIDAS PARA TESTE (CLIQUE PARA PREENCHER):
+                  {t.quickTestTitle}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
                   {[
@@ -895,7 +1159,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   '&:hover': { bgcolor: '#163a66' }
                 }}
               >
-                {submitting ? 'Autenticando no AlloyDB...' : 'Entrar e Continuar'}
+                {submitting ? t.authenticating : t.signInContinue}
               </Button>
             </Box>
           )}
@@ -1064,21 +1328,21 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   }}
                   aria-label="Abrir Menu Hambúrguer do Perfil"
                 >
-                  Menu
+                  {t.menuBtn}
                 </Button>
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                    Perfil Soberano do Cidadão •{' '}
+                    {t.profileTitle} •{' '}
                     {activeProfileSection === 'PERSONAL_DATA'
-                      ? 'Dados Cadastrais & Foto Oficial'
+                      ? t.secPersonal
                       : activeProfileSection === 'PASSWORD_SECURITY'
-                      ? 'Segurança & Alteração de Senha'
+                      ? t.secPassword
                       : activeProfileSection === 'FAMILY_READONLY'
-                      ? 'Núcleo Familiar (Somente Leitura)'
-                      : 'Credenciais Identidade 360 & Portais'}
+                      ? t.secFamily
+                      : t.secIdentity360}
                   </Typography>
                   <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#cbd5e1' }}>
-                    {user.full_name} ({user.nid}) • Use o menu ☰ para acessar as funções adicionais
+                    {user.full_name} ({user.nid}) • ☰
                   </Typography>
                 </Box>
               </Box>
@@ -1114,7 +1378,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                     onClick={() => setProfileHamburgerOpen(false)}
                     sx={{ textTransform: 'none', fontSize: '0.78rem', color: '#475569' }}
                   >
-                    Fechar Menu ✕
+                    {t.closeMenuBtn}
                   </Button>
                 </Box>
 
@@ -1122,14 +1386,18 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   <ListItemButton
                     selected={activeProfileSection === 'PERSONAL_DATA'}
                     onClick={() => selectProfileSection('PERSONAL_DATA')}
-                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'PERSONAL_DATA' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                    sx={{
+                      borderRadius: 1.5,
+                      bgcolor: activeProfileSection === 'PERSONAL_DATA' ? '#e2e8f0' : '#ffffff',
+                      border: '1px solid #e2e8f0'
+                    }}
                   >
                     <ListItemIcon sx={{ minWidth: 38 }}>
                       <PersonIcon sx={{ color: '#0a2240' }} />
                     </ListItemIcon>
                     <ListItemText
-                      primary="1. Dados Cadastrais & Foto Oficial"
-                      secondary="Upload de foto no AlloyDB, nome social, e-mail, telefone e distrito"
+                      primary={`1. ${t.secPersonal}`}
+                      secondary="Upload de foto no AlloyDB, nome social, idioma nativo, e-mail, telefone e distrito"
                       primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
                       secondaryTypographyProps={{ fontSize: '0.78rem' }}
                     />
@@ -1138,13 +1406,17 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   <ListItemButton
                     selected={activeProfileSection === 'PASSWORD_SECURITY'}
                     onClick={() => selectProfileSection('PASSWORD_SECURITY')}
-                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'PASSWORD_SECURITY' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                    sx={{
+                      borderRadius: 1.5,
+                      bgcolor: activeProfileSection === 'PASSWORD_SECURITY' ? '#e2e8f0' : '#ffffff',
+                      border: '1px solid #e2e8f0'
+                    }}
                   >
                     <ListItemIcon sx={{ minWidth: 38 }}>
                       <KeyIcon sx={{ color: '#0a2240' }} />
                     </ListItemIcon>
                     <ListItemText
-                      primary="2. Segurança & Alteração de Senha"
+                      primary={`2. ${t.secPassword}`}
                       secondary="Alterar senha soberana de acesso e verificar credenciais criptográficas"
                       primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
                       secondaryTypographyProps={{ fontSize: '0.78rem' }}
@@ -1154,13 +1426,17 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   <ListItemButton
                     selected={activeProfileSection === 'FAMILY_READONLY'}
                     onClick={() => selectProfileSection('FAMILY_READONLY')}
-                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'FAMILY_READONLY' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                    sx={{
+                      borderRadius: 1.5,
+                      bgcolor: activeProfileSection === 'FAMILY_READONLY' ? '#e2e8f0' : '#ffffff',
+                      border: '1px solid #e2e8f0'
+                    }}
                   >
                     <ListItemIcon sx={{ minWidth: 38 }}>
                       <GroupIcon sx={{ color: '#0a2240' }} />
                     </ListItemIcon>
                     <ListItemText
-                      primary="3. Núcleo Familiar (Somente Leitura)"
+                      primary={`3. ${t.secFamily}`}
                       secondary="Consultar árvore familiar e dependentes registrados no GDF / AlloyDB"
                       primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
                       secondaryTypographyProps={{ fontSize: '0.78rem' }}
@@ -1170,13 +1446,17 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   <ListItemButton
                     selected={activeProfileSection === 'SECURITY_ACCESS'}
                     onClick={() => selectProfileSection('SECURITY_ACCESS')}
-                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'SECURITY_ACCESS' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                    sx={{
+                      borderRadius: 1.5,
+                      bgcolor: activeProfileSection === 'SECURITY_ACCESS' ? '#e2e8f0' : '#ffffff',
+                      border: '1px solid #e2e8f0'
+                    }}
                   >
                     <ListItemIcon sx={{ minWidth: 38 }}>
                       <ShieldIcon sx={{ color: '#0a2240' }} />
                     </ListItemIcon>
                     <ListItemText
-                      primary="4. Credenciais Identidade 360, Portais & Sessão"
+                      primary={`4. ${t.secIdentity360}`}
                       secondary="Papel RBAC ativo, acesso ao Portal do Cidadão / Backstage e troca de conta"
                       primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
                       secondaryTypographyProps={{ fontSize: '0.78rem' }}
@@ -1194,7 +1474,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       href={buildPortalUrlWithSso(citizenPortalUrl)}
                       sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#ffffff' }}
                     >
-                      Abrir Portal do Cidadão
+                      {t.openCitizenPortal}
                     </Button>
                     {user.role !== 'CITIZEN_COMMON' && (
                       <Button
@@ -1206,7 +1486,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                         href={buildPortalUrlWithSso(govBackstageUrl)}
                         sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#ffffff' }}
                       >
-                        Abrir Backstage ({user.role})
+                        {t.openBackstage} ({user.role})
                       </Button>
                     )}
                     <Button
@@ -1217,7 +1497,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       onClick={handleLogout}
                       sx={{ textTransform: 'none', fontWeight: 700, ml: 'auto', bgcolor: '#ffffff' }}
                     >
-                      Encerrar Sessão (Logout)
+                      {t.logoutBtn}
                     </Button>
                   </Box>
                 </List>
@@ -1319,7 +1599,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                             '&:hover': { bgcolor: '#163a66' }
                           }}
                         >
-                          {uploadingAvatar ? 'Salvando Foto no Banco...' : 'Escolher e Salvar Nova Foto (WEBP / PNG / JPG)'}
+                          {uploadingAvatar ? t.savingPhoto : t.chooseSavePhoto}
                         </Button>
 
                         {pendingAvatarUrl && pendingAvatarUrl !== '/assets/pm_portrait.jpg' && (
@@ -1352,7 +1632,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                             }}
                             sx={{ textTransform: 'none' }}
                           >
-                            Restaurar Padrão
+                            {t.restoreDefaultPhoto}
                           </Button>
                         )}
                       </Box>
@@ -1366,14 +1646,14 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   >
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                       <TextField
-                        label="Nome de Exibição / Nome Social"
+                        label={t.socialNameLabel}
                         value={editSocialName}
                         onChange={(e) => setEditSocialName(e.target.value)}
                         fullWidth
                         size="medium"
                       />
                       <TextField
-                        label="E-mail Cadastral Soberano"
+                        label={t.emailLabel}
                         type="email"
                         value={editEmail}
                         onChange={(e) => setEditEmail(e.target.value)}
@@ -1382,9 +1662,9 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       />
                     </Box>
 
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
                       <TextField
-                        label="Telefone Soberano de Contato"
+                        label={t.phoneLabel}
                         value={editPhone}
                         onChange={(e) => setEditPhone(e.target.value)}
                         placeholder="+55 11 99999-0000"
@@ -1392,16 +1672,32 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                         size="medium"
                       />
                       <TextField
-                        label="Distrito Oficial de Residência"
+                        label={t.districtLabel}
                         value={editDistrict}
                         onChange={(e) => setEditDistrict(e.target.value)}
                         fullWidth
                         size="medium"
                       />
+                      <TextField
+                        select
+                        label={t.nativeLangLabel}
+                        value={editNativeLang}
+                        onChange={(e) => {
+                          const newL = e.target.value as SupportedLanguage;
+                          setEditNativeLang(newL);
+                          handleSelectLanguage(newL, true);
+                        }}
+                        fullWidth
+                        size="medium"
+                      >
+                        <MenuItem value="pt-BR">Português (pt-BR)</MenuItem>
+                        <MenuItem value="es-419">Español (es-419)</MenuItem>
+                        <MenuItem value="en-US">English (en-US)</MenuItem>
+                      </TextField>
                     </Box>
 
                     <TextField
-                      label="Observações Cadastrais / Bio"
+                      label={t.bioLabel}
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
                       multiline
@@ -1432,7 +1728,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                           color: '#0a2240'
                         }}
                       >
-                        {profileHamburgerOpen ? 'Ocultar Mais Opções do Perfil' : 'Mais Opções do Perfil (☰)'}
+                        {profileHamburgerOpen ? t.hideProfileOptions : t.moreProfileOptions}
                       </Button>
 
                       <Button
@@ -1448,7 +1744,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                           '&:hover': { bgcolor: '#163a66' }
                         }}
                       >
-                        {savingProfile ? 'Gravando no AlloyDB...' : 'Salvar Dados e Foto no AlloyDB'}
+                        {savingProfile ? t.savingProfileBtn : t.saveProfileBtn}
                       </Button>
                     </Box>
                   </Box>
@@ -1597,7 +1893,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       onClick={() => setProfileHamburgerOpen(true)}
                       sx={{ textTransform: 'none' }}
                     >
-                      Abrir Menu de Opções (☰)
+                      {t.moreProfileOptions}
                     </Button>
                   </Box>
                 </Box>
@@ -1638,7 +1934,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                         href={buildPortalUrlWithSso(citizenPortalUrl)}
                         sx={{ bgcolor: '#0a2240', textTransform: 'none', fontWeight: 700 }}
                       >
-                        Ir para o Portal do Cidadão
+                        {t.openCitizenPortal}
                       </Button>
                       {user.role !== 'CITIZEN_COMMON' && (
                         <Button
@@ -1649,7 +1945,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                           href={buildPortalUrlWithSso(govBackstageUrl)}
                           sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#0a2240', color: '#0a2240' }}
                         >
-                          Ir para o Backstage Governamental ({user.role})
+                          {t.openBackstage} ({user.role})
                         </Button>
                       )}
                     </Box>
@@ -1669,7 +1965,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       }}
                       sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
-                      Alternar para Outro Cidadão (NID)
+                      {t.switchCitizenBtn}
                     </Button>
                     <Button
                       variant="contained"
@@ -1678,7 +1974,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       onClick={handleLogout}
                       sx={{ textTransform: 'none', fontWeight: 700 }}
                     >
-                      Encerrar Sessão Agora
+                      {t.logoutBtn}
                     </Button>
                   </Box>
                 </Box>

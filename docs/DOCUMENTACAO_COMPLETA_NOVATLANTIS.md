@@ -144,3 +144,27 @@ No momento do login (`POST /api/auth/login`), o motor consulta a tabela `iam_ide
 | `POST` | `/api/services/911` | Aciona emergência 911 com cruzamento automático HL7 + familiar de emergência. |
 | `POST` | `/api/services/company` | Abre empresa autônoma em 45s vinculada ao NID do cidadão. |
 | `POST` | `/api/services/passport` | Solicita/renova Passaporte Digital ICAO mediante verificação no Cruzamento GDF #1. |
+| `GET` | `/api/v1/profile/me` | Retorna o perfil completo do cidadão autenticado, incluindo foto oficial (`photo_url`), idioma nativo (`native_language`) e grafo familiar Read-Only (`family_links`). |
+| `PUT` | `/api/v1/profile/me` | Persiste alterações de perfil (`photo_url` comprimido em Base64/WebP, `social_name`, `preferred_contact`, `accessibility_needs`, `native_language`, `street_address`, `district`) via `UPSERT` em `citizen_profiles` e `dim_citizens` no **AlloyDB for PostgreSQL (`10.223.28.2:5432`)** e no SQLite WAL. |
+
+---
+
+## 6. Arquitetura Unificada de Idiomas (i18n), Design System `america.gov` & Perfil Soberano
+
+### 6.1 Suporte Completo a Português (`pt-BR`), Espanhol (`es-419`) e Inglês (`en-US`) em Todas as Páginas
+- **Seletor Global de Idiomas no Cabeçalho (`TopNavUserWidget`) e no Menu Hambúrguer (`☰`):** Presente em 100% das telas dos 3 portais (`landing-portal`, `citizen-portal`, `gov-backstage`), permitindo alternar instantaneamente entre **Português (`PT`)**, **Español (`ES`)** e **English (`EN`)**.
+- **Resolução Automática de Idioma em 3 Camadas (`resolveInitialLanguage`):**
+  1. **Camada 1 (Override Explícito):** Se o usuário selecionou explicitamente um idioma no cabeçalho ou via parâmetro `?lang=pt-BR|es-419|en-US` (propagado automaticamente nos links SSO entre os 3 portais), o portal respeita e grava em `localStorage.novatlantis_lang`.
+  2. **Camada 2 (Idioma Nativo do Cidadão Autenticado):** Ao autenticar-se com seu NID, se não houver override manual, a interface assume automaticamente o campo `native_language` registrado no AlloyDB / GDF (`pt-BR`, `es-419` ou `en-US`), que também pode ser atualizado em **Dados Cadastrais & Foto Oficial**.
+  3. **Camada 3 (Visitante Anônimo):** Lê automaticamente o idioma do navegador (`navigator.language` / `Accept-Language`).
+
+### 6.2 Design System Editorial `america.gov` & Menu Hambúrguer (`☰`) Sem Travamento de Tela
+- **Home Page (`landing-portal`):** Inspirada diretamente em [america.gov](https://america.gov/), com faixa oficial superior, cabeçalho institucional limpo, **Concierge IA Nacional** centralizado para perguntas públicas **sem necessidade de login prévio**, pílulas de perguntas sugeridas e cartões de serviços essenciais.
+- **Menu Hambúrguer (`☰`) nas Páginas Internas e no Perfil Soberano:**
+  - Nos portais internos (`citizen-portal` e `gov-backstage`), a navegação entre módulos utiliza um **Menu Hambúrguer (`☰`)** deslizante.
+  - Dentro do modal **Meu Perfil Soberano (`TopNavUserWidget`)**, o botão **Mais Opções do Perfil (`☰`)** utiliza um menu hambúrguer colapsável inline (`<Collapse>`) em vez de um `<Drawer>` modal aninhado, garantindo transição fluida e **zero travamento de foco/backdrop** ao acessar:
+    1. **Carteira Digital Soberana (NID) & Grafo Familiar**;
+    2. **Dados Cadastrais, Idioma Nativo & Foto Oficial** (com compressão automática em `<canvas>` para JPEG `320x320` e gravação persistente em `citizen_profiles` no AlloyDB e SQLite);
+    3. **Segurança, Senha & Biometria NIST**;
+    4. **Preferências & Acessibilidade**.
+

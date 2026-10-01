@@ -46,9 +46,14 @@ import {
   AdminPanelSettings as AdminIcon,
   Close as CloseIcon,
   AutoAwesome as SparkleIcon,
-  Launch as LaunchIcon
+  Launch as LaunchIcon,
+  Language as LanguageIcon
 } from '@mui/icons-material';
-import { TopNavUserWidget, AuthUserProfile } from './components/TopNavUserWidget';
+import {
+  TopNavUserWidget,
+  SupportedLanguage,
+  resolveInitialLanguage
+} from './components/TopNavUserWidget';
 
 const CITIZEN_PORTAL_URL = 'https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app';
 const GOV_BACKSTAGE_URL = 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app';
@@ -118,7 +123,6 @@ interface ChatMessage {
   } | null;
 }
 
-// Design System inspirado em https://america.gov/ (National Design Studio / USWDS Minimalist Front Door)
 const americaGovTheme = createTheme({
   palette: {
     mode: 'light',
@@ -161,70 +165,414 @@ const americaGovTheme = createTheme({
   }
 });
 
-const POPULAR_SERVICES = [
+interface ServiceEntry {
+  id: string;
+  title: Record<SupportedLanguage, string>;
+  agency: Record<SupportedLanguage, string>;
+  description: Record<SupportedLanguage, string>;
+  questionPrompt: Record<SupportedLanguage, string>;
+  servicePrompt: Record<SupportedLanguage, string>;
+  tab: string;
+  icon: React.ReactNode;
+}
+
+const POPULAR_SERVICES: ServiceEntry[] = [
   {
     id: 'passport',
-    title: 'Passaporte Digital ICAO & Vistos',
-    agency: 'Chancelaria Soberana & Suprema Corte',
-    description: 'Emissão e renovação instantânea com assinatura Ed25519 e liberação automática de e-Gate em 174 países.',
-    questionPrompt: 'Como emitir ou renovar meu Passaporte Digital ICAO?',
-    servicePrompt: 'Emitir e validar meu Passaporte Digital ICAO agora',
+    title: {
+      'pt-BR': 'Passaporte Digital ICAO & Vistos',
+      'es-419': 'Pasaporte Digital OACI y Visas',
+      'en-US': 'ICAO Digital Passport & Visas'
+    },
+    agency: {
+      'pt-BR': 'Chancelaria Soberana & Suprema Corte',
+      'es-419': 'Cancillería Soberana y Corte Suprema',
+      'en-US': 'Sovereign Chancellery & Supreme Court'
+    },
+    description: {
+      'pt-BR': 'Emissão e renovação instantânea com assinatura Ed25519 e liberação automática de e-Gate em 174 países.',
+      'es-419': 'Emisión y renovación instantánea con firma Ed25519 y liberación automática de e-Gate en 174 países.',
+      'en-US': 'Instant issuance and renewal with Ed25519 signature and automatic e-Gate clearance in 174 countries.'
+    },
+    questionPrompt: {
+      'pt-BR': 'Como emitir ou renovar meu Passaporte Digital ICAO?',
+      'es-419': '¿Cómo emitir o renovar mi Pasaporte Digital OACI?',
+      'en-US': 'How do I issue or renew my ICAO Digital Passport?'
+    },
+    servicePrompt: {
+      'pt-BR': 'Emitir e validar meu Passaporte Digital ICAO agora',
+      'es-419': 'Emitir y validar mi Pasaporte Digital OACI ahora',
+      'en-US': 'Issue and validate my ICAO Digital Passport now'
+    },
     tab: 'treasury',
     icon: <PublicIcon sx={{ color: '#0a2240' }} />
   },
   {
     id: 'company',
-    title: 'Abrir Empresa em 45s & Dividendo UBI',
-    agency: 'Ministério do Tesouro & Economia Soberana',
-    description: 'Constituição imediata de empresa autônoma no Simples Agêntico (3%) com 250 TFLOPs de crédito computacional.',
-    questionPrompt: 'Como abrir uma empresa autônoma em 45 segundos e como funciona o UBI?',
-    servicePrompt: 'Abrir empresa autônoma agora no Ministério do Tesouro',
+    title: {
+      'pt-BR': 'Abrir Empresa em 45s & Dividendo UBI',
+      'es-419': 'Abrir Empresa en 45s y Dividendo RBU',
+      'en-US': 'Open a Company in 45s & UBI Dividend'
+    },
+    agency: {
+      'pt-BR': 'Ministério do Tesouro & Economia Soberana',
+      'es-419': 'Ministerio del Tesoro y Economía Soberana',
+      'en-US': 'Ministry of the Treasury & Sovereign Economy'
+    },
+    description: {
+      'pt-BR': 'Constituição imediata de empresa autônoma no Simples Agêntico (3%) com 250 TFLOPs de crédito computacional.',
+      'es-419': 'Constitución inmediata de empresa autónoma en el Régimen Agéntico (3%) con 250 TFLOPs de crédito computacional.',
+      'en-US': 'Instant incorporation of an autonomous enterprise under the Agentic Tax Regime (3%) with 250 TFLOPs compute grant.'
+    },
+    questionPrompt: {
+      'pt-BR': 'Como abrir uma empresa autônoma em 45 segundos e como funciona o UBI?',
+      'es-419': '¿Cómo abrir una empresa autónoma en 45 segundos y cómo funciona la RBU?',
+      'en-US': 'How do I open an autonomous company in 45 seconds and how does UBI work?'
+    },
+    servicePrompt: {
+      'pt-BR': 'Abrir empresa autônoma agora no Ministério do Tesouro',
+      'es-419': 'Abrir empresa autónoma ahora en el Ministerio del Tesoro',
+      'en-US': 'Open an autonomous company now at the Ministry of the Treasury'
+    },
     tab: 'treasury',
     icon: <BusinessIcon sx={{ color: '#0a2240' }} />
   },
   {
     id: 'health',
-    title: 'Telemedicina 24/7 & Prontuário HL7',
-    agency: 'Ministério da Saúde & Rede Hospitalar',
-    description: 'Consultas médicas por vídeo com triagem IA, histórico vacinal, tipo sanguíneo e prescrição digital.',
-    questionPrompt: 'Como funciona o atendimento de Telemedicina 24/7 e o prontuário HL7 FHIR?',
-    servicePrompt: 'Agendar teleconsulta médica agora com resumo clínico HL7',
+    title: {
+      'pt-BR': 'Telemedicina 24/7 & Prontuário HL7',
+      'es-419': 'Telemedicina 24/7 e Historia Clínica HL7',
+      'en-US': '24/7 Telemedicine & HL7 Health Record'
+    },
+    agency: {
+      'pt-BR': 'Ministério da Saúde & Rede Hospitalar',
+      'es-419': 'Ministerio de Salud y Red Hospitalaria',
+      'en-US': 'Ministry of Health & Hospital Network'
+    },
+    description: {
+      'pt-BR': 'Consultas médicas por vídeo com triagem IA, histórico vacinal, tipo sanguíneo e prescrição digital.',
+      'es-419': 'Consultas médicas por video con triaje IA, historial de vacunación, grupo sanguíneo y receta digital.',
+      'en-US': 'Video medical consultations with AI triage, vaccination history, blood type, and digital prescription.'
+    },
+    questionPrompt: {
+      'pt-BR': 'Como funciona o atendimento de Telemedicina 24/7 e o prontuário HL7 FHIR?',
+      'es-419': '¿Cómo funciona la atención de Telemedicina 24/7 y la historia clínica HL7 FHIR?',
+      'en-US': 'How do 24/7 Telemedicine and the HL7 FHIR health record work?'
+    },
+    servicePrompt: {
+      'pt-BR': 'Agendar teleconsulta médica agora com resumo clínico HL7',
+      'es-419': 'Programar teleconsulta médica ahora con resumen clínico HL7',
+      'en-US': 'Schedule a medical teleconsultation now with HL7 clinical summary'
+    },
     tab: 'health',
     icon: <HealthIcon sx={{ color: '#0a2240' }} />
   },
   {
     id: 'education',
-    title: 'Boletim Escolar & Tutoria Adaptativa IA',
-    agency: 'Ministério da Educação & Escolas Soberanas',
-    description: 'Acompanhamento de notas em Matemática, Ciências e IA & Robótica, frequência escolar e tutoria personalizada.',
-    questionPrompt: 'Como consultar o boletim escolar e frequência dos meus filhos?',
-    servicePrompt: 'Consultar boletim escolar e frequência no Ministério da Educação',
+    title: {
+      'pt-BR': 'Boletim Escolar & Tutoria Adaptativa IA',
+      'es-419': 'Boletín Escolar y Tutoría Adaptativa IA',
+      'en-US': 'School Report Card & Adaptive AI Tutoring'
+    },
+    agency: {
+      'pt-BR': 'Ministério da Educação & Escolas Soberanas',
+      'es-419': 'Ministerio de Educación y Escuelas Soberanas',
+      'en-US': 'Ministry of Education & Sovereign Schools'
+    },
+    description: {
+      'pt-BR': 'Acompanhamento de notas em Matemática, Ciências e IA & Robótica, frequência escolar e tutoria personalizada.',
+      'es-419': 'Seguimiento de calificaciones en Matemáticas, Ciencias e IA y Robótica, asistencia escolar y tutoría personalizada.',
+      'en-US': 'Grade tracking in Mathematics, Sciences, and AI & Robotics, school attendance, and personalized tutoring.'
+    },
+    questionPrompt: {
+      'pt-BR': 'Como consultar o boletim escolar e frequência dos meus filhos?',
+      'es-419': '¿Cómo consultar el boletín escolar y la asistencia de mis hijos?',
+      'en-US': 'How can I check my children’s school report card and attendance?'
+    },
+    servicePrompt: {
+      'pt-BR': 'Consultar boletim escolar e frequência no Ministério da Educação',
+      'es-419': 'Consultar boletín escolar y asistencia en el Ministerio de Educación',
+      'en-US': 'Check school report card and attendance at the Ministry of Education'
+    },
     tab: 'education',
     icon: <SchoolIcon sx={{ color: '#0a2240' }} />
   },
   {
     id: 'urban',
-    title: 'Zeladoria Urbana 311 & Emergência 911',
-    agency: 'Centro Integrado de Comando Urbano',
-    description: 'Solicitação de reparos de iluminação, vias e saneamento (SLA 6h) ou despacho tático de emergência 911.',
-    questionPrompt: 'Como abrir um chamado urbano 311 no meu distrito?',
-    servicePrompt: 'Abrir chamado 311 para reparo de iluminação e zeladoria no meu distrito',
+    title: {
+      'pt-BR': 'Zeladoria Urbana 311 & Emergência 911',
+      'es-419': 'Mantenimiento Urbano 311 y Emergencia 911',
+      'en-US': '311 Urban Maintenance & 911 Emergency'
+    },
+    agency: {
+      'pt-BR': 'Centro Integrado de Comando Urbano',
+      'es-419': 'Centro Integrado de Comando Urbano',
+      'en-US': 'Integrated Urban Command Center'
+    },
+    description: {
+      'pt-BR': 'Solicitação de reparos de iluminação, vias e saneamento (SLA 6h) ou despacho tático de emergência 911.',
+      'es-419': 'Solicitud de reparaciones de alumbrado, vías y saneamiento (SLA 6h) o despacho táctico de emergencia 911.',
+      'en-US': 'Request street lighting, road, and sanitation repairs (6h SLA) or tactical 911 emergency dispatch.'
+    },
+    questionPrompt: {
+      'pt-BR': 'Como abrir um chamado urbano 311 no meu distrito?',
+      'es-419': '¿Cómo abrir un reporte urbano 311 en mi distrito?',
+      'en-US': 'How do I open a 311 urban service ticket in my district?'
+    },
+    servicePrompt: {
+      'pt-BR': 'Abrir chamado 311 para reparo de iluminação e zeladoria no meu distrito',
+      'es-419': 'Abrir reporte 311 para reparación de alumbrado y mantenimiento en mi distrito',
+      'en-US': 'Open a 311 ticket for lighting repair and urban maintenance in my district'
+    },
     tab: 'urban',
     icon: <UrbanIcon sx={{ color: '#0a2240' }} />
   },
   {
     id: 'identity',
-    title: 'Carteira Digital NID & Árvore Familiar',
-    agency: 'Autoridade Nacional de Identidade 360',
-    description: 'Credencial soberana com biometria NIST, vínculo familiar somente leitura e permissões RBAC de Estado.',
-    questionPrompt: 'Como funciona a Identidade Soberana NID e o acesso ao Backstage?',
-    servicePrompt: 'Consultar minha Carteira Digital NID e vínculos familiares',
+    title: {
+      'pt-BR': 'Carteira Digital NID & Árvore Familiar',
+      'es-419': 'Credencial Digital NID y Árbol Familiar',
+      'en-US': 'NID Digital Wallet & Family Tree'
+    },
+    agency: {
+      'pt-BR': 'Autoridade Nacional de Identidade 360',
+      'es-419': 'Autoridad Nacional de Identidad 360',
+      'en-US': 'National Identity 360 Authority'
+    },
+    description: {
+      'pt-BR': 'Credencial soberana com biometria NIST, vínculo familiar somente leitura e permissões RBAC de Estado.',
+      'es-419': 'Credencial soberana con biometría NIST, vínculo familiar de solo lectura y permisos RBAC de Estado.',
+      'en-US': 'Sovereign credential with NIST biometrics, read-only family graph, and state RBAC permissions.'
+    },
+    questionPrompt: {
+      'pt-BR': 'Como funciona a Identidade Soberana NID e o acesso ao Backstage?',
+      'es-419': '¿Cómo funciona la Identidad Soberana NID y el acceso al Backstage?',
+      'en-US': 'How do the NID Sovereign Identity and Backstage access work?'
+    },
+    servicePrompt: {
+      'pt-BR': 'Consultar minha Carteira Digital NID e vínculos familiares',
+      'es-419': 'Consultar mi Credencial Digital NID y vínculos familiares',
+      'en-US': 'Check my NID Digital Wallet and family relationships'
+    },
     tab: 'identity',
     icon: <BadgeIcon sx={{ color: '#0a2240' }} />
   }
 ];
 
+const LANDING_I18N: Record<
+  SupportedLanguage,
+  {
+    officialBanner: string;
+    howToVerify: string;
+    verifyTitle1: string;
+    verifyDesc1: string;
+    verifyTitle2: string;
+    verifyDesc2: string;
+    govTitle: string;
+    portalBadge: string;
+    govSubtitle: string;
+    drawerSubtitle: string;
+    drawerOfficialEnvs: string;
+    citizenPortalLabel: string;
+    citizenPortalSubAuth: string;
+    citizenPortalSubAnon: string;
+    backstageLabel: string;
+    backstageSub: string;
+    drawerAskConcierge: string;
+    drawerLanguageTitle: string;
+    heroChipAuth: string;
+    heroChipAnon: string;
+    heroGreetingPrefix: string;
+    heroGreetingAnon: string;
+    heroSubheading: string;
+    promptPlaceholder: string;
+    simplifyFormBtn: string;
+    simplifyFormPrompt: string;
+    chatStatusAuth: string;
+    chatStatusAnon: string;
+    askBtn: string;
+    askingBtn: string;
+    pills: string[];
+    conciergeHeader: string;
+    clearChat: string;
+    officialCitations: string;
+    trackInCitizenPortal: string;
+    executeServiceNow: string;
+    requestServiceLogin: string;
+    directoryOverline: string;
+    directoryHeading: string;
+    askQuestionBtn: string;
+    requestServiceBtn: string;
+    footerSubtitle: string;
+    footerRight1: string;
+    footerRight2: string;
+  }
+> = {
+  'pt-BR': {
+    officialBanner: 'Um site oficial do Governo da República Digital de Novatlantis',
+    howToVerify: 'Saiba como verificar',
+    verifyTitle1: 'Portais oficiais utilizam infraestrutura soberana no Google Cloud (Project: novatlantis)',
+    verifyDesc1: 'Conectado diretamente ao cluster AlloyDB novatlantis-sovereign-cluster e ao Data Lakehouse governamental.',
+    verifyTitle2: 'Perguntas públicas abertas e autenticação exigida apenas na solicitação de serviços',
+    verifyDesc2: 'Qualquer cidadão ou visitante pode consultar informações no Concierge IA sem login. A assinatura NID é solicitada somente ao executar um serviço oficial.',
+    govTitle: 'Governo da República de Novatlantis',
+    portalBadge: 'Portal Principal da Nação',
+    govSubtitle: 'Chancelaria Digital • Agente Orquestrador de Estado • Módulo de Usuários GDF (100.000 Cidadãos)',
+    drawerSubtitle: 'Diretório Nacional de Serviços',
+    drawerOfficialEnvs: 'AMBIENTES OFICIAIS DO ESTADO',
+    citizenPortalLabel: 'Portal do Cidadão',
+    citizenPortalSubAuth: 'Autenticado',
+    citizenPortalSubAnon: 'Requer login NID ao acessar',
+    backstageLabel: 'Backstage Governamental',
+    backstageSub: 'Servidores Públicos, Médicos, Professores e PM',
+    drawerAskConcierge: 'PERGUNTAR AO CONCIERGE (SEM LOGIN)',
+    drawerLanguageTitle: 'IDIOMA OFICIAL DA REPÚBLICA (I18N)',
+    heroChipAuth: 'SESSÃO AUTENTICADA',
+    heroChipAnon: 'PORTA DE ENTRADA DIGITAL DA NAÇÃO • PERGUNTE SEM PRECISAR DE LOGIN',
+    heroGreetingPrefix: 'Olá',
+    heroGreetingAnon: 'Olá, Novatlantis.',
+    heroSubheading: 'Tudo o que você precisa do governo, comece por aqui.',
+    promptPlaceholder: 'Pergunte qualquer coisa sobre serviços públicos, passaporte, saúde, educação, impostos ou abertura de empresas...',
+    simplifyFormBtn: 'Simplificar Formulário / Regra Oficial',
+    simplifyFormPrompt: 'Explique em linguagem simples os requisitos e documentos para emitir o Passaporte Digital ICAO e abrir uma empresa em 45 segundos.',
+    chatStatusAuth: 'Logado',
+    chatStatusAnon: 'Chat Público Livre (Login só ao solicitar serviço)',
+    askBtn: 'Perguntar',
+    askingBtn: 'Consultando...',
+    pills: [
+      'Como emitir meu Passaporte Digital ICAO?',
+      'Como abrir uma empresa em 45 segundos?',
+      'Como agendar teleconsulta médica 24/7?',
+      'Como consultar o boletim escolar dos meus filhos?',
+      'Como abrir um chamado urbano 311?',
+      'Como funciona o acesso ao Backstage Governamental?'
+    ],
+    conciergeHeader: 'CONCIERGE OFICIAL DA REPÚBLICA DE NOVATLANTIS',
+    clearChat: 'Limpar conversa',
+    officialCitations: 'FONTES OFICIAIS & LEGISLAÇÃO CITADA:',
+    trackInCitizenPortal: 'Acompanhar no Portal do Cidadão',
+    executeServiceNow: 'Executar Serviço Agora',
+    requestServiceLogin: 'Solicitar Serviço (Fazer Login NID)',
+    directoryOverline: 'SERVIÇOS PÚBLICOS DIGITAIS • REPÚBLICA DE NOVATLANTIS',
+    directoryHeading: 'Serviços mais procurados pelos cidadãos',
+    askQuestionBtn: 'Tirar Dúvida',
+    requestServiceBtn: 'Solicitar Serviço',
+    footerSubtitle: 'Um portal desenhado para servir ao cidadão • AlloyDB + Government Data Platform',
+    footerRight1: 'Projeto GCP: novatlantis • Base Soberana: 100.000 Cidadãos',
+    footerRight2: 'Autenticação Zero-Trust • Perguntas Públicas sem Login • Transações Assinadas com NID'
+  },
+  'es-419': {
+    officialBanner: 'Un sitio oficial del Gobierno de la República Digital de Novatlantis',
+    howToVerify: 'Así es como puede verificarlo',
+    verifyTitle1: 'Los portales oficiales utilizan infraestructura soberana en Google Cloud (Project: novatlantis)',
+    verifyDesc1: 'Conectado directamente al clúster AlloyDB novatlantis-sovereign-cluster y al Data Lakehouse gubernamental.',
+    verifyTitle2: 'Preguntas públicas abiertas y autenticación requerida solo al solicitar servicios',
+    verifyDesc2: 'Cualquier ciudadano o visitante puede consultar información en el Concierge IA sin iniciar sesión. La firma NID se solicita únicamente al ejecutar un servicio oficial.',
+    govTitle: 'Gobierno de la República de Novatlantis',
+    portalBadge: 'Portal Principal de la Nación',
+    govSubtitle: 'Cancillería Digital • Agente Orquestador de Estado • Módulo de Usuarios GDF (100.000 Ciudadanos)',
+    drawerSubtitle: 'Directorio Nacional de Servicios',
+    drawerOfficialEnvs: 'AMBIENTES OFICIALES DEL ESTADO',
+    citizenPortalLabel: 'Portal del Ciudadano',
+    citizenPortalSubAuth: 'Autenticado',
+    citizenPortalSubAnon: 'Requiere ingreso con NID al acceder',
+    backstageLabel: 'Backstage Gubernamental',
+    backstageSub: 'Servidores Públicos, Médicos, Profesores y PM',
+    drawerAskConcierge: 'PREGUNTAR AL CONCIERGE (SIN LOGIN)',
+    drawerLanguageTitle: 'IDIOMA OFICIAL DE LA REPÚBLICA (I18N)',
+    heroChipAuth: 'SESIÓN AUTENTICADA',
+    heroChipAnon: 'PUERTA DE ENTRADA DIGITAL DE LA NACIÓN • PREGUNTE SIN NECESIDAD DE LOGIN',
+    heroGreetingPrefix: 'Hola',
+    heroGreetingAnon: 'Hola, Novatlantis.',
+    heroSubheading: 'Todo lo que necesitas del gobierno, empieza por aquí.',
+    promptPlaceholder: 'Pregunte cualquier cosa sobre servicios públicos, pasaporte, salud, educación, impuestos o apertura de empresas...',
+    simplifyFormBtn: 'Simplificar Formulario / Norma Oficial',
+    simplifyFormPrompt: 'Explique en lenguaje sencillo los requisitos y documentos para emitir el Pasaporte Digital OACI y abrir una empresa en 45 segundos.',
+    chatStatusAuth: 'Autenticado',
+    chatStatusAnon: 'Chat Público Libre (Login solo al solicitar servicio)',
+    askBtn: 'Preguntar',
+    askingBtn: 'Consultando...',
+    pills: [
+      '¿Cómo emitir mi Pasaporte Digital OACI?',
+      '¿Cómo abrir una empresa en 45 segundos?',
+      '¿Cómo programar teleconsulta médica 24/7?',
+      '¿Cómo consultar el boletín escolar de mis hijos?',
+      '¿Cómo abrir un reporte urbano 311?',
+      '¿Cómo funciona el acceso al Backstage Gubernamental?'
+    ],
+    conciergeHeader: 'CONCIERGE OFICIAL DE LA REPÚBLICA DE NOVATLANTIS',
+    clearChat: 'Limpiar conversación',
+    officialCitations: 'FUENTES OFICIALES Y LEGISLACIÓN CITADA:',
+    trackInCitizenPortal: 'Seguir en el Portal del Ciudadano',
+    executeServiceNow: 'Ejecutar Servicio Ahora',
+    requestServiceLogin: 'Solicitar Servicio (Ingresar con NID)',
+    directoryOverline: 'SERVICIOS PÚBLICOS DIGITALES • REPÚBLICA DE NOVATLANTIS',
+    directoryHeading: 'Servicios más solicitados por los ciudadanos',
+    askQuestionBtn: 'Consultar Duda',
+    requestServiceBtn: 'Solicitar Servicio',
+    footerSubtitle: 'Un portal diseñado para servir al ciudadano • AlloyDB + Government Data Platform',
+    footerRight1: 'Proyecto GCP: novatlantis • Base Soberana: 100.000 Ciudadanos',
+    footerRight2: 'Autenticación Zero-Trust • Consultas Públicas sin Login • Transacciones Firmadas con NID'
+  },
+  'en-US': {
+    officialBanner: 'An official website of the Government of the Digital Republic of Novatlantis',
+    howToVerify: 'Here’s how you know',
+    verifyTitle1: 'Official portals use sovereign infrastructure on Google Cloud (Project: novatlantis)',
+    verifyDesc1: 'Directly connected to the AlloyDB cluster novatlantis-sovereign-cluster and the Government Data Lakehouse.',
+    verifyTitle2: 'Open public questions and authentication required only when requesting services',
+    verifyDesc2: 'Any citizen or visitor can ask questions in the AI Concierge without signing in. NID authentication is requested only when executing an official service.',
+    govTitle: 'Government of the Republic of Novatlantis',
+    portalBadge: 'Main National Portal',
+    govSubtitle: 'Digital Chancellery • State Orchestrator Agent • GDF User Module (100,000 Citizens)',
+    drawerSubtitle: 'National Directory of Services',
+    drawerOfficialEnvs: 'OFFICIAL STATE ENVIRONMENTS',
+    citizenPortalLabel: 'Citizen Portal',
+    citizenPortalSubAuth: 'Authenticated',
+    citizenPortalSubAnon: 'Requires NID sign-in upon access',
+    backstageLabel: 'Government Backstage',
+    backstageSub: 'Civil Servants, Physicians, Teachers & PM',
+    drawerAskConcierge: 'ASK THE CONCIERGE (NO LOGIN REQUIRED)',
+    drawerLanguageTitle: 'OFFICIAL REPUBLIC LANGUAGE (I18N)',
+    heroChipAuth: 'AUTHENTICATED SESSION',
+    heroChipAnon: 'DIGITAL FRONT DOOR OF THE NATION • ASK WITHOUT SIGNING IN',
+    heroGreetingPrefix: 'Hello',
+    heroGreetingAnon: 'Hello, Novatlantis.',
+    heroSubheading: 'Whatever you need from government, start here.',
+    promptPlaceholder: 'Ask anything about public services, passports, healthcare, education, taxes, or starting a business...',
+    simplifyFormBtn: 'Simplify Official Form / Rule',
+    simplifyFormPrompt: 'Explain in plain language the requirements and documents to issue the ICAO Digital Passport and open a business in 45 seconds.',
+    chatStatusAuth: 'Signed in',
+    chatStatusAnon: 'Free Public Chat (Sign-in only when requesting a service)',
+    askBtn: 'Ask',
+    askingBtn: 'Asking...',
+    pills: [
+      'How do I issue my ICAO Digital Passport?',
+      'How do I open a business in 45 seconds?',
+      'How do I schedule a 24/7 medical teleconsultation?',
+      'How can I check my children’s school report card?',
+      'How do I open a 311 urban service ticket?',
+      'How does Government Backstage access work?'
+    ],
+    conciergeHeader: 'OFFICIAL CONCIERGE OF THE REPUBLIC OF NOVATLANTIS',
+    clearChat: 'Clear conversation',
+    officialCitations: 'OFFICIAL SOURCES & CITED LEGISLATION:',
+    trackInCitizenPortal: 'Track in Citizen Portal',
+    executeServiceNow: 'Execute Service Now',
+    requestServiceLogin: 'Request Service (Sign in with NID)',
+    directoryOverline: 'DIGITAL PUBLIC SERVICES • REPUBLIC OF NOVATLANTIS',
+    directoryHeading: 'Most requested citizen services',
+    askQuestionBtn: 'Ask Question',
+    requestServiceBtn: 'Request Service',
+    footerSubtitle: 'A portal designed to serve the citizen • AlloyDB + Government Data Platform',
+    footerRight1: 'GCP Project: novatlantis • Sovereign Base: 100,000 Citizens',
+    footerRight2: 'Zero-Trust Auth • Public Questions without Sign-in • NID-Signed Transactions'
+  }
+};
+
 export function App() {
+  const [lang, setLang] = useState<SupportedLanguage>(() => resolveInitialLanguage());
+  const t = LANDING_I18N[lang] || LANDING_I18N['pt-BR'];
+
   // IMPORTANTE: Nenhum usuário inicia logado por padrão (currentUser = null)
   const [currentUser, setCurrentUser] = useState<CitizenProfile | null>(null);
   const [ssoToken, setSsoToken] = useState<string | null>(null);
@@ -242,6 +590,13 @@ export function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const chatSectionRef = useRef<HTMLDivElement | null>(null);
 
+  const handleLanguageChange = (newLang: SupportedLanguage) => {
+    setLang(newLang);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('novatlantis_lang', newLang);
+    }
+  };
+
   const loadFullCitizenContext = async (nidOrEmail: string): Promise<CitizenProfile | null> => {
     try {
       const res = await fetch('/api/auth/login', {
@@ -258,8 +613,6 @@ export function App() {
     }
   };
 
-  // Envia pergunta ou solicitação de serviço ao Concierge AI
-  // Funciona tanto sem login (citizenNid = null) quanto autenticado!
   const sendToConcierge = async (messageText: string, explicitNid?: string | null) => {
     const cleanMsg = messageText.trim();
     if (!cleanMsg) return;
@@ -270,7 +623,7 @@ export function App() {
       id: `USR-${Date.now()}`,
       sender: 'user',
       text: cleanMsg,
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })
     };
 
     setChatMessages((prev) => [...prev, userMsg]);
@@ -287,7 +640,8 @@ export function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nid: effectiveNid,
-          message: cleanMsg
+          message: cleanMsg,
+          lang
         })
       });
       const data = await res.json();
@@ -296,7 +650,7 @@ export function App() {
         id: data.message_id || `AGT-${Date.now()}`,
         sender: 'orchestrator',
         text: data.reply || 'Orientação governamental processada.',
-        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }),
         intent: data.intent,
         authenticated: Boolean(data.authenticated),
         citations: data.citations || [],
@@ -313,19 +667,20 @@ export function App() {
     }
   };
 
-  // Acionado quando o usuário clica em "Solicitar Serviço" (no Chat ou nos Cards)
   const handleRequestService = (servicePrompt: string, serviceTitle: string) => {
     if (!currentUser) {
-      // Usuário não está logado -> guarda o serviço desejado e abre o Modal de Login!
       pendingServicePromptRef.current = servicePrompt;
       setLoginReasonMessage(
-        `Autenticação necessária para solicitar o serviço: "${serviceTitle}". Após entrar com seu NID, sua solicitação será executada automaticamente.`
+        lang === 'es-419'
+          ? `Autenticación requerida para solicitar el servicio: "${serviceTitle}". Tras ingresar con su NID, su solicitud se ejecutará automáticamente.`
+          : lang === 'en-US'
+          ? `Authentication required to request the service: "${serviceTitle}". After signing in with your NID, your request will be executed automatically.`
+          : `Autenticação necessária para solicitar o serviço: "${serviceTitle}". Após entrar com seu NID, sua solicitação será executada automaticamente.`
       );
       setLoginTriggerCount((prev) => prev + 1);
       return;
     }
 
-    // Se já estiver logado, executa imediatamente o serviço no Concierge com o NID autenticado
     sendToConcierge(servicePrompt, currentUser.nid);
   };
 
@@ -333,6 +688,7 @@ export function App() {
     const params = new URLSearchParams();
     if (tab) params.set('tab', tab);
     if (ssoToken) params.set('sso_token', ssoToken);
+    if (lang) params.set('lang', lang);
     const qs = params.toString();
     return qs ? `${baseUrl}?${qs}` : baseUrl;
   };
@@ -341,7 +697,15 @@ export function App() {
     if (!currentUser) {
       setLoginReasonMessage(
         targetPortal === 'backstage'
-          ? 'Para acessar o Backstage Governamental, autentique-se com uma credencial de Servidor Público / Identidade 360.'
+          ? lang === 'es-419'
+            ? 'Para acceder al Backstage Gubernamental, autentíquese con una credencial de Servidor Público / Identidad 360.'
+            : lang === 'en-US'
+            ? 'To access the Government Backstage, sign in with a Civil Servant / Identity 360 credential.'
+            : 'Para acessar o Backstage Governamental, autentique-se com uma credencial de Servidor Público / Identidade 360.'
+          : lang === 'es-419'
+          ? 'Para acceder a sus servicios personales en el Portal del Ciudadano, inicie sesión con su NID.'
+          : lang === 'en-US'
+          ? 'To access your personal services in the Citizen Portal, sign in with your NID.'
           : 'Para acessar seus serviços pessoais no Portal do Cidadão, faça login com seu NID.'
       );
       setLoginTriggerCount((prev) => prev + 1);
@@ -375,7 +739,7 @@ export function App() {
                 sx={{ width: 20, height: 13, objectFit: 'cover', borderRadius: 0.5, border: '1px solid #cbd5e1' }}
               />
               <Typography variant="caption" sx={{ color: '#1f2937', fontWeight: 600, fontSize: '0.76rem' }}>
-                Um site oficial do Governo da República Digital de Novatlantis
+                {t.officialBanner}
               </Typography>
               <Button
                 size="small"
@@ -392,7 +756,7 @@ export function App() {
                   textDecoration: 'underline'
                 }}
               >
-                Saiba como verificar
+                {t.howToVerify}
               </Button>
             </Box>
 
@@ -400,7 +764,7 @@ export function App() {
               variant="caption"
               sx={{ fontFamily: 'monospace', color: '#4b5563', fontSize: '0.72rem', display: { xs: 'none', md: 'block' } }}
             >
-              National Design Studio • AlloyDB for PostgreSQL 15 • Government Data Platform (100k Cidadãos)
+              National Design Studio • AlloyDB PostgreSQL 15 • i18n ({lang})
             </Typography>
           </Box>
 
@@ -411,11 +775,10 @@ export function App() {
                   <AccountBalanceIcon color="primary" fontSize="small" sx={{ mt: 0.25 }} />
                   <Box>
                     <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: '#111827' }}>
-                      Portais oficiais utilizam infraestrutura soberana no Google Cloud (Project: novatlantis)
+                      {t.verifyTitle1}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Conectado diretamente ao cluster AlloyDB <code>novatlantis-sovereign-cluster</code> e ao Data
-                      Lakehouse governamental.
+                      {t.verifyDesc1}
                     </Typography>
                   </Box>
                 </Box>
@@ -425,11 +788,10 @@ export function App() {
                   <HttpsIcon color="success" fontSize="small" sx={{ mt: 0.25 }} />
                   <Box>
                     <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: '#111827' }}>
-                      Perguntas públicas abertas e autenticação exigida apenas na solicitação de serviços
+                      {t.verifyTitle2}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Qualquer cidadão ou visitante pode consultar informações no Concierge IA sem login. A assinatura
-                      NID é solicitada somente ao executar um serviço oficial.
+                      {t.verifyDesc2}
                     </Typography>
                   </Box>
                 </Box>
@@ -439,7 +801,7 @@ export function App() {
         </Container>
       </Box>
 
-      {/* 2. CABEÇALHO INSTITUCIONAL (Estilo america.gov com Menu Hambúrguer ☰ + Título Ampliado + Status do Usuário) */}
+      {/* 2. CABEÇALHO INSTITUCIONAL (Estilo america.gov com Menu Hambúrguer ☰ + Título Ampliado + Seletor de Idiomas PT/ES/EN + Status do Usuário) */}
       <AppBar
         position="sticky"
         color="default"
@@ -451,7 +813,7 @@ export function App() {
         }}
       >
         <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ py: 1.5, justifyContent: 'space-between', gap: 2 }}>
+          <Toolbar disableGutters sx={{ py: 1.5, justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
             {/* Esquerda: Botão Hambúrguer (☰) + Brasão + Título Institucional Ampliado */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <IconButton
@@ -493,10 +855,10 @@ export function App() {
                       letterSpacing: '-0.02em'
                     }}
                   >
-                    Governo da República de Novatlantis
+                    {t.govTitle}
                   </Typography>
                   <Chip
-                    label="Portal Principal da Nação"
+                    label={t.portalBadge}
                     size="small"
                     sx={{
                       bgcolor: '#0a2240',
@@ -516,14 +878,16 @@ export function App() {
                     lineHeight: 1.3
                   }}
                 >
-                  Chancelaria Digital • Agente Orquestrador de Estado • Módulo de Usuários GDF (100.000 Cidadãos)
+                  {t.govSubtitle}
                 </Typography>
               </Box>
             </Box>
 
-            {/* Direita: APENAS o Item do Status do Usuário com Foto / Login NID */}
+            {/* Direita: Seletor de Idiomas (PT / ES / EN) + Status do Usuário com Foto / Login NID */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <TopNavUserWidget
+                lang={lang}
+                onLanguageChange={handleLanguageChange}
                 currentNid={currentUser?.nid}
                 openLoginTrigger={loginTriggerCount}
                 loginReasonMessage={loginReasonMessage}
@@ -532,7 +896,6 @@ export function App() {
                 onUserAuthenticated={async (nid, _authProfile, token) => {
                   if (token) setSsoToken(token);
                   const loadedProfile = await loadFullCitizenContext(nid);
-                  // Se o cidadão clicou em "Solicitar Serviço" antes de estar logado, executa agora!
                   if (pendingServicePromptRef.current && loadedProfile) {
                     const pendingPrompt = pendingServicePromptRef.current;
                     pendingServicePromptRef.current = null;
@@ -557,16 +920,16 @@ export function App() {
         open={navDrawerOpen}
         onClose={() => setNavDrawerOpen(false)}
         PaperProps={{
-          sx: { width: 330, bgcolor: '#fcfbf9', borderRight: '1px solid #e5e4dc' }
+          sx: { width: 340, bgcolor: '#fcfbf9', borderRight: '1px solid #e5e4dc' }
         }}
       >
         <Box sx={{ p: 2.5, bgcolor: '#0a2240', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              República de Novatlantis
+              {t.govTitle}
             </Typography>
             <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
-              Diretório Nacional de Serviços
+              {t.drawerSubtitle}
             </Typography>
           </Box>
           <IconButton onClick={() => setNavDrawerOpen(false)} sx={{ color: '#ffffff' }} size="small">
@@ -574,10 +937,47 @@ export function App() {
           </IconButton>
         </Box>
 
+        {/* Seletor de Idiomas também dentro do Menu Hambúrguer */}
+        <Box sx={{ px: 2.5, py: 1.5, bgcolor: '#f1f0ec', borderBottom: '1px solid #e5e4dc' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <LanguageIcon sx={{ fontSize: 16, color: '#0a2240' }} />
+            <Typography variant="caption" sx={{ fontWeight: 800, color: '#0a2240', letterSpacing: '0.05em' }}>
+              {t.drawerLanguageTitle}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {(
+              [
+                { code: 'pt-BR', label: 'Português' },
+                { code: 'es-419', label: 'Español' },
+                { code: 'en-US', label: 'English' }
+              ] as { code: SupportedLanguage; label: string }[]
+            ).map((l) => (
+              <Button
+                key={l.code}
+                size="small"
+                variant={lang === l.code ? 'contained' : 'outlined'}
+                onClick={() => handleLanguageChange(l.code)}
+                sx={{
+                  flex: 1,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  bgcolor: lang === l.code ? '#0a2240' : '#ffffff',
+                  color: lang === l.code ? '#ffffff' : '#0a2240',
+                  borderColor: '#cbd5e1'
+                }}
+              >
+                {l.label}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+
         <List sx={{ py: 1.5 }}>
           <Box sx={{ px: 2.5, py: 0.75 }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-              AMBIENTES OFICIAIS DO ESTADO
+              {t.drawerOfficialEnvs}
             </Typography>
           </Box>
 
@@ -591,8 +991,8 @@ export function App() {
               <BadgeIcon sx={{ color: '#0a2240' }} />
             </ListItemIcon>
             <ListItemText
-              primary="Portal do Cidadão"
-              secondary={currentUser ? `Autenticado: ${currentUser.nid}` : 'Requer login NID ao acessar'}
+              primary={t.citizenPortalLabel}
+              secondary={currentUser ? `${t.citizenPortalSubAuth}: ${currentUser.nid}` : t.citizenPortalSubAnon}
               primaryTypographyProps={{ fontWeight: 700 }}
             />
           </ListItemButton>
@@ -607,8 +1007,8 @@ export function App() {
               <AdminIcon sx={{ color: '#0f766e' }} />
             </ListItemIcon>
             <ListItemText
-              primary="Backstage Governamental"
-              secondary="Servidores Públicos, Médicos, Professores e PM"
+              primary={t.backstageLabel}
+              secondary={t.backstageSub}
               primaryTypographyProps={{ fontWeight: 700 }}
             />
           </ListItemButton>
@@ -617,7 +1017,7 @@ export function App() {
 
           <Box sx={{ px: 2.5, py: 0.75 }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-              PERGUNTAR AO CONCIERGE (SEM LOGIN)
+              {t.drawerAskConcierge}
             </Typography>
           </Box>
 
@@ -626,13 +1026,13 @@ export function App() {
               key={srv.id}
               onClick={() => {
                 setNavDrawerOpen(false);
-                sendToConcierge(srv.questionPrompt);
+                sendToConcierge(srv.questionPrompt[lang]);
               }}
             >
               <ListItemIcon>{srv.icon}</ListItemIcon>
               <ListItemText
-                primary={srv.title}
-                secondary={srv.agency}
+                primary={srv.title[lang]}
+                secondary={srv.agency[lang]}
                 primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 600 }}
                 secondaryTypographyProps={{ fontSize: '0.73rem' }}
               />
@@ -658,8 +1058,8 @@ export function App() {
               icon={<SparkleIcon sx={{ fontSize: '15px !important', color: '#0a2240 !important' }} />}
               label={
                 currentUser
-                  ? `SESSÃO AUTENTICADA • ${currentUser.full_name.toUpperCase()} (${currentUser.nid})`
-                  : 'PORTA DE ENTRADA DIGITAL DA NAÇÃO • PERGUNTE SEM PRECISAR DE LOGIN'
+                  ? `${t.heroChipAuth} • ${currentUser.full_name.toUpperCase()} (${currentUser.nid})`
+                  : t.heroChipAnon
               }
               sx={{
                 mb: 2.5,
@@ -682,7 +1082,7 @@ export function App() {
                 lineHeight: 1.12
               }}
             >
-              {currentUser ? `Olá, ${currentUser.full_name.split(' ')[0]}.` : 'Olá, Novatlantis.'}
+              {currentUser ? `${t.heroGreetingPrefix}, ${currentUser.full_name.split(' ')[0]}.` : t.heroGreetingAnon}
             </Typography>
 
             <Typography
@@ -696,7 +1096,7 @@ export function App() {
                 lineHeight: 1.45
               }}
             >
-              Tudo o que você precisa do governo, comece por aqui.
+              {t.heroSubheading}
             </Typography>
           </Box>
 
@@ -737,7 +1137,7 @@ export function App() {
                     sendToConcierge(promptInput);
                   }
                 }}
-                placeholder="Pergunte qualquer coisa sobre serviços públicos, passaporte, saúde, educação, impostos ou abertura de empresas..."
+                placeholder={t.promptPlaceholder}
                 InputProps={{
                   disableUnderline: true,
                   sx: {
@@ -761,17 +1161,13 @@ export function App() {
                   gap: 1
                 }}
               >
-                {/* Botões utilitários estilo america.gov (Simplificador de Documento Oficial + Indicador de Login) */}
+                {/* Botões utilitários estilo america.gov */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   <Button
                     size="small"
                     variant="outlined"
                     startIcon={<DescriptionIcon fontSize="small" />}
-                    onClick={() =>
-                      sendToConcierge(
-                        'Explique em linguagem simples os requisitos e documentos para emitir o Passaporte Digital ICAO e abrir uma empresa em 45 segundos.'
-                      )
-                    }
+                    onClick={() => sendToConcierge(t.simplifyFormPrompt)}
                     sx={{
                       borderRadius: 999,
                       textTransform: 'none',
@@ -783,7 +1179,7 @@ export function App() {
                       '&:hover': { borderColor: '#0a2240', bgcolor: '#f9fafb' }
                     }}
                   >
-                    Simplificar Formulário / Regra Oficial
+                    {t.simplifyFormBtn}
                   </Button>
 
                   <Chip
@@ -797,8 +1193,8 @@ export function App() {
                     }
                     label={
                       currentUser
-                        ? `Logado: ${currentUser.nid}`
-                        : 'Chat Público Livre (Login só ao solicitar serviço)'
+                        ? `${t.chatStatusAuth}: ${currentUser.nid}`
+                        : t.chatStatusAnon
                     }
                     color={currentUser ? 'success' : 'default'}
                     variant="outlined"
@@ -811,7 +1207,7 @@ export function App() {
                   <IconButton
                     size="small"
                     title="Consulta por Voz Assistida"
-                    onClick={() => sendToConcierge('Como funciona o atendimento de Telemedicina 24/7 e o prontuário HL7?')}
+                    onClick={() => sendToConcierge(POPULAR_SERVICES[2].questionPrompt[lang])}
                     sx={{
                       border: '1px solid #e5e7eb',
                       color: '#4b5563',
@@ -837,7 +1233,7 @@ export function App() {
                       '&:hover': { bgcolor: '#163a66' }
                     }}
                   >
-                    {chatLoading ? 'Consultando...' : 'Perguntar'}
+                    {chatLoading ? t.askingBtn : t.askBtn}
                   </Button>
                 </Box>
               </Box>
@@ -854,14 +1250,7 @@ export function App() {
               mt: 2.5
             }}
           >
-            {[
-              'Como emitir meu Passaporte Digital ICAO?',
-              'Como abrir uma empresa em 45 segundos?',
-              'Como agendar teleconsulta médica 24/7?',
-              'Como consultar o boletim escolar dos meus filhos?',
-              'Como abrir um chamado urbano 311?',
-              'Como funciona o acesso ao Backstage Governamental?'
-            ].map((pill) => (
+            {t.pills.map((pill) => (
               <Chip
                 key={pill}
                 label={pill}
@@ -902,7 +1291,7 @@ export function App() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <VerifiedUserIcon sx={{ color: '#0a2240', fontSize: 20 }} />
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
-                      CONCIERGE OFICIAL DA REPÚBLICA DE NOVATLANTIS
+                      {t.conciergeHeader}
                     </Typography>
                   </Box>
                   <Button
@@ -910,7 +1299,7 @@ export function App() {
                     onClick={() => setChatMessages([])}
                     sx={{ textTransform: 'none', color: '#6b7280', fontSize: '0.78rem' }}
                   >
-                    Limpar conversa
+                    {t.clearChat}
                   </Button>
                 </Box>
 
@@ -969,7 +1358,7 @@ export function App() {
                                   letterSpacing: '0.04em'
                                 }}
                               >
-                                FONTES OFICIAIS & LEGISLAÇÃO CITADA:
+                                {t.officialCitations}
                               </Typography>
                               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                 {msg.citations.map((cit) => (
@@ -1013,7 +1402,7 @@ export function App() {
                                 onClick={() => handleNavigateToPortal('citizen', msg.service_request_action?.target_tab)}
                                 sx={{ textTransform: 'none', fontWeight: 700 }}
                               >
-                                Acompanhar no Portal do Cidadão
+                                {t.trackInCitizenPortal}
                               </Button>
                             </Alert>
                           )}
@@ -1070,9 +1459,7 @@ export function App() {
                                   '&:hover': { bgcolor: '#163a66' }
                                 }}
                               >
-                                {currentUser
-                                  ? 'Executar Serviço Agora'
-                                  : 'Solicitar Serviço (Fazer Login NID)'}
+                                {currentUser ? t.executeServiceNow : t.requestServiceLogin}
                               </Button>
                             </Paper>
                           )}
@@ -1097,10 +1484,10 @@ export function App() {
               variant="overline"
               sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.08em', display: 'block' }}
             >
-              SERVIÇOS PÚBLICOS DIGITAIS • REPÚBLICA DE NOVATLANTIS
+              {t.directoryOverline}
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 800, color: '#0a2240', fontFamily: '"Merriweather", serif' }}>
-              Serviços mais procurados pelos cidadãos
+              {t.directoryHeading}
             </Typography>
           </Box>
 
@@ -1118,7 +1505,7 @@ export function App() {
                 px: 2.5
               }}
             >
-              Portal do Cidadão
+              {t.citizenPortalLabel}
             </Button>
             <Button
               variant="outlined"
@@ -1133,7 +1520,7 @@ export function App() {
                 px: 2.5
               }}
             >
-              Backstage Governamental
+              {t.backstageLabel}
             </Button>
           </Box>
         </Box>
@@ -1172,16 +1559,16 @@ export function App() {
                       {srv.icon}
                     </Box>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: '#4b5563' }}>
-                      {srv.agency}
+                      {srv.agency[lang]}
                     </Typography>
                   </Box>
 
                   <Typography variant="h6" sx={{ fontWeight: 800, color: '#0a2240', mb: 1, fontSize: '1.08rem' }}>
-                    {srv.title}
+                    {srv.title[lang]}
                   </Typography>
 
                   <Typography variant="body2" sx={{ color: '#4b5563', lineHeight: 1.55, mb: 2.5 }}>
-                    {srv.description}
+                    {srv.description[lang]}
                   </Typography>
                 </Box>
 
@@ -1189,16 +1576,16 @@ export function App() {
                   <Button
                     size="small"
                     variant="text"
-                    onClick={() => sendToConcierge(srv.questionPrompt)}
+                    onClick={() => sendToConcierge(srv.questionPrompt[lang])}
                     sx={{ textTransform: 'none', fontWeight: 700, color: '#0a2240' }}
                   >
-                    Tirar Dúvida
+                    {t.askQuestionBtn}
                   </Button>
                   <Button
                     size="small"
                     variant="contained"
                     endIcon={<ArrowForwardIcon fontSize="small" />}
-                    onClick={() => handleRequestService(srv.servicePrompt, srv.title)}
+                    onClick={() => handleRequestService(srv.servicePrompt[lang], srv.title[lang])}
                     sx={{
                       ml: 'auto',
                       bgcolor: '#0a2240',
@@ -1208,7 +1595,7 @@ export function App() {
                       '&:hover': { bgcolor: '#163a66' }
                     }}
                   >
-                    Solicitar Serviço
+                    {t.requestServiceBtn}
                   </Button>
                 </Box>
               </Paper>
@@ -1231,20 +1618,20 @@ export function App() {
                 />
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                    Governo da República Digital de Novatlantis
+                    {t.govTitle}
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
-                    Um portal desenhado para servir ao cidadão • AlloyDB + Government Data Platform
+                    {t.footerSubtitle}
                   </Typography>
                 </Box>
               </Box>
             </Grid>
             <Grid item xs={12} md={5} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
               <Typography variant="caption" sx={{ color: '#cbd5e1', display: 'block' }}>
-                Projeto GCP: <code>novatlantis</code> • Base Soberana: 100.000 Cidadãos
+                {t.footerRight1}
               </Typography>
               <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mt: 0.5 }}>
-                Autenticação Zero-Trust • Perguntas Públicas sem Login • Transações Assinadas com NID
+                {t.footerRight2}
               </Typography>
             </Grid>
           </Grid>
