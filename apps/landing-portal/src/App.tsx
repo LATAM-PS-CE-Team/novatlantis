@@ -47,7 +47,8 @@ import {
   Close as CloseIcon,
   AutoAwesome as SparkleIcon,
   Launch as LaunchIcon,
-  Language as LanguageIcon
+  Language as LanguageIcon,
+  Shield as ShieldIcon
 } from '@mui/icons-material';
 import {
   TopNavUserWidget,
