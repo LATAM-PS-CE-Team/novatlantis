@@ -5,10 +5,10 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Collapse,
   Dialog,
   DialogContent,
   Divider,
-  Drawer,
   IconButton,
   List,
   ListItemButton,
@@ -39,8 +39,11 @@ import {
   Close as CloseIcon,
   Visibility as VisibilityIcon,
   Menu as MenuIcon,
+  MenuOpen as MenuOpenIcon,
   Launch as LaunchIcon,
-  AdminPanelSettings as AdminIcon
+  AdminPanelSettings as AdminIcon,
+  Save as SaveIcon,
+  DeleteOutline as DeleteOutlineIcon
 } from '@mui/icons-material';
 
 export interface AuthUserProfile {
@@ -53,6 +56,7 @@ export interface AuthUserProfile {
   status: string;
   must_change_password: boolean;
   avatarUrl: string | null;
+  avatar_url?: string | null;
   phone_number: string;
   bio: string;
   role: string;
@@ -84,7 +88,59 @@ interface TopNavUserWidgetProps {
   govBackstageUrl?: string;
 }
 
-type ProfileSection = 'PERSONAL_DATA' | 'FAMILY_READONLY' | 'SECURITY_ACCESS';
+type ProfileSection = 'PERSONAL_DATA' | 'PASSWORD_SECURITY' | 'FAMILY_READONLY' | 'SECURITY_ACCESS';
+
+/**
+ * Redimensiona e comprime imagens selecionadas pelo usuário para um DataURL JPEG/WEBP otimizado (máx 360x360),
+ * garantindo upload instantâneo e gravação confiável no banco de dados (SQLite + AlloyDB PostgreSQL).
+ */
+async function compressImageFileToDataUrl(file: File): Promise<{ dataUrl: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo de imagem selecionado.'));
+    reader.onload = () => {
+      const rawDataUrl = String(reader.result || '');
+      const img = new Image();
+      img.onerror = () => {
+        // Fallback para o DataURL original caso o navegador não decodifique no canvas
+        resolve({ dataUrl: rawDataUrl, mimeType: file.type || 'image/jpeg' });
+      };
+      img.onload = () => {
+        try {
+          const maxDim = 360;
+          let width = img.width || 360;
+          let height = img.height || 360;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve({ dataUrl: rawDataUrl, mimeType: file.type || 'image/jpeg' });
+            return;
+          }
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.86);
+          resolve({ dataUrl: compressedDataUrl, mimeType: 'image/jpeg' });
+        } catch {
+          resolve({ dataUrl: rawDataUrl, mimeType: file.type || 'image/jpeg' });
+        }
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   onUserAuthenticated,
@@ -98,7 +154,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   const [ssoToken, setSsoToken] = useState<string | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
 
-  // Modals & Internal Hamburger Drawer State
+  // Modals & Internal Non-Blocking Hamburger Menu State
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileHamburgerOpen, setProfileHamburgerOpen] = useState(false);
@@ -115,19 +171,39 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   const [authError, setAuthError] = useState<string | null>(null);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [dispatchedOtpPreview, setDispatchedOtpPreview] = useState<string | null>(null);
-  const [postalHintPassword, setPostalHintPassword] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Profile edit state
   const [editSocialName, setEditSocialName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editDistrict, setEditDistrict] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [profileStatusMsg, setProfileStatusMsg] = useState<string | null>(null);
+  const [profileErrorMsg, setProfileErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Password Change state inside Profile Modal
+  const [currentPasswordForChange, setCurrentPasswordForChange] = useState('');
+  const [newPasswordForChange, setNewPasswordForChange] = useState('');
+  const [confirmNewPasswordForChange, setConfirmNewPasswordForChange] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Family Read-Only state
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberRecord[]>([]);
   const [loadingFamily, setLoadingFamily] = useState(false);
+
+  const syncFormStateFromUser = (u: AuthUserProfile) => {
+    setEditSocialName(u.social_name || u.full_name || u.name || '');
+    setEditEmail(u.email || '');
+    setEditPhone(u.phone_number || '');
+    setEditDistrict(u.district || '');
+    setEditBio(u.bio || '');
+    setPendingAvatarUrl(u.avatarUrl || u.avatar_url || null);
+  };
 
   const fetchProfileSession = async () => {
     try {
@@ -148,13 +224,15 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       }
       const data = await res.json();
       if (data.authenticated && data.user) {
-        setUser(data.user);
+        const normalizedUser: AuthUserProfile = {
+          ...data.user,
+          avatarUrl: data.user.avatarUrl || data.user.avatar_url || null
+        };
+        setUser(normalizedUser);
         setSsoToken(data.sso_token || null);
-        setEditSocialName(data.user.social_name || data.user.full_name || '');
-        setEditPhone(data.user.phone_number || '');
-        setEditBio(data.user.bio || '');
+        syncFormStateFromUser(normalizedUser);
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user, data.sso_token);
+          onUserAuthenticated(normalizedUser.nid, normalizedUser, data.sso_token);
         }
       } else {
         setUser(null);
@@ -207,11 +285,10 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       const res = await fetch(`/api/v1/auth/postal-dispatch?nid=${encodeURIComponent(cleanTarget)}`);
       const data = await res.json();
       if (res.ok && data.initial_password) {
-        setPostalHintPassword(data.initial_password);
         setPasswordInput(data.initial_password);
         setEmailInput(data.citizen?.email || '');
         setAuthNotice(
-          `Credencial localizada no AlloyDB para ${data.citizen?.full_name || cleanTarget}: senha inicial ${data.initial_password}`
+          `Credencial localizada no AlloyDB para ${data.citizen?.full_name || cleanTarget}: senha preenchida (${data.initial_password})`
         );
       } else {
         setAuthError(data.error || 'NID não encontrado no lote de 100.000 cidadãos.');
@@ -237,7 +314,6 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       const data = await res.json();
       if (res.ok) {
         setPasswordInput(data.initial_password || '');
-        setPostalHintPassword(data.initial_password || null);
         setAuthStep('LOGIN');
         setAuthNotice(
           `Status de ${cleanTarget} redefinido para FIRST_LOGIN_REQUIRED. Senha inicial preenchida (${data.initial_password}).`
@@ -278,14 +354,16 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       }
 
       if (data.authenticated && data.user) {
-        setUser(data.user);
+        const normalizedUser: AuthUserProfile = {
+          ...data.user,
+          avatarUrl: data.user.avatarUrl || data.user.avatar_url || null
+        };
+        setUser(normalizedUser);
         setSsoToken(data.sso_token || null);
-        setEditSocialName(data.user.social_name || data.user.full_name);
-        setEditPhone(data.user.phone_number || '');
-        setEditBio(data.user.bio || '');
+        syncFormStateFromUser(normalizedUser);
         setLoginModalOpen(false);
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user, data.sso_token);
+          onUserAuthenticated(normalizedUser.nid, normalizedUser, data.sso_token);
         }
       }
     } catch {
@@ -358,15 +436,17 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       }
 
       if (data.verified && data.user) {
-        setUser(data.user);
+        const normalizedUser: AuthUserProfile = {
+          ...data.user,
+          avatarUrl: data.user.avatarUrl || data.user.avatar_url || null
+        };
+        setUser(normalizedUser);
         setSsoToken(data.sso_token || null);
-        setEditSocialName(data.user.social_name || data.user.full_name);
-        setEditPhone(data.user.phone_number || '');
-        setEditBio(data.user.bio || '');
+        syncFormStateFromUser(normalizedUser);
         setLoginModalOpen(false);
         setAuthStep('LOGIN');
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user, data.sso_token);
+          onUserAuthenticated(normalizedUser.nid, normalizedUser, data.sso_token);
         }
       }
     } catch {
@@ -407,24 +487,46 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     e.preventDefault();
     if (!user) return;
     setProfileStatusMsg(null);
-    const res = await fetch('/api/v1/profile/me', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
+    setProfileErrorMsg(null);
+    setSavingProfile(true);
+    try {
+      const payload: Record<string, unknown> = {
         nid: user.nid,
-        social_name: editSocialName,
-        phone_number: editPhone,
-        bio: editBio
-      })
-    });
-    const data = await res.json();
-    if (res.ok && data.user) {
-      setUser(data.user);
-      setProfileStatusMsg('Dados cadastrais atualizados com sucesso no AlloyDB.');
-      if (onUserAuthenticated) {
-        onUserAuthenticated(data.user.nid, data.user, ssoToken || undefined);
+        social_name: editSocialName.trim(),
+        email: editEmail.trim(),
+        phone_number: editPhone.trim(),
+        district: editDistrict.trim(),
+        bio: editBio.trim()
+      };
+      if (pendingAvatarUrl !== null) {
+        payload.avatar_url = pendingAvatarUrl;
       }
+
+      const res = await fetch('/api/v1/profile/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.user) {
+        const updatedUser: AuthUserProfile = {
+          ...data.user,
+          avatarUrl: data.user.avatarUrl || data.user.avatar_url || pendingAvatarUrl || null
+        };
+        setUser(updatedUser);
+        syncFormStateFromUser(updatedUser);
+        setProfileStatusMsg('Perfil e foto oficial gravados com sucesso no banco de dados (AlloyDB + GDF)!');
+        if (onUserAuthenticated) {
+          onUserAuthenticated(updatedUser.nid, updatedUser, ssoToken || undefined);
+        }
+      } else {
+        setProfileErrorMsg(data.error || 'Não foi possível salvar as alterações do perfil.');
+      }
+    } catch {
+      setProfileErrorMsg('Erro de comunicação ao salvar os dados do perfil.');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -432,15 +534,22 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    setProfileStatusMsg(null);
+    setProfileErrorMsg(null);
+
     const allowed = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
-    if (!allowed.includes(file.type.toLowerCase())) {
-      setProfileStatusMsg('Erro: Apenas arquivos WEBP, PNG ou JPG são permitidos.');
+    if (file.type && !allowed.includes(file.type.toLowerCase())) {
+      setProfileErrorMsg('Formato inválido: selecione uma imagem WEBP, PNG ou JPG.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = String(reader.result || '');
+    setUploadingAvatar(true);
+    try {
+      const { dataUrl, mimeType } = await compressImageFileToDataUrl(file);
+      // Atualiza preview imediatamente
+      setPendingAvatarUrl(dataUrl);
+
+      // Salva imediatamente no banco de dados (SQLite + AlloyDB)
       const res = await fetch('/api/v1/profile/me/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -448,21 +557,71 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
         body: JSON.stringify({
           nid: user.nid,
           avatar_url: dataUrl,
-          mime_type: file.type
+          mime_type: mimeType
         })
       });
       const data = await res.json();
       if (res.ok && data.user) {
-        setUser(data.user);
-        setProfileStatusMsg('Foto de perfil oficial validada e atualizada com sucesso!');
+        const updatedUser: AuthUserProfile = {
+          ...data.user,
+          avatarUrl: data.user.avatarUrl || data.user.avatar_url || dataUrl
+        };
+        setUser(updatedUser);
+        setPendingAvatarUrl(updatedUser.avatarUrl);
+        setProfileStatusMsg('Foto de perfil salva no banco de dados (AlloyDB) e atualizada com sucesso!');
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user, ssoToken || undefined);
+          onUserAuthenticated(updatedUser.nid, updatedUser, ssoToken || undefined);
         }
       } else {
-        setProfileStatusMsg(data.error || 'Erro ao enviar foto de perfil.');
+        setProfileErrorMsg(data.error || 'Erro ao armazenar a foto de perfil no banco de dados.');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      setProfileErrorMsg('Falha ao processar e armazenar a foto de perfil.');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setProfileStatusMsg(null);
+    setProfileErrorMsg(null);
+
+    if (newPasswordForChange !== confirmNewPasswordForChange) {
+      setProfileErrorMsg('A confirmação da nova senha não coincide.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const res = await fetch('/api/v1/profile/me/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          nid: user.nid,
+          current_password: currentPasswordForChange,
+          new_password: newPasswordForChange
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.updated) {
+        setCurrentPasswordForChange('');
+        setNewPasswordForChange('');
+        setConfirmNewPasswordForChange('');
+        setProfileStatusMsg(data.message || 'Senha de acesso atualizada com sucesso no AlloyDB!');
+      } else {
+        setProfileErrorMsg(data.error || 'Não foi possível alterar a senha.');
+      }
+    } catch {
+      setProfileErrorMsg('Erro de comunicação ao atualizar a senha.');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -480,9 +639,10 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     }
   };
 
-  const openProfileWithSection = (section: ProfileSection) => {
+  const selectProfileSection = (section: ProfileSection) => {
     setActiveProfileSection(section);
     setProfileStatusMsg(null);
+    setProfileErrorMsg(null);
     setProfileHamburgerOpen(false);
     setProfileModalOpen(true);
     if (section === 'FAMILY_READONLY' && user) {
@@ -495,6 +655,8 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     const sep = baseUrl.includes('?') ? '&' : '?';
     return `${baseUrl}${sep}sso_token=${encodeURIComponent(ssoToken)}`;
   };
+
+  const displayedAvatar = pendingAvatarUrl || user?.avatarUrl || user?.avatar_url || '/assets/pm_portrait.jpg';
 
   return (
     <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
@@ -537,7 +699,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       ) : (
         <Paper
           variant="outlined"
-          onClick={() => openProfileWithSection('PERSONAL_DATA')}
+          onClick={() => selectProfileSection('PERSONAL_DATA')}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -557,7 +719,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
           }}
         >
           <Avatar
-            src={user.avatarUrl || '/assets/pm_portrait.jpg'}
+            src={displayedAvatar}
             alt={user.name}
             sx={{
               width: 34,
@@ -848,7 +1010,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* MODAL 2: ÁREA INTERNA DO PERFIL DO CIDADÃO — NAVEGAÇÃO VIA MENU HAMBÚRGUER (☰) */}
+      {/* MODAL 2: ÁREA INTERNA DO PERFIL DO CIDADÃO — MENU HAMBÚRGUER (☰) SEM CONFLITO DE FOCUS TRAP */}
       <Dialog
         open={profileModalOpen}
         onClose={() => {
@@ -861,7 +1023,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
           sx: {
             borderRadius: 3,
             overflow: 'hidden',
-            minHeight: 500,
+            minHeight: 540,
             position: 'relative',
             border: '1px solid #e2e8f0'
           }
@@ -882,170 +1044,204 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <IconButton
-                  onClick={() => setProfileHamburgerOpen(true)}
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={profileHamburgerOpen ? <MenuOpenIcon /> : <MenuIcon />}
+                  onClick={() => setProfileHamburgerOpen((prev) => !prev)}
                   sx={{
                     color: '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.25)',
-                    borderRadius: 1.5
+                    borderColor: 'rgba(255,255,255,0.4)',
+                    bgcolor: profileHamburgerOpen ? 'rgba(255,255,255,0.16)' : 'transparent',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: 1.5,
+                    px: 1.5,
+                    '&:hover': {
+                      borderColor: '#ffffff',
+                      bgcolor: 'rgba(255,255,255,0.2)'
+                    }
                   }}
-                  aria-label="Abrir Menu do Perfil"
+                  aria-label="Abrir Menu Hambúrguer do Perfil"
                 >
-                  <MenuIcon />
-                </IconButton>
+                  Menu
+                </Button>
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                     Perfil Soberano do Cidadão •{' '}
                     {activeProfileSection === 'PERSONAL_DATA'
-                      ? 'Dados Cadastrais & Foto'
+                      ? 'Dados Cadastrais & Foto Oficial'
+                      : activeProfileSection === 'PASSWORD_SECURITY'
+                      ? 'Segurança & Alteração de Senha'
                       : activeProfileSection === 'FAMILY_READONLY'
                       ? 'Núcleo Familiar (Somente Leitura)'
-                      : 'Credenciais & Acesso Identidade 360'}
+                      : 'Credenciais Identidade 360 & Portais'}
                   </Typography>
                   <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#cbd5e1' }}>
-                    {user.full_name} ({user.nid}) • Clique em ☰ para alternar seções do perfil
+                    {user.full_name} ({user.nid}) • Use o menu ☰ para acessar as funções adicionais
                   </Typography>
                 </Box>
               </Box>
-              <IconButton onClick={() => setProfileModalOpen(false)} sx={{ color: '#cbd5e1' }} size="small">
+              <IconButton
+                onClick={() => {
+                  setProfileHamburgerOpen(false);
+                  setProfileModalOpen(false);
+                }}
+                sx={{ color: '#cbd5e1' }}
+                size="small"
+              >
                 <CloseIcon />
               </IconButton>
             </Box>
 
-            {/* Menu Hambúrguer Deslizante Interno do Perfil (Sem opções empilhadas lado a lado) */}
-            <Drawer
-              anchor="left"
-              open={profileHamburgerOpen}
-              onClose={() => setProfileHamburgerOpen(false)}
-              PaperProps={{
-                sx: {
-                  width: 300,
-                  bgcolor: '#ffffff',
-                  borderRight: '1px solid #e2e8f0'
-                }
-              }}
-            >
-              <Box sx={{ p: 2.5, bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            {/* Menu Hambúrguer Deslizante Inline (Sem criar segundo Modal/FocusTrap que trava a tela) */}
+            <Collapse in={profileHamburgerOpen} timeout="auto" unmountOnExit>
+              <Box
+                sx={{
+                  bgcolor: '#f8fafc',
+                  borderBottom: '2px solid #cbd5e1',
+                  px: 2.5,
+                  py: 2,
+                  boxShadow: 'inset 0 -4px 12px rgba(10, 34, 64, 0.05)'
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240', letterSpacing: '0.03em' }}>
-                    MENU DO PERFIL (NID)
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#0a2240', letterSpacing: '0.06em' }}>
+                    NAVEGAÇÃO DO PERFIL & CONFIGURAÇÕES ADICIONAIS (MENU ☰)
                   </Typography>
-                  <IconButton size="small" onClick={() => setProfileHamburgerOpen(false)}>
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Avatar
-                    src={user.avatarUrl || '/assets/pm_portrait.jpg'}
-                    sx={{ width: 44, height: 44, border: '2px solid #0a2240' }}
-                  />
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
-                      {user.name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#475569' }}>
-                      {user.nid}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-              <List sx={{ py: 1 }}>
-                <ListItemButton
-                  selected={activeProfileSection === 'PERSONAL_DATA'}
-                  onClick={() => openProfileWithSection('PERSONAL_DATA')}
-                >
-                  <ListItemIcon>
-                    <PersonIcon sx={{ color: '#0a2240' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Dados Cadastrais & Foto"
-                    secondary="Nome social, foto ICAO e telefone"
-                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
-                  />
-                </ListItemButton>
-
-                <ListItemButton
-                  selected={activeProfileSection === 'FAMILY_READONLY'}
-                  onClick={() => openProfileWithSection('FAMILY_READONLY')}
-                >
-                  <ListItemIcon>
-                    <GroupIcon sx={{ color: '#0a2240' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Núcleo Familiar"
-                    secondary="Vínculos civis (Somente Leitura)"
-                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
-                  />
-                </ListItemButton>
-
-                <ListItemButton
-                  selected={activeProfileSection === 'SECURITY_ACCESS'}
-                  onClick={() => openProfileWithSection('SECURITY_ACCESS')}
-                >
-                  <ListItemIcon>
-                    <ShieldIcon sx={{ color: '#0a2240' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Segurança & Identidade 360"
-                    secondary="Papel RBAC, sessão e troca de conta"
-                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
-                  />
-                </ListItemButton>
-
-                <Divider sx={{ my: 1.5 }} />
-
-                <ListItemButton
-                  component="a"
-                  href={buildPortalUrlWithSso(citizenPortalUrl)}
-                  onClick={() => setProfileHamburgerOpen(false)}
-                >
-                  <ListItemIcon>
-                    <LaunchIcon sx={{ color: '#0369a1' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Abrir Portal do Cidadão"
-                    secondary="Serviços digitais e prontuários"
-                    primaryTypographyProps={{ fontWeight: 600, fontSize: '0.88rem' }}
-                  />
-                </ListItemButton>
-
-                {user.role !== 'CITIZEN_COMMON' && (
-                  <ListItemButton
-                    component="a"
-                    href={buildPortalUrlWithSso(govBackstageUrl)}
+                  <Button
+                    size="small"
                     onClick={() => setProfileHamburgerOpen(false)}
+                    sx={{ textTransform: 'none', fontSize: '0.78rem', color: '#475569' }}
                   >
-                    <ListItemIcon>
-                      <AdminIcon sx={{ color: '#0f766e' }} />
+                    Fechar Menu ✕
+                  </Button>
+                </Box>
+
+                <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <ListItemButton
+                    selected={activeProfileSection === 'PERSONAL_DATA'}
+                    onClick={() => selectProfileSection('PERSONAL_DATA')}
+                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'PERSONAL_DATA' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 38 }}>
+                      <PersonIcon sx={{ color: '#0a2240' }} />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Backstage Governamental"
-                      secondary={`Acesso: ${user.role}`}
-                      primaryTypographyProps={{ fontWeight: 600, fontSize: '0.88rem' }}
+                      primary="1. Dados Cadastrais & Foto Oficial"
+                      secondary="Upload de foto no AlloyDB, nome social, e-mail, telefone e distrito"
+                      primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
+                      secondaryTypographyProps={{ fontSize: '0.78rem' }}
                     />
                   </ListItemButton>
-                )}
 
-                <Divider sx={{ my: 1.5 }} />
+                  <ListItemButton
+                    selected={activeProfileSection === 'PASSWORD_SECURITY'}
+                    onClick={() => selectProfileSection('PASSWORD_SECURITY')}
+                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'PASSWORD_SECURITY' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 38 }}>
+                      <KeyIcon sx={{ color: '#0a2240' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="2. Segurança & Alteração de Senha"
+                      secondary="Alterar senha soberana de acesso e verificar credenciais criptográficas"
+                      primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
+                      secondaryTypographyProps={{ fontSize: '0.78rem' }}
+                    />
+                  </ListItemButton>
 
-                <ListItemButton onClick={handleLogout} sx={{ color: '#b91c1c' }}>
-                  <ListItemIcon>
-                    <LogoutIcon sx={{ color: '#b91c1c' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Encerrar Sessão (Logout)"
-                    secondary="Sair e limpar cookie de sessão"
-                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
-                  />
-                </ListItemButton>
-              </List>
-            </Drawer>
+                  <ListItemButton
+                    selected={activeProfileSection === 'FAMILY_READONLY'}
+                    onClick={() => selectProfileSection('FAMILY_READONLY')}
+                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'FAMILY_READONLY' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 38 }}>
+                      <GroupIcon sx={{ color: '#0a2240' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="3. Núcleo Familiar (Somente Leitura)"
+                      secondary="Consultar árvore familiar e dependentes registrados no GDF / AlloyDB"
+                      primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
+                      secondaryTypographyProps={{ fontSize: '0.78rem' }}
+                    />
+                  </ListItemButton>
+
+                  <ListItemButton
+                    selected={activeProfileSection === 'SECURITY_ACCESS'}
+                    onClick={() => selectProfileSection('SECURITY_ACCESS')}
+                    sx={{ borderRadius: 1.5, bgcolor: activeProfileSection === 'SECURITY_ACCESS' ? '#e2e8f0' : '#ffffff', border: '1px solid #e2e8f0' }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 38 }}>
+                      <ShieldIcon sx={{ color: '#0a2240' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="4. Credenciais Identidade 360, Portais & Sessão"
+                      secondary="Papel RBAC ativo, acesso ao Portal do Cidadão / Backstage e troca de conta"
+                      primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}
+                      secondaryTypographyProps={{ fontSize: '0.78rem' }}
+                    />
+                  </ListItemButton>
+
+                  <Divider sx={{ my: 1 }} />
+
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 0.5 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<LaunchIcon />}
+                      component="a"
+                      href={buildPortalUrlWithSso(citizenPortalUrl)}
+                      sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#ffffff' }}
+                    >
+                      Abrir Portal do Cidadão
+                    </Button>
+                    {user.role !== 'CITIZEN_COMMON' && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="secondary"
+                        startIcon={<AdminIcon />}
+                        component="a"
+                        href={buildPortalUrlWithSso(govBackstageUrl)}
+                        sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#ffffff' }}
+                      >
+                        Abrir Backstage ({user.role})
+                      </Button>
+                    )}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<LogoutIcon />}
+                      onClick={handleLogout}
+                      sx={{ textTransform: 'none', fontWeight: 700, ml: 'auto', bgcolor: '#ffffff' }}
+                    >
+                      Encerrar Sessão (Logout)
+                    </Button>
+                  </Box>
+                </List>
+              </Box>
+            </Collapse>
 
             <DialogContent sx={{ p: 3.5, bgcolor: '#fcfcfc' }}>
               {profileStatusMsg && (
-                <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2 }}>
+                <Alert
+                  severity="success"
+                  onClose={() => setProfileStatusMsg(null)}
+                  sx={{ mb: 2.5, borderRadius: 2, fontWeight: 600 }}
+                >
                   {profileStatusMsg}
+                </Alert>
+              )}
+
+              {profileErrorMsg && (
+                <Alert
+                  severity="error"
+                  onClose={() => setProfileErrorMsg(null)}
+                  sx={{ mb: 2.5, borderRadius: 2, fontWeight: 600 }}
+                >
+                  {profileErrorMsg}
                 </Alert>
               )}
 
@@ -1065,11 +1261,34 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       flexWrap: 'wrap'
                     }}
                   >
-                    <Avatar
-                      src={user.avatarUrl || '/assets/pm_portrait.jpg'}
-                      alt={user.name}
-                      sx={{ width: 76, height: 76, border: '2px solid #0a2240' }}
-                    />
+                    <Box sx={{ position: 'relative' }}>
+                      <Avatar
+                        src={displayedAvatar}
+                        alt={user.name}
+                        sx={{
+                          width: 84,
+                          height: 84,
+                          border: '2.5px solid #0a2240',
+                          boxShadow: '0 4px 14px rgba(10,34,64,0.15)'
+                        }}
+                      />
+                      {uploadingAvatar && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            bgcolor: 'rgba(255,255,255,0.75)',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <CircularProgress size={26} />
+                        </Box>
+                      )}
+                    </Box>
+
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a' }}>
                         {user.full_name}
@@ -1077,46 +1296,112 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       <Typography variant="body2" sx={{ fontFamily: 'monospace', color: '#475569', mb: 1.25 }}>
                         {user.nid} • {user.email} • Distrito: {user.district}
                       </Typography>
+
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/webp,image/png,image/jpeg"
+                        accept="image/webp,image/png,image/jpeg,image/jpg"
                         onChange={handleAvatarFileChange}
                         style={{ display: 'none' }}
                       />
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<PhotoCameraIcon />}
-                        onClick={() => fileInputRef.current?.click()}
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
-                      >
-                        Atualizar Foto Oficial (WEBP / PNG / JPG)
-                      </Button>
+
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          disabled={uploadingAvatar}
+                          startIcon={<PhotoCameraIcon />}
+                          onClick={() => fileInputRef.current?.click()}
+                          sx={{
+                            bgcolor: '#0a2240',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            '&:hover': { bgcolor: '#163a66' }
+                          }}
+                        >
+                          {uploadingAvatar ? 'Salvando Foto no Banco...' : 'Escolher e Salvar Nova Foto (WEBP / PNG / JPG)'}
+                        </Button>
+
+                        {pendingAvatarUrl && pendingAvatarUrl !== '/assets/pm_portrait.jpg' && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="inherit"
+                            startIcon={<DeleteOutlineIcon />}
+                            onClick={async () => {
+                              const defaultAvatar = '/assets/pm_portrait.jpg';
+                              setPendingAvatarUrl(defaultAvatar);
+                              const res = await fetch('/api/v1/profile/me/avatar', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({
+                                  nid: user.nid,
+                                  avatar_url: defaultAvatar,
+                                  mime_type: 'image/jpeg'
+                                })
+                              });
+                              const data = await res.json();
+                              if (res.ok && data.user) {
+                                setUser(data.user);
+                                setProfileStatusMsg('Foto restaurada para o retrato oficial padrão.');
+                                if (onUserAuthenticated) {
+                                  onUserAuthenticated(data.user.nid, data.user, ssoToken || undefined);
+                                }
+                              }
+                            }}
+                            sx={{ textTransform: 'none' }}
+                          >
+                            Restaurar Padrão
+                          </Button>
+                        )}
+                      </Box>
                     </Box>
                   </Paper>
 
                   <Box
                     component="form"
                     onSubmit={handleSaveProfile}
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 2.25 }}
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
                   >
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                      <TextField
+                        label="Nome de Exibição / Nome Social"
+                        value={editSocialName}
+                        onChange={(e) => setEditSocialName(e.target.value)}
+                        fullWidth
+                        size="medium"
+                      />
+                      <TextField
+                        label="E-mail Cadastral Soberano"
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        fullWidth
+                        size="medium"
+                      />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                      <TextField
+                        label="Telefone Soberano de Contato"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        placeholder="+55 11 99999-0000"
+                        fullWidth
+                        size="medium"
+                      />
+                      <TextField
+                        label="Distrito Oficial de Residência"
+                        value={editDistrict}
+                        onChange={(e) => setEditDistrict(e.target.value)}
+                        fullWidth
+                        size="medium"
+                      />
+                    </Box>
+
                     <TextField
-                      label="Nome de Exibição / Nome Social"
-                      value={editSocialName}
-                      onChange={(e) => setEditSocialName(e.target.value)}
-                      fullWidth
-                      size="medium"
-                    />
-                    <TextField
-                      label="Telefone Soberano de Contato"
-                      value={editPhone}
-                      onChange={(e) => setEditPhone(e.target.value)}
-                      fullWidth
-                      size="medium"
-                    />
-                    <TextField
-                      label="Observações Cadastrais"
+                      label="Observações Cadastrais / Bio"
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
                       multiline
@@ -1124,28 +1409,126 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       fullWidth
                       size="medium"
                     />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1 }}>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 1.5,
+                        pt: 1
+                      }}
+                    >
                       <Button
+                        type="button"
                         variant="outlined"
-                        startIcon={<MenuIcon />}
-                        onClick={() => setProfileHamburgerOpen(true)}
-                        sx={{ textTransform: 'none' }}
+                        startIcon={profileHamburgerOpen ? <MenuOpenIcon /> : <MenuIcon />}
+                        onClick={() => setProfileHamburgerOpen((prev) => !prev)}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          borderColor: '#0a2240',
+                          color: '#0a2240'
+                        }}
                       >
-                        Mais Opções do Perfil
+                        {profileHamburgerOpen ? 'Ocultar Mais Opções do Perfil' : 'Mais Opções do Perfil (☰)'}
                       </Button>
+
                       <Button
                         type="submit"
                         variant="contained"
-                        sx={{ bgcolor: '#0a2240', textTransform: 'none', fontWeight: 700, px: 3 }}
+                        disabled={savingProfile}
+                        startIcon={<SaveIcon />}
+                        sx={{
+                          bgcolor: '#0a2240',
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          px: 3,
+                          '&:hover': { bgcolor: '#163a66' }
+                        }}
                       >
-                        Salvar Dados no AlloyDB
+                        {savingProfile ? 'Gravando no AlloyDB...' : 'Salvar Dados e Foto no AlloyDB'}
                       </Button>
                     </Box>
                   </Box>
                 </Box>
               )}
 
-              {/* SEÇÃO 2: NÚCLEO FAMILIAR (SOMENTE LEITURA) */}
+              {/* SEÇÃO 2: SEGURANÇA & ALTERAÇÃO DE SENHA */}
+              {activeProfileSection === 'PASSWORD_SECURITY' && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  <Alert severity="info" icon={<KeyIcon />} sx={{ borderRadius: 2 }}>
+                    <strong>Segurança Criptográfica Soberana:</strong> Altere sua senha de acesso ao ecossistema
+                    Novatlantis. A nova credencial é sincronizada com hash seguro no banco de dados AlloyDB.
+                  </Alert>
+
+                  <Paper
+                    component="form"
+                    onSubmit={handleChangePasswordSubmit}
+                    variant="outlined"
+                    sx={{ p: 3, borderRadius: 2.5, bgcolor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 2 }}
+                  >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0a2240' }}>
+                      Alterar Senha de Acesso ({user.nid})
+                    </Typography>
+
+                    <TextField
+                      label="Senha Atual (Opcional se já autenticado na sessão)"
+                      type="password"
+                      value={currentPasswordForChange}
+                      onChange={(e) => setCurrentPasswordForChange(e.target.value)}
+                      fullWidth
+                      size="medium"
+                    />
+
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                      <TextField
+                        label="Nova Senha (mínimo 8 caracteres, letras e números)"
+                        type="password"
+                        value={newPasswordForChange}
+                        onChange={(e) => setNewPasswordForChange(e.target.value)}
+                        required
+                        fullWidth
+                        size="medium"
+                      />
+                      <TextField
+                        label="Confirmar Nova Senha"
+                        type="password"
+                        value={confirmNewPasswordForChange}
+                        onChange={(e) => setConfirmNewPasswordForChange(e.target.value)}
+                        required
+                        fullWidth
+                        size="medium"
+                      />
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1 }}>
+                      <Button
+                        type="button"
+                        variant="outlined"
+                        startIcon={<PersonIcon />}
+                        onClick={() => selectProfileSection('PERSONAL_DATA')}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Voltar para Dados Cadastrais
+                      </Button>
+
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={changingPassword}
+                        startIcon={<SaveIcon />}
+                        sx={{ bgcolor: '#0a2240', textTransform: 'none', fontWeight: 700 }}
+                      >
+                        {changingPassword ? 'Atualizando Senha...' : 'Confirmar Nova Senha no AlloyDB'}
+                      </Button>
+                    </Box>
+                  </Paper>
+                </Box>
+              )}
+
+              {/* SEÇÃO 3: NÚCLEO FAMILIAR (SOMENTE LEITURA) */}
               {activeProfileSection === 'FAMILY_READONLY' && (
                 <Box>
                   <Alert severity="info" icon={<VisibilityIcon />} sx={{ mb: 2.5, borderRadius: 2 }}>
@@ -1162,7 +1545,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       Nenhum vínculo familiar direto registrado para este NID.
                     </Typography>
                   ) : (
-                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 2.5 }}>
                       <Table size="small">
                         <TableHead sx={{ bgcolor: '#f8fafc' }}>
                           <TableRow>
@@ -1198,15 +1581,34 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                       </Table>
                     </TableContainer>
                   )}
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<PersonIcon />}
+                      onClick={() => selectProfileSection('PERSONAL_DATA')}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Voltar para Dados Cadastrais
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<MenuIcon />}
+                      onClick={() => setProfileHamburgerOpen(true)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Abrir Menu de Opções (☰)
+                    </Button>
+                  </Box>
                 </Box>
               )}
 
-              {/* SEÇÃO 3: SEGURANÇA, PAPEL IDENTIDADE 360 & SESSÃO */}
+              {/* SEÇÃO 4: SEGURANÇA, PAPEL IDENTIDADE 360 & SESSÃO */}
               {activeProfileSection === 'SECURITY_ACCESS' && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                   <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, bgcolor: '#ffffff' }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240', mb: 1 }}>
-                      CREDENCIAL & PAPEL ATIVO NA IDENTIDADE 360
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240', mb: 1.5 }}>
+                      CREDENCIAL SOBERANA & PAPEL ATIVO NA IDENTIDADE 360
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 0.75 }}>
                       • <strong>NID Soberano:</strong> <code>{user.nid}</code>
@@ -1217,24 +1619,55 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                     <Typography variant="body2" sx={{ mb: 0.75 }}>
                       • <strong>Profissão / Especialidade:</strong> {user.profession}
                     </Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" sx={{ mb: 1.5 }}>
                       • <strong>Status da Conta no AlloyDB:</strong>{' '}
                       <Chip size="small" color="success" label={user.status} icon={<CheckCircleIcon />} />
                     </Typography>
+
+                    <Divider sx={{ my: 1.5 }} />
+
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 1 }}>
+                      ACESSO RÁPIDO AOS AMBIENTES COM SINGLE SIGN-ON (SSO):
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<LaunchIcon />}
+                        component="a"
+                        href={buildPortalUrlWithSso(citizenPortalUrl)}
+                        sx={{ bgcolor: '#0a2240', textTransform: 'none', fontWeight: 700 }}
+                      >
+                        Ir para o Portal do Cidadão
+                      </Button>
+                      {user.role !== 'CITIZEN_COMMON' && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<AdminIcon />}
+                          component="a"
+                          href={buildPortalUrlWithSso(govBackstageUrl)}
+                          sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#0a2240', color: '#0a2240' }}
+                        >
+                          Ir para o Backstage Governamental ({user.role})
+                        </Button>
+                      )}
+                    </Box>
                   </Paper>
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, pt: 1 }}>
                     <Button
                       variant="outlined"
                       startIcon={<KeyIcon />}
                       onClick={() => {
+                        setProfileHamburgerOpen(false);
                         setProfileModalOpen(false);
                         setNidInput('');
                         setPasswordInput('');
                         setAuthStep('LOGIN');
                         setLoginModalOpen(true);
                       }}
-                      sx={{ textTransform: 'none' }}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
                       Alternar para Outro Cidadão (NID)
                     </Button>

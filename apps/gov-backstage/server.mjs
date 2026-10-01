@@ -228,9 +228,21 @@ const stmtUpdateStudentGrade = db.prepare(`
 function enrichCitizenWithIam(citizen) {
   if (!citizen) return null;
   const roleInfo = IAM_ROLE_MATRIX[citizen.iam_role] || IAM_ROLE_MATRIX.CITIZEN_COMMON;
+  let customProfile = null;
+  try {
+    customProfile = db.prepare('SELECT * FROM citizen_profiles WHERE nid = ?').get(citizen.nid);
+  } catch {
+    customProfile = null;
+  }
   return {
     ...citizen,
+    social_name: customProfile?.social_name || citizen.full_name,
+    avatar_url: customProfile?.avatar_url || '/assets/coat_of_arms.jpg',
+    avatarUrl: customProfile?.avatar_url || '/assets/coat_of_arms.jpg',
+    phone_number: customProfile?.phone_number || `+550 98100-${citizen.nid.slice(-6, -2)}`,
+    bio: customProfile?.bio || `Servidor público em ${citizen.district}.`,
     role_info: roleInfo,
+    effective_role_code: roleInfo.role_code,
     backstage_allowed: roleInfo.backstage_allowed
   };
 }

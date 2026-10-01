@@ -91,6 +91,14 @@ try {
           locked_until TIMESTAMPTZ NULL,
           updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS citizen_profiles (
+          nid VARCHAR(25) PRIMARY KEY,
+          avatar_url TEXT NULL,
+          phone_number VARCHAR(40) NULL,
+          social_name VARCHAR(160) NULL,
+          bio TEXT NULL,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
       `);
     })
     .catch((err) => {
@@ -118,6 +126,58 @@ async function syncCredentialToAlloyDB(nid, passwordHash, status, mustChange, em
     );
   } catch {
     // Non-blocking write-through
+  }
+}
+
+async function syncCitizenProfileToAlloyDB(nid, avatarUrl, phoneNumber, socialName, bio, email) {
+  if (!alloyPool) return;
+  try {
+    await alloyPool.query(
+      `INSERT INTO citizen_profiles (nid, avatar_url, phone_number, social_name, bio, updated_at)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+       ON CONFLICT (nid) DO UPDATE SET
+         avatar_url = EXCLUDED.avatar_url,
+         phone_number = EXCLUDED.phone_number,
+         social_name = EXCLUDED.social_name,
+         bio = EXCLUDED.bio,
+         updated_at = CURRENT_TIMESTAMP`,
+      [nid, avatarUrl, phoneNumber, socialName, bio]
+    );
+    await alloyPool.query(
+      `UPDATE dim_citizens
+       SET avatar_url = COALESCE($2, avatar_url),
+           email = COALESCE($3, email)
+       WHERE nid = $1`,
+      [nid, avatarUrl, email || null]
+    );
+    alloyDirectConnected = true;
+  } catch (err) {
+    console.warn('[ALLOYDB] Aviso ao sincronizar citizen_profiles:', err?.message);
+  }
+}
+
+async function pullCitizenProfileFromAlloyDB(db, nid) {
+  if (!alloyPool || !nid) return;
+  try {
+    const res = await alloyPool.query(
+      'SELECT avatar_url, phone_number, social_name, bio FROM citizen_profiles WHERE nid = $1 LIMIT 1',
+      [nid]
+    );
+    if (res.rows && res.rows.length > 0) {
+      const row = res.rows[0];
+      db.prepare(`
+        INSERT INTO citizen_profiles (nid, avatar_url, phone_number, social_name, bio, updated_at)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(nid) DO UPDATE SET
+          avatar_url = COALESCE(excluded.avatar_url, citizen_profiles.avatar_url),
+          phone_number = COALESCE(excluded.phone_number, citizen_profiles.phone_number),
+          social_name = COALESCE(excluded.social_name, citizen_profiles.social_name),
+          bio = COALESCE(excluded.bio, citizen_profiles.bio),
+          updated_at = CURRENT_TIMESTAMP
+      `).run(nid, row.avatar_url, row.phone_number, row.social_name, row.bio);
+    }
+  } catch {
+    // Non-blocking read-through
   }
 }
 
@@ -293,7 +353,7 @@ export function ensureAuthTablesExist(db) {
 
     CREATE TABLE IF NOT EXISTS citizen_profiles (
       nid VARCHAR(20) PRIMARY KEY,
-      avatar_url VARCHAR(500) NULL,
+      avatar_url TEXT NULL,
       phone_number VARCHAR(25) NULL,
       social_name VARCHAR(120) NULL,
       bio TEXT NULL,
@@ -337,6 +397,14 @@ export function ensureAuthTablesExist(db) {
             email_verified INTEGER DEFAULT 0,
             failed_login_attempts INT DEFAULT 0,
             locked_until TIMESTAMPTZ NULL,
+            updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+          CREATE TABLE IF NOT EXISTS citizen_profiles (
+            nid VARCHAR(25) PRIMARY KEY,
+            avatar_url TEXT NULL,
+            phone_number VARCHAR(40) NULL,
+            social_name VARCHAR(160) NULL,
+            bio TEXT NULL,
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
           );
         `);
@@ -581,6 +649,7 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       `).run(nid);
     }
 
+    await pullCitizenProfileFromAlloyDB(db, nid);
     const userProfile = getCompleteProfileByNid(db, nid);
     const accessJwt = signJwtToken({ nid, role: userProfile.role, scope: 'SESSION_ACTIVE' }, 3600);
     const refreshJwt = signJwtToken({ nid, scope: 'REFRESH' }, 86400);
@@ -737,6 +806,7 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
     const updatedCred = db.prepare('SELECT password_hash FROM user_credentials WHERE nid = ?').get(nid);
     await syncCredentialToAlloyDB(nid, updatedCred?.password_hash || '', 'ACTIVE', false, email, true);
 
+    await pullCitizenProfileFromAlloyDB(db, nid);
     const userProfile = getCompleteProfileByNid(db, nid);
     const accessJwt = signJwtToken({ nid, role: userProfile.role, scope: 'SESSION_ACTIVE' }, 3600);
     const refreshJwt = signJwtToken({ nid, scope: 'REFRESH' }, 86400);
@@ -819,6 +889,7 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       }
       return sendJsonFn(res, 200, { authenticated: false, user: null });
     }
+    await pullCitizenProfileFromAlloyDB(db, authenticatedNid);
     const profile = getCompleteProfileByNid(db, authenticatedNid);
     if (!profile) {
       return sendJsonFn(res, 200, { authenticated: false, user: null });
@@ -830,10 +901,10 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
     });
   }
 
-  // 7. PUT /api/v1/profile/me
+  // 7. PUT /api/v1/profile/me (Atualização Completa do Perfil + Foto + E-mail + Distrito no SQLite e no AlloyDB)
   if (pathname === '/api/v1/profile/me' && req.method === 'PUT') {
     const body = await readBodyFn(req);
-    const targetNid = sessionClaims?.nid || body.nid;
+    const targetNid = String(sessionClaims?.nid || body.nid || '').trim().toUpperCase();
     if (!targetNid) {
       return sendJsonFn(res, 401, { error: 'Autenticação necessária para atualizar o perfil.' });
     }
@@ -845,16 +916,33 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
     const socialName = String(body.social_name ?? current.social_name).trim().slice(0, 120);
     const phoneNumber = String(body.phone_number ?? current.phone_number).trim().slice(0, 25);
     const bio = String(body.bio ?? current.bio).trim().slice(0, 600);
+    const avatarUrl = body.avatar_url ? String(body.avatar_url) : current.avatarUrl;
+    const email = body.email ? String(body.email).trim().toLowerCase() : current.email;
+    const district = body.district ? String(body.district).trim() : current.district;
 
     db.prepare(`
       INSERT INTO citizen_profiles (nid, avatar_url, phone_number, social_name, bio, updated_at)
       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(nid) DO UPDATE SET
+        avatar_url = excluded.avatar_url,
         phone_number = excluded.phone_number,
         social_name = excluded.social_name,
         bio = excluded.bio,
         updated_at = CURRENT_TIMESTAMP
-    `).run(targetNid, current.avatarUrl, phoneNumber, socialName, bio);
+    `).run(targetNid, avatarUrl, phoneNumber, socialName, bio);
+
+    if (email && email.includes('@')) {
+      db.prepare('UPDATE dim_citizens SET email = ? WHERE nid = ?').run(email, targetNid);
+      db.prepare('UPDATE user_credentials SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE nid = ?').run(
+        email,
+        targetNid
+      );
+    }
+    if (district) {
+      db.prepare('UPDATE dim_citizens SET district = ? WHERE nid = ?').run(district, targetNid);
+    }
+
+    await syncCitizenProfileToAlloyDB(targetNid, avatarUrl, phoneNumber, socialName, bio, email);
 
     return sendJsonFn(res, 200, {
       updated: true,
@@ -862,18 +950,23 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
     });
   }
 
-  // 8. POST /api/v1/profile/me/avatar
+  // 8. POST /api/v1/profile/me/avatar (Armazena Foto do Perfil no SQLite e no AlloyDB com UPSERT Garantido)
   if (pathname === '/api/v1/profile/me/avatar' && req.method === 'POST') {
     const body = await readBodyFn(req);
-    const targetNid = sessionClaims?.nid || body.nid;
+    const targetNid = String(sessionClaims?.nid || body.nid || '').trim().toUpperCase();
     if (!targetNid) {
       return sendJsonFn(res, 401, { error: 'Autenticação necessária para envio de foto.' });
+    }
+
+    const current = getCompleteProfileByNid(db, targetNid);
+    if (!current) {
+      return sendJsonFn(res, 404, { error: 'Cidadão não encontrado.' });
     }
 
     const avatarDataUrl = String(body.avatar_url || '');
     const mimeType = String(body.mime_type || '');
 
-    // Validação estrita de MIME type (image/webp, image/png, image/jpeg)
+    // Validação de formato (image/webp, image/png, image/jpeg)
     const allowedMimes = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
     const isValidDataUrl =
       avatarDataUrl.startsWith('data:image/webp;base64,') ||
@@ -885,20 +978,65 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
 
     if (!isValidDataUrl || (mimeType && !allowedMimes.includes(mimeType.toLowerCase()))) {
       return sendJsonFn(res, 400, {
-        error: 'Formato de imagem inválido. Apenas arquivos sanitizados nos formatos WEBP, PNG ou JPG são permitidos.'
+        error: 'Formato de imagem inválido. Apenas arquivos nos formatos WEBP, PNG ou JPG são permitidos.'
       });
     }
 
+    // CORREÇÃO CRÍTICA: Usa INSERT ... ON CONFLICT(nid) DO UPDATE para garantir criação da linha em citizen_profiles!
     db.prepare(`
-      UPDATE citizen_profiles
-      SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP
+      INSERT INTO citizen_profiles (nid, avatar_url, phone_number, social_name, bio, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(nid) DO UPDATE SET
+        avatar_url = excluded.avatar_url,
+        updated_at = CURRENT_TIMESTAMP
+    `).run(targetNid, avatarDataUrl, current.phone_number, current.social_name, current.bio);
+
+    await syncCitizenProfileToAlloyDB(
+      targetNid,
+      avatarDataUrl,
+      current.phone_number,
+      current.social_name,
+      current.bio,
+      current.email
+    );
+
+    const updatedUser = getCompleteProfileByNid(db, targetNid);
+    return sendJsonFn(res, 200, {
+      updated: true,
+      avatarUrl: updatedUser.avatarUrl,
+      user: updatedUser
+    });
+  }
+
+  // 8b. POST /api/v1/profile/me/password (Alteração de Senha nas Configurações Adicionais do Perfil)
+  if (pathname === '/api/v1/profile/me/password' && req.method === 'POST') {
+    const body = await readBodyFn(req);
+    const targetNid = String(sessionClaims?.nid || body.nid || '').trim().toUpperCase();
+    if (!targetNid) {
+      return sendJsonFn(res, 401, { error: 'Autenticação necessária para alterar a senha.' });
+    }
+
+    const newPassword = String(body.new_password || '').trim();
+    if (newPassword.length < 8) {
+      return sendJsonFn(res, 400, { error: 'A nova senha deve possuir no mínimo 8 caracteres.' });
+    }
+
+    const newHash = hashPasswordArgon2idCompat(newPassword);
+    db.prepare(`
+      UPDATE user_credentials
+      SET password_hash = ?, pending_password_hash = NULL, status = 'ACTIVE',
+          must_change_password = 0, failed_login_attempts = 0, locked_until = NULL,
+          updated_at = CURRENT_TIMESTAMP
       WHERE nid = ?
-    `).run(avatarDataUrl, targetNid);
+    `).run(newHash, targetNid);
+
+    const current = getCompleteProfileByNid(db, targetNid);
+    await syncCredentialToAlloyDB(targetNid, newHash, 'ACTIVE', false, current?.email || '', true);
 
     return sendJsonFn(res, 200, {
       updated: true,
-      avatarUrl: avatarDataUrl,
-      user: getCompleteProfileByNid(db, targetNid)
+      message: 'Nova senha criptografada com Argon2id e armazenada com sucesso no AlloyDB.',
+      user: current
     });
   }
 

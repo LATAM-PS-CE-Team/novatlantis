@@ -612,7 +612,11 @@ export default function App() {
                 <div className="lg:col-span-7 bg-[#002046] text-white rounded p-6 border-2 border-[#b4c5ff]/40 space-y-5 shadow-sm">
                   <div className="flex items-center justify-between border-b border-white/15 pb-3">
                     <div className="flex items-center gap-3">
-                      <img src="/assets/coat_of_arms.jpg" alt="Brasão" className="h-10 w-10 rounded bg-white p-0.5" />
+                      <img
+                        src={citizen.avatarUrl || citizen.avatar_url || '/assets/pm_portrait.jpg'}
+                        alt={citizen.full_name}
+                        className="h-14 w-14 rounded-full object-cover border-2 border-[#b4c5ff] bg-white"
+                      />
                       <div>
                         <div className="font-mono text-[10px] uppercase tracking-widest text-[#b4c5ff]">
                           REPÚBLICA DIGITAL DE NOVATLANTIS • DOCUMENTO OFICIAL DE IDENTIDADE
@@ -629,8 +633,12 @@ export default function App() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <div className="text-slate-400 uppercase font-mono text-[10px]">Nome Civil Completo</div>
-                      <div className="text-base font-bold text-white">{citizen.full_name}</div>
+                      <div className="text-slate-400 uppercase font-mono text-[10px]">Nome Civil / Social</div>
+                      <div className="text-base font-bold text-white">
+                        {citizen.social_name && citizen.social_name !== citizen.full_name
+                          ? `${citizen.social_name} (${citizen.full_name})`
+                          : citizen.full_name}
+                      </div>
                     </div>
                     <div>
                       <div className="text-slate-400 uppercase font-mono text-[10px]">Identificador Soberano (NID)</div>

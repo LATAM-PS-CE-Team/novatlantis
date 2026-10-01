@@ -308,16 +308,26 @@ function getFullCitizenProfile(nidOrEmail) {
   `).get(nid);
   const passportRow = db.prepare(`SELECT * FROM sec_passports WHERE nid = ?`).get(nid);
   const justiceRow = db.prepare(`SELECT * FROM justice_records WHERE citizen_nid = ?`).get(nid);
+  let customProfile = null;
+  try {
+    customProfile = db.prepare(`SELECT * FROM citizen_profiles WHERE nid = ?`).get(nid);
+  } catch {
+    customProfile = null;
+  }
 
   const hospitalIdx = (parseInt(nid.slice(-3, -2), 10) % 5) + 1;
 
   return {
     ...row,
     nid: row.citizen_id,
+    social_name: customProfile?.social_name || row.full_name,
+    avatar_url: customProfile?.avatar_url || '/assets/coat_of_arms.jpg',
+    avatarUrl: customProfile?.avatar_url || '/assets/coat_of_arms.jpg',
+    bio: customProfile?.bio || `Cidadão soberano residente em ${row.district}.`,
     iam_role: effectiveRoleCode,
     profession: row.professional_credential,
     specialty: row.profession_label,
-    phone: `+550 98100-${nid.slice(-6, -2)}`,
+    phone: customProfile?.phone_number || `+550 98100-${nid.slice(-6, -2)}`,
     ubi_monthly_credits: row.age >= 18 ? 1250.0 : 450.0,
     effective_role_code: effectiveRoleCode,
     role_title: roleMeta.title,
@@ -1058,7 +1068,7 @@ function readBody(req) {
     let data = '';
     req.on('data', chunk => {
       data += chunk;
-      if (data.length > 2 * 1024 * 1024) reject(new Error('Payload too large'));
+      if (data.length > 15 * 1024 * 1024) reject(new Error('Payload too large'));
     });
     req.on('end', () => {
       if (!data) return resolve({});
