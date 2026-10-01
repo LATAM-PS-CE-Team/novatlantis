@@ -4,78 +4,73 @@
 > - 🇧🇷 **Português (Oficial):** [README.md](./README.md)
 > - 🇪🇸 **Español:** [README.es.md](./README.es.md)
 > - 🇺🇸 **English:** [README.en.md](./README.en.md)
+> - 🏛️ **Government Data Platform (GDP / EDP):** [government-data-platform/README.md](./government-data-platform/README.md)
 > - 📘 **Manual Funcional e Técnico Completo:** [docs/DOCUMENTACAO_COMPLETA_NOVATLANTIS.md](./docs/DOCUMENTACAO_COMPLETA_NOVATLANTIS.md)
 
 ---
 
-## 1. Visão Geral da Nação AI-First
+## 1. Visão Geral da Nação AI-First (Material UI + AlloyDB + Government Data Platform)
 
-A **República Digital de Novatlantis** (`novatlantis.gov.cloud`) é uma nação soberana nativa da era agêntica, projetada sob o paradigma estético e funcional **Sovereign Civic** (inspirado na austeridade institucional do **GOV.UK** e na interoperabilidade da **e-Estonia**), operando integralmente sobre o **Google Cloud (Projeto Argolis: `novatlantis`)**.
+A **República Digital de Novatlantis** (`novatlantis.gov.cloud`) é uma nação soberana nativa da era agêntica, projetada sob o paradigma estético e funcional **Sovereign Civic** com **Material UI (`@mui/material` v6)** (inspirado na austeridade institucional do **GOV.UK** e na interoperabilidade da **e-Estonia**), operando integralmente sobre o **Google Cloud (Projeto Argolis: `novatlantis`)**.
 
-A arquitetura do Estado foi estruturada em **3 Aplicações Full-Stack Completas e Independentes** (cada uma com seu próprio **Frontend React + Tailwind CSS** e **Backend Node.js 22 + SQLite `node:sqlite`**) mais **5 Microsserviços Setoriais**, utilizando o **Datalake Soberano de 100.000 Cidadãos (`dim_citizens`) como Módulo Unificado de Usuários (SSO & RBAC/ABAC)**.
+A arquitetura do Estado é composta por:
+- **3 Aplicações Full-Stack Completas e Independentes** (cada uma com seu próprio **Frontend React + Material UI (`@mui/material`)** e **Backend Node.js 22 conectado ao AlloyDB for PostgreSQL via Direct VPC Egress**);
+- **Banco de Dados Transacional Soberano no AlloyDB for PostgreSQL**:
+  - **Cluster:** `projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster`
+  - **Instância Primária:** `projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster/instances/novatlantis-primary-01` (`10.223.28.2:5432`, PostgreSQL 15 + `vector` extension)
+- **Government Data Platform (GDP)** ([`government-data-platform/`](./government-data-platform)) baseado na arquitetura oficial [`googlecloudplatform/education-data-platform`](https://github.com/googlecloudplatform/education-data-platform), implantado no BigQuery e Cloud Storage do projeto `novatlantis` com **100.000 cidadãos** e todas as tabelas relacionais e views analíticas.
 
 ---
 
-## 2. Separação das 3 Aplicações Principais Full-Stack (Produção Cloud Run)
+## 2. Separação das 3 Aplicações Principais Full-Stack (Produção Cloud Run + Material UI)
 
 | Aplicação Full-Stack | Diretório no Monorepo | Serviço Cloud Run (`novatlantis`) | Papel Institucional & Funcionalidades |
 | :--- | :--- | :--- | :--- |
-| **1. Portal Principal da Nação + Chat do Agente Orquestrador** | [`apps/landing-portal`](./apps/landing-portal) | [`https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app) | **Página Principal da Nação**: Apresenta o balanço nacional em tempo real, a matriz de eventos da vida e a **Barra de Busca Central controlada pelo Agente Orquestrador de Estado**, que abre um **Chat Interativo** para o cidadão dialogar com os serviços públicos e executar transações reais no banco de 100.000 cidadãos. |
-| **2. Portal do Cidadão (Autoatendimento 360°)** | [`apps/citizen-portal`](./apps/citizen-portal) | [`https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva do Cidadão**: Utiliza a base de 100.000 cidadãos como módulo de usuários. Inclui Carteira Soberana NID (Mod-11 + Biometria NIST), Grafo Familiar (`rel_family_graph`), gestão de endereço, Prontuário de Saúde HL7 e Telemedicina com IA, Boletim Escolar por matéria, Zeladoria 311, SOS 911, abertura de empresa em 45s e Passaporte ICAO. |
-| **3. Backstage Governamental & Identidade 360** | [`apps/gov-backstage`](./apps/gov-backstage) | [`https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app`](https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva de Servidores e Gestores Públicos**: Controlada pela aplicação **Identidade 360 (RBAC/ABAC)**. Inclui o Gabinete do Primeiro-Ministro (`jopoco`) e Secretário-Geral, Gestão de Identidades 360 (concessão/revogação imediata de acessos), Gestão de Hospitais e Médicos, Gestão de Escolas, Professores, Provas e Notas, Comando 311/911 e Explorador do Datalake de 100k cidadãos. |
-
-### Microsserviços Setoriais Adicionais em Produção (`us-central1`)
-- **Identidade Soberana NID (`identity-nid`)**: `https://novatlantis-identity-nid-wpahcxvhuq-uc.a.run.app`
-- **Zeladoria Urbana 311 (`services-311`)**: `https://novatlantis-services-311-wpahcxvhuq-uc.a.run.app`
-- **Despacho de Emergência 911 (`emergency-911`)**: `https://novatlantis-emergency-911-wpahcxvhuq-uc.a.run.app`
-- **Prontuário & Telemedicina (`health-telemed`)**: `https://novatlantis-health-telemed-wpahcxvhuq-uc.a.run.app`
-- **Educação & Tutoria IA (`education-learn`)**: `https://novatlantis-education-learn-wpahcxvhuq-uc.a.run.app`
+| **1. Portal Principal da Nação + Chat do Agente Orquestrador** | [`apps/landing-portal`](./apps/landing-portal) | [`https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app) | **Página Principal da Nação (Material UI)**: Cabeçalho institucional ampliado com **Governo da República de Novatlantis • Portal Principal da Nação** e widget de status do usuário com foto (`TopNavUserWidget`), painel ao vivo do **AlloyDB + Government Data Platform**, matriz de eventos da vida e **Barra de Busca Central controlada pelo Agente Orquestrador de Estado**. |
+| **2. Portal do Cidadão (Autoatendimento 360°)** | [`apps/citizen-portal`](./apps/citizen-portal) | [`https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app`](https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva do Cidadão (Material UI)**: Utiliza a base de 100.000 cidadãos no AlloyDB/GDP como módulo de usuários. Inclui Carteira Soberana NID (Mod-11 + Biometria NIST), Grafo Familiar Read-Only (`rel_family_graph`), gestão de endereço, Prontuário de Saúde HL7 e Telemedicina com IA, Boletim Escolar por matéria, Zeladoria 311, SOS 911, abertura de empresa em 45s e Passaporte ICAO. |
+| **3. Backstage Governamental & Identidade 360** | [`apps/gov-backstage`](./apps/gov-backstage) | [`https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app`](https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app) | **Aplicação Exclusiva de Servidores e Gestores Públicos (Material UI)**: Controlada pela aplicação **Identidade 360 (RBAC/ABAC)**. Inclui o Gabinete do Primeiro-Ministro (`jopoco`) e Secretário-Geral, Gestão de Identidades 360, Gestão de Hospitais e Médicos, Gestão de Escolas, Professores, Provas e Notas, Comando 311/911 e Explorador AlloyDB & GDP de 100k cidadãos. |
 
 ---
 
-## 3. Agente Orquestrador de Estado via Chat (Portal Principal da Nação)
+## 3. Banco de Dados AlloyDB for PostgreSQL & Government Data Platform (GDP)
 
-No **Portal Principal da Nação (`apps/landing-portal`)**, a barra de busca central é operada pelo **Agente Orquestrador de Estado (`POST /api/orchestrator/chat`)**:
-1. Ao digitar uma demanda ou clicar em qualquer sugestão na página principal, abre-se o **Console de Chat do Agente Orquestrador**.
-2. O Agente identifica automaticamente o cidadão autenticado na base de **100.000 cidadãos (`dim_citizens`)**, classifica a intenção (`CITIZEN_360_SUMMARY`, `PASSPORT_ICAO`, `GOVBIZ_45S`, `HEALTH_TELEMED`, `EDUCATION_GRADES`, `URBAN_311`, `EMERGENCY_911`, `IAM_BACKSTAGE`), executa a transação real no banco SQLite e exibe:
-   - **Resposta Institucional Contextualizada** com os dados reais do cidadão;
-   - **Trace de Orquestração Multi-Agente** detalhando a latência e os agentes acionados (`Orchestrator-Core`, `GDF-Query-Engine`, `Health-Telemed-Agent`, `GovBiz-45s-Agent`, etc.);
-   - **Card de Transação Oficial** com botão de 1 clique para abrir o registro diretamente no **Portal do Cidadão** ou no **Backstage Governamental**.
+### 3.1 AlloyDB for PostgreSQL (`novatlantis-sovereign-cluster`)
+- **Cluster URI:** `projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster`
+- **Primary Instance URI:** `projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster/instances/novatlantis-primary-01`
+- **Private Services Access IP (VPC `novatlantis-vpc`):** `10.223.28.2:5432`
+- **Schema DDL:** [`data-generator/sql/01_novatlantis_alloydb_schema.sql`](./data-generator/sql/01_novatlantis_alloydb_schema.sql)
+- **Endpoint de Telemetria ao Vivo:** `GET /api/v1/alloydb/status` e `GET /api/v1/gdp/status`
 
----
-
-## 4. Base de Dados Soberana e Datalake (100.000 Cidadãos como Módulo de Usuários)
-
-O script [`data-generator/generate_novatlantis_lakehouse.py`](./data-generator/generate_novatlantis_lakehouse.py) gera o banco relacional embarcado `gdf_sovereign.db` e os arquivos analíticos no Cloud Storage (`gs://novatlantis-gdf-lakehouse/bronze/`):
-
-- **`dim_citizens` (100.000 registros)**: Identidade NID Mod-11, nome, e-mail, idade (0 a 100 anos), idioma nativo (`pt-BR` 45%, `es-419` 45%, `en-US` 10%), profissão, especialidade, endereço, distrito e papel na **Identidade 360 (`iam_role`)**.
-- **`rel_family_graph` (71.425 registros)**: Grafo familiar bidirecional (`SPOUSE`, `PARENT_OF`, `CHILD_OF`, `SIBLING`) com guarda legal e contato de emergência.
-- **`health_records` (100.000 registros)**: Tipo sanguíneo, alergias, condições crônicas, doador de órgãos e médico de família vinculado.
-- **`edu_enrollments` (20.440 registros)**: Matrículas escolares, professor regente, frequência e notas em **Matemática, Ciências, IA & Robótica e Idiomas**.
-- **`sec_passports` (44.088 registros)**: Passaportes biométricos padrão ICAO Doc 9303 com linhas MRZ verificáveis.
-- **`justice_records` (100.000 registros)**: Certidão judicial e admissibilidade de fronteira.
-
-### Credenciais Oficiais para Testes (SSO & Identidade 360)
-
-| NID | Nome / Cargo | E-mail de Login | Papel Identidade 360 (`iam_role`) | Acesso ao Backstage |
-| :--- | :--- | :--- | :--- | :--- |
-| `NID-000-0000-0001-9` | **Jopoco (Primeiro-Ministro / Root)** | `jopoco@novatlantis.gov.cloud` / `admin@jopoco.altostrat.com` | `PRIME_MINISTER_ROOT` | **TOTAL (Root L10)** |
-| `NID-000-0000-0002-7` | **Dr. Aurelius Valerius (Secretário-Geral)** | `secretario.geral@novatlantis.gov.cloud` | `SECRETARY_GENERAL` | **TOTAL (Executivo L9)** |
-| `NID-000-0000-0003-5` | **Helena Viana (Gestora Identidade 360)** | `gestor.identidade@novatlantis.gov.cloud` | `IDENTITY_MANAGER_360` | **Gestão IAM 360 (L8)** |
-| `NID-000-0000-0004-3` | **Dra. Sofia Mendes (Gestora Saúde & Médica)** | `sofia.mendes@saude.novatlantis.gov.cloud` | `DOCTOR_AND_HEALTH_MANAGER` | **Saúde & Telemedicina (L6)** |
-| `NID-000-0000-0006-0` | **Prof. Lucas Albuquerque (Gestor Educação)** | `lucas.albuquerque@educacao.novatlantis.gov.cloud` | `TEACHER_AND_EDU_MANAGER` | **Educação, Provas & Notas (L6)** |
-| `NID-000-0000-0008-6` | **Comandante Rafael Santos** | `rafael.santos@operacoes.novatlantis.gov.cloud` | `OPERATIONS_311_911_MANAGER` | **Comando 311 & 911 (L6)** |
-| `NID-000-0000-0009-4` | **Magistrada Clara Sterling Davis** | `clara.sterling@justica.novatlantis.gov.cloud` | `JUSTICE_AND_TREASURY_MANAGER` | **Justiça & Tesouro (L7)** |
-| `NID-000-0000-0010-8` | **Pedro Albuquerque Viana (Estudante 11a)** | `pedro.albuquerque@cidadao.novatlantis.gov.cloud` | `CITIZEN_COMMON` | **Negado (Apenas Portal Cidadão)** |
+### 3.2 Government Data Platform (`government-data-platform/`)
+Baseado em [`googlecloudplatform/education-data-platform`](https://github.com/googlecloudplatform/education-data-platform) e provisionado em produção no projeto `novatlantis`:
+- **7 Buckets Cloud Storage (`us-central1`):**
+  - `gs://novatlantis-gdp-drp-cs-0` (Drop-off Zone)
+  - `gs://novatlantis-gdp-load-cs-0` (Load Dataflow Artifacts)
+  - `gs://novatlantis-gdp-trf-cs-0` (Transformation Artifacts)
+  - `gs://novatlantis-gdp-dwh-lnd-cs-0` (Data Warehouse Landing Raw Storage)
+  - `gs://novatlantis-gdp-dwh-cur-cs-0` (Data Warehouse Curated Storage)
+  - `gs://novatlantis-gdp-dwh-conf-cs-0` (Data Warehouse Confidential Storage)
+  - `gs://novatlantis-gdp-dwh-plg-cs-0` (Data Warehouse Playground Storage)
+- **5 Datasets BigQuery Medallion (`us-central1`):**
+  - `novatlantis:novatlantis_gdp_drp_bq_0` (Drop-off Zone)
+  - `novatlantis:novatlantis_gdp_dwh_lnd_bq_0` (Landing Zone — 11 tabelas brutas com 100.000 cidadãos)
+  - `novatlantis:novatlantis_gdp_dwh_cur_bq_0` (Curated Zone — `citizen_360_anonymized`, `v_mdl_users`, `v_mdl_courses`, `v_mdl_grades`, `v_gdp_executive_kpis`)
+  - `novatlantis:novatlantis_gdp_dwh_conf_bq_0` (Confidential Zone — `citizens_pii_biometrics` com templates NIST e passaportes ICAO)
+  - `novatlantis:novatlantis_gdp_dwh_plg_bq_0` (Playground Zone para Vertex AI / Cientistas de Dados)
+- **Pub/Sub Event Bus:** `projects/novatlantis/topics/novatlantis-gdp-drp-ps-0`
+- **7 Service Accounts Dedicadas:** `gdp-drp-cs-0`, `gdp-drp-ps-0`, `gdp-drp-bq-0`, `gdp-load-df-0`, `gdp-trf-df-0`, `gdp-trf-bq-0`, `gdp-orc-cmp-0` (`@novatlantis.iam.gserviceaccount.com`).
 
 ---
 
-## 5. Como Executar e Fazer Deploy no Google Cloud (Argolis)
+## 4. Credenciais Oficiais para Testes (SSO, Primeiro Login Obrigatório & Identidade 360)
 
-```bash
-# 1. Gerar a base completa de 100.000 cidadãos e o Datalake SQLite + NDJSON.gz
-python3 data-generator/generate_novatlantis_lakehouse.py
-
-# 2. Provisionar e implantar todas as aplicações full-stack no Cloud Run (Projeto: novatlantis)
-bash infra/argolis/cloudrun-deploy.sh
-```
+| NID | Nome / Cargo | E-mail de Login | Senha Inicial (Canal Postal) | Papel Identidade 360 (`iam_role`) | Acesso ao Backstage |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `NID-000-0000-0001-9` | **Jopoco (Primeiro-Ministro / Root)** | `jopoco@novatlantis.gov.cloud` | `Novatlantis@0001-9` (ou `ATs32=34`) | `PRIME_MINISTER_ROOT` | **TOTAL (Root L10)** |
+| `NID-000-0000-0002-7` | **Dr. Aurelius Valerius (Secretário-Geral)** | `secretario.geral@novatlantis.gov.cloud` | `Novatlantis@0002-7` | `SECRETARY_GENERAL` | **TOTAL (Executivo L9)** |
+| `NID-000-0000-0003-5` | **Helena Viana (Gestora Identidade 360)** | `gestor.identidade@novatlantis.gov.cloud` | `Novatlantis@0003-5` | `IDENTITY_MANAGER_360` | **Gestão IAM 360 (L8)** |
+| `NID-000-0000-0004-3` | **Dra. Sofia Mendes (Gestora Saúde & Médica)** | `sofia.mendes@saude.novatlantis.gov.cloud` | `Novatlantis@0004-3` | `DOCTOR_AND_HEALTH_MANAGER` | **Saúde & Telemedicina (L6)** |
+| `NID-000-0000-0006-0` | **Prof. Lucas Albuquerque (Gestor Educação)** | `lucas.albuquerque@educacao.novatlantis.gov.cloud` | `Novatlantis@0006-0` | `TEACHER_AND_EDU_MANAGER` | **Educação, Provas & Notas (L6)** |
+| `NID-000-0000-0008-6` | **Comandante Rafael Santos** | `rafael.santos@operacoes.novatlantis.gov.cloud` | `Novatlantis@0008-6` | `OPERATIONS_311_911_MANAGER` | **Comando 311 & 911 (L6)** |
+| `NID-000-0000-0009-4` | **Magistrada Clara Sterling Davis** | `clara.sterling@justica.novatlantis.gov.cloud` | `Novatlantis@0009-4` | `JUSTICE_AND_TREASURY_MANAGER` | **Justiça & Tesouro (L7)** |
+| `NID-000-0000-0010-8` | **Pedro Albuquerque Viana (Estudante 11a)** | `pedro.albuquerque@cidadao.novatlantis.gov.cloud` | `Novatlantis@0010-8` | `CITIZEN_COMMON` | **Negado (Apenas Portal Cidadão)** |

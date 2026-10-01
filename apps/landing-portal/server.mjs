@@ -827,7 +827,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     const pathname = url.pathname;
 
-    if (pathname.startsWith('/api/v1/auth/') || pathname.startsWith('/api/v1/profile/')) {
+    if (pathname.startsWith('/api/v1/')) {
       const handled = await handleCentralAuthAndProfileRoutes(req, res, db, pathname, url, readBody, sendJson);
       if (handled !== false) return;
     }
@@ -842,6 +842,8 @@ const server = http.createServer(async (req, res) => {
         status: 'ok',
         service: 'novatlantis-landing-portal-orchestrator',
         project_id: 'novatlantis',
+        database_engine: 'Google Cloud AlloyDB for PostgreSQL 15 (novatlantis-sovereign-cluster / novatlantis-primary-01)',
+        government_data_platform: 'Google Cloud Government Data Platform (GDP) — Baseado em education-data-platform',
         citizens_total: totalCitizens,
         active_backstage_roles: activeRoles,
         lakehouse_counts: {
@@ -856,8 +858,24 @@ const server = http.createServer(async (req, res) => {
           gov_backstage: GOV_BACKSTAGE_URL
         },
         lakehouse: {
-          gcs_bucket: 'gs://novatlantis-gdf-lakehouse',
-          bigquery_datasets: ['novatlantis:gdf_bronze', 'novatlantis:gdf_silver', 'novatlantis:gdf_gold']
+          alloydb_cluster: 'projects/novatlantis/locations/us-central1/clusters/novatlantis-sovereign-cluster',
+          alloydb_primary_ip: '10.223.28.2',
+          gcs_buckets: [
+            'gs://novatlantis-gdp-drp-cs-0',
+            'gs://novatlantis-gdp-load-cs-0',
+            'gs://novatlantis-gdp-trf-cs-0',
+            'gs://novatlantis-gdp-dwh-lnd-cs-0',
+            'gs://novatlantis-gdp-dwh-cur-cs-0',
+            'gs://novatlantis-gdp-dwh-conf-cs-0',
+            'gs://novatlantis-gdp-dwh-plg-cs-0'
+          ],
+          bigquery_datasets: [
+            'novatlantis:novatlantis_gdp_drp_bq_0',
+            'novatlantis:novatlantis_gdp_dwh_lnd_bq_0',
+            'novatlantis:novatlantis_gdp_dwh_cur_bq_0',
+            'novatlantis:novatlantis_gdp_dwh_conf_bq_0',
+            'novatlantis:novatlantis_gdp_dwh_plg_bq_0'
+          ]
         }
       });
     }

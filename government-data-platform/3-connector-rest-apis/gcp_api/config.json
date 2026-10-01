@@ -1,0 +1,34 @@
+{
+  "project_id": "novatlantis",
+  "bucket": "novatlantis-gdp-drp-cs-0",
+  "api_path": "gov_apis",
+  "api_uri": "https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app/api/gdf/stats",
+  "location": "US",
+  "region": "us-central1",
+  "endpoints": [
+    {
+      "url": "https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app/api/gdf/stats",
+      "type": "json",
+      "blob": "gdf_lakehouse_stats/load",
+      "project_id_bq": "novatlantis",
+      "dataset_name": "novatlantis_gdp_dwh_lnd_bq_0",
+      "retention_data": "7776000"
+    },
+    {
+      "url": "https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app/api/health",
+      "type": "json",
+      "blob": "citizen_portal_telemetry/load",
+      "project_id_bq": "novatlantis",
+      "dataset_name": "novatlantis_gdp_dwh_lnd_bq_0",
+      "retention_data": "7776000"
+    },
+    {
+      "url": "https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app/api/health",
+      "type": "json",
+      "blob": "gov_backstage_telemetry/load",
+      "project_id_bq": "novatlantis",
+      "dataset_name": "novatlantis_gdp_dwh_lnd_bq_0",
+      "retention_data": "7776000"
+    }
+  ]
+}

@@ -281,7 +281,7 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
-  if (pathname.startsWith('/api/v1/auth/') || pathname.startsWith('/api/v1/profile/')) {
+  if (pathname.startsWith('/api/v1/')) {
     const handled = await handleCentralAuthAndProfileRoutes(req, res, db, pathname, parsedUrl, readJsonBody, sendJson);
     if (handled !== false) return;
   }
@@ -293,6 +293,8 @@ const server = http.createServer(async (req, res) => {
       service: 'novatlantis-gov-backstage',
       role: 'Backstage Governamental & Identidade 360 (Full-Stack Standalone Application)',
       project_id: 'novatlantis',
+      database_engine: 'Google Cloud AlloyDB for PostgreSQL 15 (novatlantis-sovereign-cluster / novatlantis-primary-01)',
+      government_data_platform: 'Google Cloud Government Data Platform (GDP) — Baseado em education-data-platform',
       users_module_total_citizens: totalCitizens,
       timestamp: new Date().toISOString()
     });

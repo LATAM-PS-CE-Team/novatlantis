@@ -21,7 +21,23 @@ import {
   HeartPulse,
   MapPin
 } from 'lucide-react';
+import {
+  ThemeProvider,
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  Container,
+  Box,
+  Paper,
+  Typography,
+  Chip,
+  Tabs,
+  Tab,
+  Alert,
+  Button
+} from '@mui/material';
 import { TopNavUserWidget } from './components/TopNavUserWidget';
+import { novatlantisTheme } from './theme';
 
 type Language = 'pt-BR' | 'es-419' | 'en-US';
 type CitizenTab = 'identity' | 'family_address' | 'health' | 'education' | 'urban' | 'treasury';
@@ -228,127 +244,148 @@ export default function App() {
   const citizen = dossier?.citizen;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] text-[#191c1e] flex flex-col">
-      {/* TOP BAR SOBERANA */}
-      <div className="bg-[#001530] text-white text-xs border-b border-[#002046]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <img src="/assets/flag.jpg" alt="Bandeira de Novatlantis" className="h-4 w-6 object-cover border border-white/30" />
-            <span className="font-mono uppercase tracking-wider font-semibold text-[#b4c5ff]">
-              REPÚBLICA DIGITAL DE NOVATLANTIS • PORTAL DO CIDADÃO (APLICAÇÃO FULL-STACK INDEPENDENTE)
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <a
-              href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(citizen?.nid || 'NID-000-0000-0001-9')}`}
-              className="text-[#b4c5ff] hover:underline flex items-center gap-1"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Portal Principal da Nação
-            </a>
-            <div className="flex items-center gap-1 bg-[#002046] px-2 py-0.5 rounded border border-white/15">
-              <Globe className="w-3.5 h-3.5 text-[#b4c5ff]" />
-              {(['pt-BR', 'es-419', 'en-US'] as Language[]).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
-                    lang === l ? 'bg-[#b4c5ff] text-[#002046] font-bold' : 'text-slate-300'
-                  }`}
-                >
-                  {l.split('-')[0].toUpperCase()}
-                </button>
-              ))}
+    <ThemeProvider theme={novatlantisTheme}>
+      <CssBaseline />
+      <div className="min-h-screen bg-[#f8f9fb] text-[#191c1e] flex flex-col">
+        {/* TOP BAR SOBERANA */}
+        <div className="bg-[#001530] text-white text-xs border-b border-[#002046]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <img src="/assets/flag.jpg" alt="Bandeira de Novatlantis" className="h-4 w-6 object-cover border border-white/30" />
+              <span className="font-mono uppercase tracking-wider font-semibold text-[#b4c5ff]">
+                REPÚBLICA DIGITAL DE NOVATLANTIS • PORTAL DO CIDADÃO • ALLOYDB + GOVERNMENT DATA PLATFORM
+              </span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CABEÇALHO DO PORTAL DO CIDADÃO */}
-      <header className="bg-white border-b-2 border-[#002046] sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img src="/assets/coat_of_arms.jpg" alt="Brasão Oficial" className="h-11 w-11 object-contain rounded border border-slate-200 p-0.5" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-serif-authority text-xl font-bold text-[#002046]">
-                  Portal do Cidadão • Novatlantis 360°
-                </h1>
-                <span className="font-mono text-[11px] uppercase px-2 py-0.5 rounded bg-[#dae2ff] text-[#001848] font-bold">
-                  Módulo de Usuários GDF (100.000 Cidadãos)
-                </span>
-              </div>
-              <p className="text-xs text-[#43474f]">
-                Autoatendimento Soberano • Carteira NID, Família, Saúde HL7, Educação, Zeladoria 311/911 e Tesouro
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <a
-              href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(citizen?.nid || 'NID-000-0000-0001-9')}`}
-              className="px-3 py-2 rounded text-xs font-semibold bg-[#f2f4f6] text-[#002046] border border-slate-300 hover:bg-[#dae2ff] transition flex items-center gap-1.5"
-            >
-              <Home className="w-3.5 h-3.5" /> Portal da Nação
-            </a>
-            <a
-              href={`${GOV_BACKSTAGE_URL}?nid=${encodeURIComponent(citizen?.nid || 'NID-000-0000-0001-9')}`}
-              className="px-3.5 py-2 rounded text-xs font-semibold bg-[#002046] text-white hover:bg-[#00356e] transition flex items-center gap-1.5"
-            >
-              <Lock className="w-3.5 h-3.5 text-[#b4c5ff]" /> Backstage Governamental
-              <ExternalLink className="w-3 h-3" />
-            </a>
-
-            <div className="pl-2 border-l border-slate-200">
-              <TopNavUserWidget
-                currentNid={citizen?.nid}
-                onUserAuthenticated={(nid) => loadCitizen(nid)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* BARRA DE ABAS DO PORTAL DO CIDADÃO */}
-        <div className="bg-white border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap gap-1 py-1.5">
-            {[
-              { id: 'identity', label: '1. Carteira Soberana NID & Biometria NIST', icon: Shield },
-              { id: 'family_address', label: '2. Grafo Familiar & Endereço Soberano', icon: Users },
-              { id: 'health', label: '3. Saúde HL7 & Telemedicina', icon: Stethoscope },
-              { id: 'education', label: '4. Educação & Notas Escolares', icon: GraduationCap },
-              { id: 'urban', label: '5. Zeladoria 311 & Emergência 911', icon: Wrench },
-              { id: 'treasury', label: '6. Economia, Empresa 45s & Passaporte ICAO', icon: Landmark }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as CitizenTab)}
-                className={`px-3 py-2 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
-                  activeTab === tab.id
-                    ? 'bg-[#002046] text-white'
-                    : 'text-[#43474f] hover:bg-[#f2f4f6] hover:text-[#002046]'
-                }`}
+            <div className="flex items-center gap-3">
+              <a
+                href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(citizen?.nid || 'NID-000-0000-0001-9')}`}
+                className="text-[#b4c5ff] hover:underline flex items-center gap-1"
               >
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            ))}
+                <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Portal Principal da Nação
+              </a>
+              <div className="flex items-center gap-1 bg-[#002046] px-2 py-0.5 rounded border border-white/15">
+                <Globe className="w-3.5 h-3.5 text-[#b4c5ff]" />
+                {(['pt-BR', 'es-419', 'en-US'] as Language[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
+                      lang === l ? 'bg-[#b4c5ff] text-[#002046] font-bold' : 'text-slate-300'
+                    }`}
+                  >
+                    {l.split('-')[0].toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      </header>
 
-      {/* BANNER DE FEEDBACK */}
-      {statusBanner && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 w-full">
-          <div className="bg-emerald-50 border-l-4 border-emerald-700 text-emerald-950 px-4 py-3 rounded text-xs flex items-center justify-between">
-            <span className="font-medium flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+        {/* CABEÇALHO MATERIAL UI DO PORTAL DO CIDADÃO COM FONTE AMPLIADA E APENAS STATUS DO USUÁRIO */}
+        <AppBar position="sticky" color="inherit" elevation={0} sx={{ bgcolor: '#ffffff', borderBottom: '3px solid #002046', zIndex: 30 }}>
+          <Container maxWidth="xl">
+            <Toolbar
+              disableGutters
+              sx={{
+                py: { xs: 2, md: 2.5 },
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 3
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+                <Paper variant="outlined" sx={{ p: 0.75, borderRadius: 2, borderColor: '#cbd5e1', bgcolor: '#fff' }}>
+                  <Box
+                    component="img"
+                    src="/assets/coat_of_arms.jpg"
+                    alt="Brasão Oficial"
+                    sx={{ height: { xs: 50, md: 64 }, width: { xs: 50, md: 64 }, objectFit: 'contain' }}
+                  />
+                </Paper>
+                <Box>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
+                    <Typography
+                      variant="h1"
+                      sx={{
+                        fontSize: { xs: '1.6rem', sm: '2.05rem', md: '2.4rem' },
+                        fontWeight: 800,
+                        color: '#002046',
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1.15
+                      }}
+                    >
+                      Governo da República de Novatlantis
+                    </Typography>
+                    <Chip
+                      label="Portal do Cidadão • 360°"
+                      sx={{
+                        bgcolor: '#dae2ff',
+                        color: '#001848',
+                        fontFamily: 'monospace',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        fontSize: { xs: '0.8rem', md: '0.92rem' },
+                        height: { xs: 30, md: 34 },
+                        px: 1
+                      }}
+                    />
+                  </Box>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontSize: { xs: '0.95rem', sm: '1.12rem', md: '1.22rem' },
+                      fontWeight: 500,
+                      color: '#43474f',
+                      mt: 0.5
+                    }}
+                  >
+                    Chancelaria Digital • Autoatendimento Soberano • Módulo de Usuários AlloyDB & GDP (100.000 Cidadãos)
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* APENAS O STATUS DO USUÁRIO COM A FOTO */}
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <TopNavUserWidget
+                  currentNid={citizen?.nid}
+                  onUserAuthenticated={(nid) => loadCitizen(nid)}
+                />
+              </Box>
+            </Toolbar>
+          </Container>
+
+          {/* BARRA DE ABAS MATERIAL UI DO PORTAL DO CIDADÃO */}
+          <Box sx={{ bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+            <Container maxWidth="xl">
+              <Tabs
+                value={activeTab}
+                onChange={(_, val) => setActiveTab(val as CitizenTab)}
+                variant="scrollable"
+                scrollButtons="auto"
+                textColor="primary"
+                indicatorColor="primary"
+              >
+                <Tab value="identity" label="1. Carteira Soberana NID & Biometria NIST" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
+                <Tab value="family_address" label="2. Grafo Familiar & Endereço Soberano" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
+                <Tab value="health" label="3. Saúde HL7 & Telemedicina" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
+                <Tab value="education" label="4. Educação & Notas Escolares (GDP)" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
+                <Tab value="urban" label="5. Zeladoria 311 & Emergência 911" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
+                <Tab value="treasury" label="6. Economia, Empresa 45s & Passaporte ICAO" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
+              </Tabs>
+            </Container>
+          </Box>
+        </AppBar>
+
+        {/* BANNER DE FEEDBACK */}
+        {statusBanner && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 w-full">
+            <Alert severity="success" onClose={() => setStatusBanner(null)}>
               {statusBanner}
-            </span>
-            <button onClick={() => setStatusBanner(null)} className="text-xs font-mono underline">
-              Fechar
-            </button>
+            </Alert>
           </div>
-        </div>
-      )}
+        )}
 
       {/* CONTEÚDO PRINCIPAL DO PORTAL DO CIDADÃO */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
@@ -887,5 +924,6 @@ export default function App() {
         )}
       </main>
     </div>
+    </ThemeProvider>
   );
 }

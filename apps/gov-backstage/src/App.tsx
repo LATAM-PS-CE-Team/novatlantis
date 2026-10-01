@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
+  ThemeProvider,
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  Container,
+  Box,
+  Typography,
+  Chip,
+  Stack,
+  Tabs,
+  Tab,
+  Alert
+} from '@mui/material';
+import {
   Shield,
   Globe,
   CheckCircle2,
@@ -20,6 +34,7 @@ import {
   Home,
   UserCheck
 } from 'lucide-react';
+import { novatlantisTheme } from './theme';
 import { TopNavUserWidget } from './components/TopNavUserWidget';
 
 type Language = 'pt-BR' | 'es-419' | 'en-US';
@@ -248,138 +263,183 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] text-[#191c1e] flex flex-col">
-      {/* TOP BAR SOBERANA */}
-      <div className="bg-[#001530] text-white text-xs border-b border-[#002046]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <img src="/assets/flag.jpg" alt="Bandeira" className="h-4 w-6 object-cover border border-white/30" />
-            <span className="font-mono uppercase tracking-wider font-semibold text-[#b4c5ff]">
-              REPÚBLICA DIGITAL DE NOVATLANTIS • BACKSTAGE GOVERNAMENTAL & IDENTIDADE 360
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <a
-              href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
-              className="text-[#b4c5ff] hover:underline flex items-center gap-1"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Portal Principal da Nação
-            </a>
-            <a
-              href={`${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
-              className="text-[#b4c5ff] hover:underline flex items-center gap-1"
-            >
-              <UserCheck className="w-3.5 h-3.5" /> Portal do Cidadão
-            </a>
-            <div className="flex items-center gap-1 bg-[#002046] px-2 py-0.5 rounded border border-white/15">
-              <Globe className="w-3.5 h-3.5 text-[#b4c5ff]" />
-              {(['pt-BR', 'es-419', 'en-US'] as Language[]).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
-                    lang === l ? 'bg-[#b4c5ff] text-[#002046] font-bold' : 'text-slate-300'
-                  }`}
-                >
-                  {l.split('-')[0].toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CABEÇALHO DO BACKSTAGE GOVERNAMENTAL */}
-      <header className="bg-white border-b-2 border-[#002046] sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img src="/assets/coat_of_arms.jpg" alt="Brasão" className="h-11 w-11 object-contain rounded border border-slate-200 p-0.5" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-serif-authority text-xl font-bold text-[#002046]">
-                  Backstage Governamental & Identidade 360
-                </h1>
-                <span className="font-mono text-[11px] uppercase px-2 py-0.5 rounded bg-[#002046] text-[#b4c5ff] font-bold">
-                  Servidores & Gestores Públicos
-                </span>
+    <ThemeProvider theme={novatlantisTheme}>
+      <CssBaseline />
+      <div className="min-h-screen bg-[#f8f9fb] text-[#191c1e] flex flex-col">
+        {/* TOP BAR SOBERANA */}
+        <Box sx={{ bgcolor: '#001530', color: 'white', borderBottom: '1px solid #002046', py: 0.75 }}>
+          <Container maxWidth="xl" sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <img src="/assets/flag.jpg" alt="Bandeira" className="h-4 w-6 object-cover border border-white/30" />
+              <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.73rem', fontWeight: 700, letterSpacing: '0.06em', color: '#b4c5ff' }}>
+                REPÚBLICA DIGITAL DE NOVATLANTIS • BACKSTAGE GOVERNAMENTAL • ALLOYDB & GOVERNMENT DATA PLATFORM
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <a
+                href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
+                className="text-[#b4c5ff] hover:underline flex items-center gap-1 text-xs font-mono"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Portal Principal da Nação
+              </a>
+              <a
+                href={`${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
+                className="text-[#b4c5ff] hover:underline flex items-center gap-1 text-xs font-mono"
+              >
+                <UserCheck className="w-3.5 h-3.5" /> Portal do Cidadão
+              </a>
+              <div className="flex items-center gap-1 bg-[#002046] px-2 py-0.5 rounded border border-white/15">
+                <Globe className="w-3.5 h-3.5 text-[#b4c5ff]" />
+                {(['pt-BR', 'es-419', 'en-US'] as Language[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
+                      lang === l ? 'bg-[#b4c5ff] text-[#002046] font-bold' : 'text-slate-300'
+                    }`}
+                  >
+                    {l.split('-')[0].toUpperCase()}
+                  </button>
+                ))}
               </div>
-              <p className="text-xs text-[#43474f]">
-                Chancelaria do Primeiro-Ministro (`jopoco`) • Secretaria-Geral • IAM 360 • Saúde • Educação • Comando 311/911
-              </p>
-            </div>
-          </div>
+            </Stack>
+          </Container>
+        </Box>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <a
-              href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
-              className="px-3 py-2 rounded text-xs font-semibold bg-[#f2f4f6] text-[#002046] border border-slate-300 hover:bg-[#dae2ff] transition flex items-center gap-1.5"
-            >
-              <Home className="w-3.5 h-3.5" /> Portal da Nação
-            </a>
-            <a
-              href={`${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
-              className="px-3.5 py-2 rounded text-xs font-semibold bg-[#00356e] text-white hover:bg-[#002046] transition flex items-center gap-1.5"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-[#b4c5ff]" /> Visão Cidadão (Portal do Cidadão)
-              <ExternalLink className="w-3 h-3" />
-            </a>
+        {/* CABEÇALHO DO BACKSTAGE GOVERNAMENTAL (MATERIAL UI - TEXTO AMPLIADO, APENAS WIDGET DO USUÁRIO À DIREITA) */}
+        <AppBar
+          position="sticky"
+          elevation={0}
+          sx={{
+            bgcolor: '#ffffff',
+            color: '#002046',
+            borderBottom: '3px solid #002046',
+            zIndex: 30
+          }}
+        >
+          <Container maxWidth="xl">
+            <Toolbar disableGutters sx={{ py: 1.75, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+              <Stack direction="row" spacing={2.25} alignItems="center">
+                <Box
+                  component="img"
+                  src="/assets/coat_of_arms.jpg"
+                  alt="Brasão"
+                  sx={{
+                    height: { xs: 52, md: 64 },
+                    width: { xs: 52, md: 64 },
+                    objectFit: 'contain',
+                    borderRadius: 1.5,
+                    border: '1px solid #cbd5e1',
+                    p: 0.5,
+                    bgcolor: '#fff'
+                  }}
+                />
+                <Box>
+                  <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                    <Typography
+                      variant="h1"
+                      sx={{
+                        fontFamily: '"Libre Baskerville", Georgia, serif',
+                        fontSize: { xs: '1.35rem', sm: '1.65rem', md: '2.05rem' },
+                        fontWeight: 700,
+                        color: '#002046',
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1.15
+                      }}
+                    >
+                      Governo da República de Novatlantis
+                    </Typography>
+                    <Chip
+                      label="Backstage Governamental & Identidade 360"
+                      sx={{
+                        bgcolor: '#002046',
+                        color: '#b4c5ff',
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontWeight: 700,
+                        fontSize: { xs: '0.75rem', md: '0.85rem' },
+                        height: 30,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em'
+                      }}
+                    />
+                  </Stack>
+                  <Typography
+                    sx={{
+                      mt: 0.5,
+                      fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                      fontWeight: 600,
+                      color: '#334155',
+                      letterSpacing: '-0.005em'
+                    }}
+                  >
+                    Chancelaria Digital • Agente Orquestrador de Estado • Módulo de Usuários GDF (100.000 Cidadãos • AlloyDB & GDP)
+                  </Typography>
+                </Box>
+              </Stack>
 
-            <div className="pl-2 border-l border-slate-200">
-              <TopNavUserWidget
-                currentNid={currentUser?.nid}
-                onUserAuthenticated={(nid) => loadUserSession(nid)}
-              />
-            </div>
-          </div>
-        </div>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <TopNavUserWidget
+                  currentNid={currentUser?.nid}
+                  onUserAuthenticated={(nid) => loadUserSession(nid)}
+                />
+              </Box>
+            </Toolbar>
+          </Container>
 
-        {/* BARRA DE AMBIENTES ADMINISTRATIVOS DO BACKSTAGE */}
-        {currentUser?.backstage_allowed && (
-          <div className="bg-white border-t border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap gap-1 py-1.5">
-              {[
-                { id: 'pm_cabinet', label: '1. Gabinete Primeiro-Ministro & Secretário-Geral', icon: Award },
-                { id: 'iam360', label: '2. Identidade 360 (Gestão RBAC/ABAC)', icon: Lock },
-                { id: 'health_mgmt', label: '3. Gestão da Saúde (Hospitais & Médicos)', icon: Stethoscope },
-                { id: 'edu_mgmt', label: '4. Gestão da Educação (Escolas, Provas & Notas)', icon: GraduationCap },
-                { id: 'ops_311_911', label: '5. Comando 311 & 911 (Demandas do Cidadão)', icon: Siren },
-                { id: 'justice_datalake', label: '6. Justiça, Tesouro & Datalake 100k', icon: Database }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setBackstageTab(tab.id as BackstageTab)}
-                  className={`px-3 py-2 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
-                    backstageTab === tab.id
-                      ? 'bg-[#002046] text-white'
-                      : 'text-[#43474f] hover:bg-[#f2f4f6] hover:text-[#002046]'
-                  }`}
+          {/* BARRA DE AMBIENTES ADMINISTRATIVOS DO BACKSTAGE (MUI TABS) */}
+          {currentUser?.backstage_allowed && (
+            <Box sx={{ bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+              <Container maxWidth="xl">
+                <Tabs
+                  value={backstageTab}
+                  onChange={(_, v) => setBackstageTab(v as BackstageTab)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  sx={{
+                    minHeight: 44,
+                    '& .MuiTab-root': {
+                      minHeight: 44,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.78rem',
+                      color: '#43474f'
+                    },
+                    '& .Mui-selected': {
+                      color: '#002046 !important'
+                    },
+                    '& .MuiTabs-indicator': {
+                      backgroundColor: '#002046',
+                      height: 3
+                    }
+                  }}
                 >
-                  <tab.icon className="w-3.5 h-3.5" />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </header>
+                  <Tab value="pm_cabinet" icon={<Award className="w-4 h-4" />} iconPosition="start" label="1. Gabinete Primeiro-Ministro & Secretário-Geral" />
+                  <Tab value="iam360" icon={<Lock className="w-4 h-4" />} iconPosition="start" label="2. Identidade 360 (Gestão RBAC/ABAC)" />
+                  <Tab value="health_mgmt" icon={<Stethoscope className="w-4 h-4" />} iconPosition="start" label="3. Gestão da Saúde (Hospitais & Médicos)" />
+                  <Tab value="edu_mgmt" icon={<GraduationCap className="w-4 h-4" />} iconPosition="start" label="4. Gestão da Educação (Escolas, Provas & Notas)" />
+                  <Tab value="ops_311_911" icon={<Siren className="w-4 h-4" />} iconPosition="start" label="5. Comando 311 & 911 (Demandas do Cidadão)" />
+                  <Tab value="justice_datalake" icon={<Database className="w-4 h-4" />} iconPosition="start" label="6. Justiça, Tesouro, AlloyDB & GDP 100k" />
+                </Tabs>
+              </Container>
+            </Box>
+          )}
+        </AppBar>
 
-      {/* BANNER DE STATUS OPERACIONAL */}
-      {statusMessage && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 w-full">
-          <div className="bg-[#dae2ff] border-l-4 border-[#002046] text-[#001848] px-4 py-3 rounded text-xs flex items-center justify-between">
-            <span className="font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#002046]" />
+        {/* BANNER DE STATUS OPERACIONAL */}
+        {statusMessage && (
+          <Container maxWidth="xl" sx={{ pt: 2 }}>
+            <Alert
+              severity="info"
+              onClose={() => setStatusMessage(null)}
+              sx={{ bgcolor: '#dae2ff', color: '#001848', borderLeft: '4px solid #002046', fontWeight: 600 }}
+            >
               {statusMessage}
-            </span>
-            <button onClick={() => setStatusMessage(null)} className="text-xs font-mono underline">
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
+            </Alert>
+          </Container>
+        )}
 
-      {/* CONTEÚDO PRINCIPAL DO BACKSTAGE */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+        {/* CONTEÚDO PRINCIPAL DO BACKSTAGE */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
         {/* BLOQUEIO RBAC/ABAC QUANDO O USUÁRIO É CIDADÃO COMUM OU TEVE PERMISSÃO REVOGADA */}
         {currentUser && !currentUser.backstage_allowed ? (
           <div className="bg-white border-2 border-red-800 rounded p-8 max-w-3xl mx-auto my-8 space-y-5 shadow-sm">
@@ -830,10 +890,10 @@ export default function App() {
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                       <div>
                         <h3 className="font-serif-authority text-lg font-bold text-[#002046]">
-                          Explorador SQLite do Government Data Fabric (100.000 Cidadãos)
+                          Explorador AlloyDB & Government Data Platform (100.000 Cidadãos)
                         </h3>
                         <p className="text-xs text-[#43474f]">
-                          Consulte qualquer registro entre os 100.000 cidadãos para auditoria civil, fiscal ou concessão de acesso.
+                          Cluster AlloyDB: <code className="font-mono font-bold">novatlantis-sovereign-cluster (10.223.28.2:5432)</code> • BigQuery GDP: <code className="font-mono font-bold">novatlantis_gdp_dwh_cur_bq_0</code>
                         </p>
                       </div>
                       <form onSubmit={handleSearchDatalake} className="flex gap-2 text-xs">
@@ -848,7 +908,7 @@ export default function App() {
                           type="submit"
                           className="bg-[#002046] text-white px-4 py-1.5 rounded font-bold hover:bg-[#00356e]"
                         >
-                          Consultar Datalake 100k
+                          Consultar AlloyDB / GDP 100k
                         </button>
                       </form>
                     </div>
@@ -899,7 +959,8 @@ export default function App() {
             </>
           )
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </ThemeProvider>
   );
 }
