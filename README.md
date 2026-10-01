@@ -1,51 +1,45 @@
-# República Digital de Novatlantis (`novatlantis`)
+# República Digital de Novatlantis — Ecossistema Soberano AI-First
 
-> **Lema Oficial:** `NOVATLANTIS • LIBERTAS IN DIGITALI`  
-> **Projeto Google Cloud (Argolis):** `novatlantis`  
-> **Repositório Oficial:** `https://github.com/billebr/novatlantis.git`
-
-<p align="center">
-  <img src="apps/landing-portal/public/assets/flag-novatlantis.jpg" alt="Bandeira Oficial de Novatlantis" width="45%" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="apps/landing-portal/public/assets/coat-of-arms-novatlantis.jpg" alt="Brasão de Armas de Novatlantis" width="40%" />
-</p>
-
-Ecossistema governamental soberano da **Primeira Nação AI-First da Era Agêntica**, construído sobre o **Google Cloud (Argolis Ready)** no projeto `novatlantis`. Integra Identidade Digital Nacional (**NID**) com biometria padrão **ANSI/NIST-ITL 1-2011** (`ISO/IEC 19794-5` e `ISO/IEC 19794-2`), chaves públicas assimétricas **Ed25519**, resolução síncrona de idiomas em **3 camadas** (`pt-BR`, `es-419`, `en-US`) e **Serviços Públicos Agênticos** (311, 911, Saúde e Educação).
+**Lema Constitucional:** `NOVATLANTIS • LIBERTAS IN DIGITALI`  
+**Design System:** `Sovereign Civic` (Austeridade Institucional, Clareza Tipográfica e Eficiência Agêntica)  
+**Google Cloud Project ID (Argolis):** `novatlantis` (`1054221034062`)  
+**Documentação Funcional e Técnica Completa:** [`docs/DOCUMENTACAO_COMPLETA_NOVATLANTIS.md`](docs/DOCUMENTACAO_COMPLETA_NOVATLANTIS.md)
 
 ---
 
-## Identidade Visual e Símbolos Nacionais
+## 1. Serviços em Produção (Google Cloud Run — `novatlantis`)
 
-1. **Bandeira Oficial (`flag-novatlantis.jpg`)**:
-   - Campo Azul-Cobalto Soberano (`#082F72`) com Triângulo Azul-Oceânico (`#009EE0`) à tralha.
-   - Coroa de Louros Prateada envolvendo a **Constelação Neural Dourada de 9 Nós** (8 Agentes Ministeriais de IA interconectados em malha completa ao Cidadão Soberano no centro).
-2. **Brasão de Armas (`coat-of-arms-novatlantis.jpg`)**:
-   - Divisa: **`NOVATLANTIS • LIBERTAS IN DIGITALI`**.
-   - Timbre: Águia Dourada e Azul sob o Sol da IA, empunhando a **Chave Criptográfica Ed25519** e a **Onda Oceânica**.
-   - Escudo partido: à destra (`#082F72`), o Caduceu Prateado e a Balança da Justiça Algorítmica; à sinistra (`#046A38`), a Árvore Cibernética da Vida ascendendo às Nuvens Soberanas.
+| Serviço / Ambiente | URL de Produção | Descrição |
+| :--- | :--- | :--- |
+| **Portal Master, Espaço do Cidadão & Backstage Governamental (GDF 100k)** | https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app | Portal Institucional Austero (*Sovereign Civic*), Login Único NID/E-mail, Espaço do Cidadão e Ambiente de Backstage com 7 Ministérios e banco operacional SQLite de 100.000 cidadãos embarcado. |
+| **Autoridade de Identidade 360 (NID & Biometria NIST)** | https://novatlantis-identity-nid-wpahcxvhuq-uc.a.run.app | Verificação biométrica ISO/IEC 19794-5 & 19794-2, chaves `Ed25519` e resolução de escopos RBAC/ABAC. |
+| **Zeladoria Urbana 311 & Backstage Público** | https://novatlantis-services-311-wpahcxvhuq-uc.a.run.app | Triagem de chamados urbanos georreferenciados nos 50.000 imóveis (`dim_addresses`). |
+| **Comando Nacional de Emergência 911** | https://novatlantis-emergency-911-wpahcxvhuq-uc.a.run.app | Despacho de emergência com cruzamento automático de prontuário HL7 e alerta familiar (`rel_family_graph`). |
+| **Ministério da Saúde, Hospitais & Telemedicina** | https://novatlantis-health-telemed-wpahcxvhuq-uc.a.run.app | Prontuário Único HL7 FHIR (100k cidadãos), gestão dos 5 hospitais nacionais e prescrição digital assinada. |
+| **Ministério da Educação, Escolas & Diário Docente** | https://novatlantis-education-learn-wpahcxvhuq-uc.a.run.app | Gestão das 6 escolas/universidades, 17.993 matrículas ativas, notas por matéria e prevenção de evasão escolar. |
 
 ---
 
-## Estrutura do Monorepo
+## 2. Government Data Framework (GDF) & Data Lakehouse (100.000 Cidadãos)
 
-```text
-novatlantis/
-├── apps/
-│   ├── landing-portal/        # Portal Master AI-First, NID Hub Holográfico, Validador ICAO/NIST e Launchpad SSO
-│   ├── identity-nid/          # Microsserviço de Identidade Soberana, Biometria NIST e OIDC/JWT
-│   ├── services-311/          # Zeladoria Urbana e Triagem de Chamados por Agente LLM (Gemini)
-│   ├── emergency-911/         # Triagem Rápida 1-Clique de Alto Contraste e Despacho Tático com IA
-│   ├── health-telemed/        # Prontuário Soberano, Transcrição Ao Vivo, SOAP IA e Receita Ed25519
-│   └── education-learn/       # Ambiente Estudantil e Tutoria Adaptativa por Idade Cronológica
-├── packages/
-│   ├── shared-ui/             # Design System Heráldico & AI-First de Novatlantis (Tailwind CSS & Tokens)
-│   └── auth-client/           # SDK Centralizado OIDC/JWT, Validação NIST/Módulo 11 e i18n em 3 Camadas
-├── data-generator/
-│   ├── generate_citizens.py   # Gerador de 100.000 Cidadãos Sintéticos (NDJSON/Parquet + Firestore/Spanner)
-│   ├── requirements.txt       # Dependências Python (numpy, Faker, pyarrow, google-cloud-*)
-│   └── output/                # Massa de dados gerada (citizens_100k.ndjson.gz e citizens_sample_1k.ndjson)
-└── infra/
-    └── argolis/
-        ├── cloudrun-deploy.sh # Script automatizado de build e deploy no Google Cloud Argolis (projeto: novatlantis)
-        └── main.tf            # Manifesto Terraform (Cloud Run, Cloud Armor OWASP WAF, SSL, IAP)
-```
+- **Gerador Determinístico:** [`data-generator/generate_novatlantis_lakehouse.py`](data-generator/generate_novatlantis_lakehouse.py)
+- **Exportações Comprimidas (Camada Bronze):** [`data-generator/lakehouse/*.ndjson.gz`](data-generator/lakehouse/) e bucket `gs://novatlantis-gdf-lakehouse/bronze/`
+- **Datasets BigQuery (`novatlantis`):**
+  - `novatlantis:gdf_bronze`
+  - `novatlantis:gdf_silver` (`dim_citizens`, `sec_biometrics_nist`, `rel_family_graph`, `dim_addresses`, `rel_citizen_residence`, `health_records`, `health_vaccinations`, `edu_enrollments`, `sec_passports`, `justice_records`, `iam_identity_360_roles`)
+  - `novatlantis:gdf_gold` (`vw_border_passport_clearance`, `vw_school_truancy_family_alerts`, `vw_emergency_911_medical_dispatch`)
+
+---
+
+## 3. Credenciais de Acesso (Login Único Cidadão & Backstage Governamental)
+
+No Portal Master (`https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app`), utilize qualquer NID ou E-mail dos 100.000 cidadãos ou selecione um dos perfis executivos abaixo:
+
+1. **Primeiro-Ministro & Root Admin (`jopoco`):** `NID-000-0000-0001-9` (`admin@jopoco.altostrat.com` / `jopoco@novatlantis.gov.cloud`)
+2. **Secretário-Geral de Estado:** `NID-000-0000-0002-7` (`secretario.geral@novatlantis.gov.cloud`)
+3. **Gestora de Identidades do Governo (Identidade 360):** `NID-000-0000-0003-5` (`gestor.identidade@novatlantis.gov.cloud`)
+4. **Médica & Gestora Pública de Saúde:** `NID-000-0000-0004-3` (`dra.sofia.mendes@novatlantis.gov.cloud`)
+5. **Professor & Gestor Público de Educação:** `NID-000-0000-0006-0` (`prof.lucas.silva@novatlantis.gov.cloud`)
+6. **Gestor de Operações 311 & Comando 911:** `NID-000-0000-0008-6` (`comandante.rafael@novatlantis.gov.cloud`)
+7. **Magistrada, Passaportes & Tesouro:** `NID-000-0000-0009-4` (`juiza.clara.sterling@novatlantis.gov.cloud`)
+8. **Estudante / Cidadão Comum (Sem Acesso Backstage):** `NID-000-0000-0010-2` (`pedro.albuquerque@cidadania.novatlantis.gov`)

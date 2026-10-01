@@ -4,6 +4,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 8080;
 const PROJECT_ID = process.env.GCP_PROJECT_ID || 'novatlantis';
+const PORTAL_URL = 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app';
 
 const server = http.createServer((req, res) => {
   if (req.url === '/assets/flag-novatlantis.jpg' || req.url === '/assets/coat-of-arms-novatlantis.jpg') {
@@ -15,16 +16,15 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  if (req.url === '/healthz' || req.url === '/api/v1/911/sos') {
+  if (req.url === '/api/health' || req.url === '/api/v1/911/dispatch') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
       status: 'ONLINE',
       republic: 'República Digital de Novatlantis',
-      motto: 'NOVATLANTIS • LIBERTAS IN DIGITALI',
+      design_system: 'Sovereign Civic (Austere Institutional)',
       gcp_project_id: PROJECT_ID,
       service: 'emergency-911',
-      ai_agent: 'agent-911-tactical-dispatcher',
-      supported_locales: ['pt-BR', 'es-419', 'en-US'],
+      gdf_crossing: 'vw_emergency_911_medical_dispatch (health_records x rel_family_graph)',
       timestamp: new Date().toISOString()
     }, null, 2));
     return;
@@ -36,31 +36,33 @@ const server = http.createServer((req, res) => {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Comando Tático 911 — Triagem de Emergência & Despacho 1-Clique — Novatlantis</title>
+  <title>Comando Nacional de Emergência 911 & Cruzamento GDF HL7 — Novatlantis</title>
   <link rel="icon" type="image/jpeg" href="/assets/coat-of-arms-novatlantis.jpg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Public+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen bg-[#041434] text-white font-sans antialiased">
-  <header class="bg-gradient-to-r from-[#062356] via-[#082F72] to-[#051C48] border-b border-amber-400/40 p-6">
-    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-4">
-        <img src="/assets/coat-of-arms-novatlantis.jpg" alt="Brasão de Novatlantis" class="w-16 h-16 rounded-xl bg-white p-1 border-2 border-amber-400 object-contain" />
+<body class="min-h-screen bg-[#f7f9fc] text-[#191c1e] font-['Inter'] antialiased">
+  <div class="bg-[#ba1a1a] text-white py-1.5 px-6 text-xs flex justify-between items-center">
+    <span class="font-bold uppercase tracking-wider">COMANDO NACIONAL DE EMERGÊNCIA 911 — PRIORIDADE DE VIDA NÍVEL 1</span>
+    <span class="font-mono">CRUZAMENTO GDF GOLD #3 ATIVO • PROJETO GCP: ${PROJECT_ID}</span>
+  </div>
+  <header class="bg-white border-b border-[#c6c6ce] px-6 py-4">
+    <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-4">
+        <img src="/assets/coat-of-arms-novatlantis.jpg" alt="Brasão" class="w-12 h-12 object-contain border border-[#c6c6ce] p-0.5" />
         <div>
-          <span class="text-xs font-mono uppercase tracking-widest text-amber-300 font-bold">NOVATLANTIS • LIBERTAS IN DIGITALI • GCP: ${PROJECT_ID}</span>
-          <h1 class="text-2xl font-bold mt-0.5">Comando Tático 911 — Triagem de Emergência & Despacho 1-Clique</h1>
-          <p class="text-sm text-sky-200">Interface de Alto Contraste, Triagem de Voz/Texto por IA e Despacho de Ambulâncias/Drones</p>
+          <h1 class="text-xl font-bold text-slate-900 font-['Public_Sans']">Despacho de Emergência 911 Integrado ao Prontuário HL7 & Grafo Familiar</h1>
+          <p class="text-xs text-slate-500">Consulta instantânea de Tipo Sanguíneo, Alergias e Notificação Automática de Familiares</p>
         </div>
       </div>
-      <img src="/assets/flag-novatlantis.jpg" alt="Bandeira de Novatlantis" class="w-24 h-16 object-cover rounded-lg border-2 border-amber-400 shadow-md" />
+      <a href="${PORTAL_URL}" class="bg-[#141a32] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider">Abrir Console de Comando 911</a>
     </div>
   </header>
-  <main class="max-w-5xl mx-auto p-6 space-y-6">
-    <div class="bg-[#071F4A] border border-sky-400/30 rounded-2xl p-6 shadow-xl space-y-4">
-      <div class="flex items-center justify-between">
-        <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40">● AGENTE ATIVO: agent-911-tactical-dispatcher</span>
-        <a href="/api/v1/911/sos" class="text-xs font-mono text-amber-300 underline">Ver Endpoint JSON (/api/v1/911/sos)</a>
-      </div>
-      <p class="text-sm text-slate-200">Microsserviço soberano integrado via Single-Click Launchpad OIDC/JWT e protegido por Google Cloud Armor (OWASP Top 10) no projeto <strong>${PROJECT_ID}</strong>.</p>
+  <main class="max-w-6xl mx-auto p-6 space-y-6">
+    <div class="bg-white border-2 border-[#ba1a1a] p-6 space-y-3">
+      <h2 class="text-base font-bold text-[#ba1a1a]">Cruzamento GDF de Emergência Médica (health_records × rel_family_graph)</h2>
+      <p class="text-xs text-slate-700 leading-relaxed">Ao acionar um chamado 911 para qualquer um dos 100.000 cidadãos, a central recupera em milissegundos o <code>blood_type</code>, <code>allergies</code> e <code>chronic_conditions</code> na tabela <code>health_records</code>, reserva leito no hospital de referência (<code>HOSP-NV-01</code> a <code>05</code>) e dispara alerta automático ao familiar cadastrado em <code>rel_family_graph</code>.</p>
+      <a href="/api/v1/911/dispatch" class="inline-block px-4 py-2 bg-[#ba1a1a] text-white text-xs font-mono uppercase font-bold">GET /api/v1/911/dispatch</a>
     </div>
   </main>
 </body>

@@ -1,8 +1,7 @@
 /**
  * @novatlantis/shared-ui
- * Sistema de Identidade Visual Oficial da República Digital de Novatlantis
+ * Design System Oficial: "Sovereign Civic" (Austeridade Institucional & Estado Agêntico)
  * Lema Constitucional: "NOVATLANTIS • LIBERTAS IN DIGITALI"
- * Arquitetura Visual: Nação AI-First da Era Agêntica (Heraldry + Neural Constellation)
  */
 
 export const NOVATLANTIS_HERALDRY = {
@@ -14,45 +13,41 @@ export const NOVATLANTIS_HERALDRY = {
   },
   flagAssetPath: '/assets/flag-novatlantis.jpg',
   coatOfArmsAssetPath: '/assets/coat-of-arms-novatlantis.jpg',
-  symbolism: {
-    neuralConstellation:
-      '9 Nós Neurais Dourados interconectados em malha completa (8 Agentes Ministeriais Autônomos orbitando o Cidadão Soberano no centro), envoltos pela Coroa de Louros Prateada da Democracia Cívica.',
-    sovereignEagle:
-      'Águia Dourada e Azul-Atlântico sob o Sol Nascente da IA, empunhando a Chave Criptográfica Ed25519 (Soberania de Dados) e a Onda Oceânica (Sustentabilidade Azul).',
-    shieldDexter:
-      'Campo Azul-Cobalto com Caduceu Prateado e Balança Dourada (Saúde Digital, Equidade e Justiça Algorítmica).',
-    shieldSinister:
-      'Campo Verde-Esmeralda com a Árvore Cibernética da Vida enraizada na terra e ascendendo às Nuvens Soberanas do Google Cloud.',
-  },
 } as const;
 
-export const NOVATLANTIS_DESIGN_TOKENS = {
+export const SOVEREIGN_CIVIC_DESIGN_SYSTEM = {
+  name: 'Sovereign Civic',
+  aestheticPhilosophy:
+    'Austeridade institucional, clareza tipográfica absoluta, superfícies claras em Titanium Cool Gray (#F7F9FC) e cartões brancos puros (#FFFFFF) com bordas estruturais de 1px (#C6C6CE / #DCE3EC).',
   colors: {
-    // Extraídos diretamente da Bandeira e do Brasão Oficial de Novatlantis
-    royalCobaltFlag: '#082F72',
-    sovereignDeepNavy: '#051533',
-    oceanicCyanHoist: '#009EE0',
-    neuralGoldNode: '#FBBF24',
-    heraldicAmberGold: '#D97706',
-    cyberTreeEmerald: '#046A38',
-    cyberCircuitTeal: '#0D9488',
-    laurelSilver: '#CBD5E1',
-    surfaceLight: '#F8FAFC',
-    emergencyHighContrastRed: '#DC2626',
-    emergencyHighContrastBg: '#09090B',
+    surfacePrimary: '#F7F9FC',
+    surfaceCard: '#FFFFFF',
+    surfaceContainerLow: '#F2F4F7',
+    sovereignNavy: '#141A32',
+    sovereignDeepNavy: '#0A1128',
+    primaryAction: '#000000',
+    administrativeBlue: '#0061A5',
+    consensusTeal: '#00957F',
+    consensusTealBright: '#57FBDB',
+    alertErrorRed: '#BA1A1A',
+    borderHairline: '#C6C6CE',
+    textPrimary: '#191C1E',
+    textSecondary: '#45464D',
   },
   typography: {
-    headingFont: '"Space Grotesk", "Public Sans", "Inter", system-ui, sans-serif',
-    serifMottoFont: '"Cinzel", "Playfair Display", Georgia, serif',
+    headlineFont: '"Public Sans", sans-serif',
     bodyFont: '"Inter", system-ui, sans-serif',
     monoFont: '"JetBrains Mono", monospace',
+    iconFont: '"Material Symbols Outlined"',
   },
   districts: [
     'Distrito Tecnológico',
     'Distrito Oceânico',
     'Colina da Justiça',
     'Porto Solar',
-    'Vale da Inovação',
-    'Bosque Esmeralda',
+    'Vale das Águas',
+    'Jardins Botânicos',
   ] as const,
 };
+
+export const NOVATLANTIS_DESIGN_TOKENS = SOVEREIGN_CIVIC_DESIGN_SYSTEM;

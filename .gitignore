@@ -1,5 +1,8 @@
 node_modules/
 dist/
 .env
+*.db
+*.db-wal
+*.db-shm
 data-generator/output/citizens_100k.ndjson
 data-generator/output/citizens_100k.parquet

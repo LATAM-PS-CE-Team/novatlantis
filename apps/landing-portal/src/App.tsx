@@ -1,1925 +1,2561 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 
-// ============================================================================
-// TIPAGENS SOBERANAS E MODELO DE DADOS (NID, BIOMETRIA NIST, I18N, AUDITORIA)
-// ============================================================================
+type Locale = 'pt-BR' | 'es-419' | 'en-US';
+type WorkspaceView = 'PUBLIC_PORTAL' | 'CITIZEN_HUB' | 'GOVERNMENT_BACKSTAGE';
+type BackstageTab =
+  | 'pm_cabinet'
+  | 'iam_360'
+  | 'health_backstage'
+  | 'edu_backstage'
+  | 'ops_311_911'
+  | 'justice_treasury'
+  | 'gdf_lakehouse';
 
-export type SupportedLocale = 'pt-BR' | 'es-419' | 'en-US';
-export type ActiveModule = 'hub' | '311' | '911' | 'health' | 'education' | 'heraldry';
-
-export interface NistMinutia {
-  x: number;
-  y: number;
-  theta: number;
-  quality: number;
-  type: 'RIDGE_ENDING' | 'BIFURCATION';
-}
-
-export interface CitizenProfile {
-  nid: string;
-  fullName: string;
-  nativeLanguage: SupportedLocale;
-  birthDate: string;
-  ageYears: number;
-  filiation: {
-    motherName: string;
-    fatherName: string;
-  };
-  address: {
-    street: string;
-    district: string;
-    postalCode: string;
-    lat: number;
-    lng: number;
-  };
-  avatarUrl: string;
-  publicKeyEd25519: string;
-  biometrics: {
-    nistFaceTemplate: string;
-    nistFingerprintMinutiae: NistMinutia[];
-    biometricConfidenceScore: number;
-    icaoCompliant: boolean;
-    eyeDistancePx: number;
-    headPitchDeg: number;
-    illuminationScore: number;
-  };
-}
-
-export interface AuditLogEntry {
-  id: string;
-  timestamp: string;
-  relativeTime: string;
-  secretariat: string;
-  aiAgent: string;
-  purpose: Record<SupportedLocale, string>;
-  fieldsAccessed: string[];
-  hash: string;
-}
-
-// ============================================================================
-// COMPONENTE SVG: CONSTELAÇÃO NEURAL DE 9 NÓS + LOUROS DE NOVATLANTIS
-// (Reproduz fielmente o emblema central da Bandeira Oficial de Novatlantis)
-// ============================================================================
-
-export const NovatlantisNeuralEmblemSvg: React.FC<{ className?: string }> = ({ className = 'w-12 h-12' }) => {
-  // 8 nós periféricos + 1 nó central soberano (exatamente como na bandeira oficial)
-  const nodes = [
-    { cx: 50, cy: 18 },
-    { cx: 72.6, cy: 27.4 },
-    { cx: 82, cy: 50 },
-    { cx: 72.6, cy: 72.6 },
-    { cx: 50, cy: 82 },
-    { cx: 27.4, cy: 72.6 },
-    { cx: 18, cy: 50 },
-    { cx: 27.4, cy: 27.4 },
-  ];
-
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-label="Emblema Neural da Bandeira de Novatlantis">
-      <defs>
-        <radialGradient id="nvNodeGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FFFBEB" />
-          <stop offset="45%" stopColor="#FBBF24" />
-          <stop offset="100%" stopColor="#D97706" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      {/* Coroa de Louros Prateada (Arco Cívico) */}
-      <circle
-        cx="50"
-        cy="50"
-        r="43"
-        fill="none"
-        stroke="#CBD5E1"
-        strokeWidth="2.2"
-        strokeDasharray="6 3"
-        opacity="0.85"
-      />
-      <circle cx="50" cy="50" r="32" fill="none" stroke="#FBBF24" strokeWidth="0.9" opacity="0.65" />
-
-      {/* Malha Completa de Conexões Agênticas (Grafo K8 + Centro) */}
-      {nodes.map((a, i) =>
-        nodes.slice(i + 1).map((b, j) => (
-          <line
-            key={`mesh-${i}-${j}`}
-            x1={a.cx}
-            y1={a.cy}
-            x2={b.cx}
-            y2={b.cy}
-            stroke="#FBBF24"
-            strokeWidth="0.75"
-            opacity="0.55"
-          />
-        ))
-      )}
-      {nodes.map((n, i) => (
-        <line
-          key={`center-${i}`}
-          x1={50}
-          y1={50}
-          x2={n.cx}
-          y2={n.cy}
-          stroke="#FDE68A"
-          strokeWidth="1.2"
-          opacity="0.85"
-        />
-      ))}
-
-      {/* 8 Nós Agênticos Ministeriais */}
-      {nodes.map((n, i) => (
-        <g key={`node-${i}`}>
-          <circle cx={n.cx} cy={n.cy} r="5.5" fill="url(#nvNodeGlow)" />
-          <circle cx={n.cx} cy={n.cy} r="2.6" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="0.8" />
-        </g>
-      ))}
-
-      {/* Nó Central: Cidadão Soberano */}
-      <circle cx="50" cy="50" r="7.5" fill="url(#nvNodeGlow)" />
-      <circle cx="50" cy="50" r="3.6" fill="#FFFFFF" stroke="#F59E0B" strokeWidth="1" />
-    </svg>
-  );
-};
-
-// ============================================================================
-// DICIONÁRIO TRILÍNGUE SÍNCRONO (pt-BR, es-419, en-US)
-// ============================================================================
-
-const I18N_DICTIONARY: Record<
-  SupportedLocale,
+const QUICK_PROFILES = [
   {
-    govHeader: string;
-    mottoTranslation: string;
-    republicTitle: string;
-    republicSubtitle: string;
-    aiFirstBadge: string;
-    langResolutionLabel: string;
-    langSourceAuth: string;
-    langSourceAnon: string;
-    langSourceOverride: string;
-    resetLangOverride: string;
-    citizenSelectorLabel: string;
-    anonymousVisitor: string;
-    navHub: string;
-    nav311: string;
-    nav911: string;
-    navHealth: string;
-    navEducation: string;
-    navHeraldry: string;
-    nidCardTitle: string;
-    nidCardSubtitle: string;
-    nidVerifiedMod11: string;
-    nidHologramActive: string;
-    labelFullName: string;
-    labelBirthDate: string;
-    labelAge: string;
-    labelNativeLang: string;
-    labelFiliation: string;
-    labelAddress: string;
-    labelPublicKey: string;
-    labelNistScore: string;
-    labelNistFaceHash: string;
-    labelMinutiaeCount: string;
-    editProfileBtn: string;
-    saveProfileBtn: string;
-    uploadPhotoLabel: string;
-    icaoValidatorTitle: string;
-    icaoCompliantBadge: string;
-    icaoFailedBadge: string;
-    icaoCheckEyes: string;
-    icaoCheckPose: string;
-    icaoCheckLight: string;
-    simulatePhotoPass: string;
-    simulatePhotoFail: string;
-    launchpadTitle: string;
-    launchpadSubtitle: string;
-    ssoBadge: string;
-    auditPanelTitle: string;
-    auditPanelSubtitle: string;
-    auditAgency: string;
-    auditAgent: string;
-    auditPurpose: string;
-    auditTimestamp: string;
-    heraldryTitle: string;
-    heraldrySubtitle: string;
-    flagTitle: string;
-    flagDesc: string;
-    coatTitle: string;
-    coatDesc: string;
-    service311Title: string;
-    service311Desc: string;
-    issueInputPlaceholder: string;
-    analyze311Btn: string;
-    llmDepartment: string;
-    llmSla: string;
-    llmPriority: string;
-    service911Title: string;
-    service911Desc: string;
-    sosOneClickBtn: string;
-    triageInputPlaceholder: string;
-    dispatchBtn: string;
-    unitDispatched: string;
-    serviceHealthTitle: string;
-    serviceHealthDesc: string;
-    startTelemedBtn: string;
-    liveTranscriptLabel: string;
-    aiSummaryLabel: string;
-    digitalRxLabel: string;
-    serviceEduTitle: string;
-    serviceEduDesc: string;
-    adaptiveTrackLabel: string;
-    askTutorBtn: string;
+    nid: 'NID-000-0000-0001-9',
+    label: 'Primeiro-Ministro (jopoco — Root)',
+    roleHint: 'PRIME_MINISTER_ROOT',
+    email: 'jopoco@novatlantis.gov.cloud'
+  },
+  {
+    nid: 'NID-000-0000-0002-7',
+    label: 'Secretário-Geral (Alexandre Vance)',
+    roleHint: 'SECRETARY_GENERAL',
+    email: 'secretario.geral@novatlantis.gov.cloud'
+  },
+  {
+    nid: 'NID-000-0000-0003-5',
+    label: 'Gestora Identidade 360 (Helena)',
+    roleHint: 'IDENTITY_MANAGER_360',
+    email: 'gestor.identidade@novatlantis.gov.cloud'
+  },
+  {
+    nid: 'NID-000-0000-0004-3',
+    label: 'Médica / Gestora Saúde (Dra. Sofia)',
+    roleHint: 'DOCTOR_AND_HEALTH_MANAGER',
+    email: 'dra.sofia.mendes@novatlantis.gov.cloud'
+  },
+  {
+    nid: 'NID-000-0000-0006-0',
+    label: 'Professor / Gestor Educação (Prof. Lucas)',
+    roleHint: 'TEACHER_AND_EDU_MANAGER',
+    email: 'prof.lucas.silva@novatlantis.gov.cloud'
+  },
+  {
+    nid: 'NID-000-0000-0008-6',
+    label: 'Gestor 311 & 911 (Com. Rafael)',
+    roleHint: 'OPERATIONS_311_911_MANAGER',
+    email: 'comandante.rafael@novatlantis.gov.cloud'
+  },
+  {
+    nid: 'NID-000-0000-0009-4',
+    label: 'Magistrada & Fronteiras (Juíza Clara)',
+    roleHint: 'JUSTICE_AND_TREASURY_MANAGER',
+    email: 'juiza.clara.sterling@novatlantis.gov.cloud'
+  },
+  {
+    nid: 'NID-000-0000-0010-2',
+    label: 'Cidadão / Estudante (Pedro — 11 anos)',
+    roleHint: 'CITIZEN_COMMON',
+    email: 'pedro.albuquerque@cidadania.novatlantis.gov'
   }
-> = {
-  'pt-BR': {
-    govHeader: 'GOV.NOVATLANTIS.CLOUD • PROJETO GCP: NOVATLANTIS • LIBERTAS IN DIGITALI',
-    mottoTranslation: 'Liberdade na Era Digital • Estado Soberano AI-First',
-    republicTitle: 'República Digital de Novatlantis',
-    republicSubtitle:
-      'Primeira Nação AI-First da Era Agêntica • Identidade Biométrica NIST • Governança Autônoma no Google Cloud',
-    aiFirstBadge: 'CONSTELAÇÃO DE 9 NÓS AGÊNTICOS ATIVA',
-    langResolutionLabel: 'Resolução de Idioma (3 Camadas):',
-    langSourceAuth: 'Camada 1 • Idioma Nativo do Cidadão Autenticado (BD)',
-    langSourceAnon: 'Camada 2 • Visitante Anônimo (HTTP Accept-Language + GeoIP)',
-    langSourceOverride: 'Camada 3 • Override Explícito do Cabeçalho (localStorage)',
-    resetLangOverride: 'Restaurar Automático',
-    citizenSelectorLabel: 'Sessão de Cidadão (Simulador SSO):',
-    anonymousVisitor: 'Visitante Anônimo (Sem Sessão)',
-    navHub: 'NID Hub & Cidadania',
-    nav311: '311 Zeladoria Urbana',
-    nav911: '911 Emergência IA',
-    navHealth: 'Saúde & Telemedicina',
-    navEducation: 'Educação Adaptativa',
-    navHeraldry: 'Símbolos Nacionais (Bandeira & Brasão)',
-    nidCardTitle: 'Carteira de Identidade Nacional (NID)',
-    nidCardSubtitle: 'Padrão ANSI/NIST-ITL 1-2011 • ISO/IEC 19794-5 & 19794-2 • Ed25519',
-    nidVerifiedMod11: 'Módulo 11 Verificado',
-    nidHologramActive: 'Holograma Neural Ativo',
-    labelFullName: 'Nome Civil Completo',
-    labelBirthDate: 'Data de Nascimento',
-    labelAge: 'Idade Cronológica',
-    labelNativeLang: 'Idioma Nativo Registrado',
-    labelFiliation: 'Filiação Soberana',
-    labelAddress: 'Endereço Residencial em Novatlantis',
-    labelPublicKey: 'Chave Pública Assimétrica (Ed25519)',
-    labelNistScore: 'Confiança Biométrica NIST',
-    labelNistFaceHash: 'Template Facial (ISO/IEC 19794-5)',
-    labelMinutiaeCount: 'Minúcias Digitais (ISO/IEC 19794-2)',
-    editProfileBtn: 'Atualizar Endereço & Biometria Facial',
-    saveProfileBtn: 'Assinar com Ed25519 & Salvar no Spanner (Projeto: novatlantis)',
-    uploadPhotoLabel: 'Trocar Foto de Perfil (Validação ICAO/NIST em Tempo Real)',
-    icaoValidatorTitle: 'Motor de Conformidade Facial ICAO 9303 / NIST Type-10',
-    icaoCompliantBadge: 'APROVADO PELO VALIDADOR NIST/ICAO',
-    icaoFailedBadge: 'REPROVADO: FORA DO ENQUADRAMENTO ICAO',
-    icaoCheckEyes: 'Distância Interpupilar (mín. 90px)',
-    icaoCheckPose: 'Ângulo Cefálico Pitch/Yaw (±5°)',
-    icaoCheckLight: 'Uniformidade de Iluminação (>85%)',
-    simulatePhotoPass: 'Testar Captura Biométrica Conformante (ICAO OK)',
-    simulatePhotoFail: 'Testar Foto Descentralizada (Simular Bloqueio NIST)',
-    launchpadTitle: 'Single-Click Launchpad — Malha de Serviços Satélites Agênticos',
-    launchpadSubtitle: 'Transição instantânea Zero-Trust (OIDC/JWT) sem necessidade de relogar.',
-    ssoBadge: 'SSO Ativo • Zero Re-Login',
-    auditPanelTitle: 'Painel de Transparência e Auditoria Cidadã (Últimas 48 Horas)',
-    auditPanelSubtitle: 'Registro imutável de todas as secretarias e agentes de IA que consultaram seus dados soberanos.',
-    auditAgency: 'Secretaria / Órgão',
-    auditAgent: 'Agente de IA / Serviço',
-    auditPurpose: 'Finalidade Constitucional do Acesso',
-    auditTimestamp: 'Horário & Hash',
-    heraldryTitle: 'Identidade Visual Soberana — Bandeira & Brasão de Armas de Novatlantis',
-    heraldrySubtitle:
-      'Concebidos para simbolizar a união entre Democracia Cívica, Soberania Criptográfica, Sustentabilidade Oceânica e Inteligência Artificial Agêntica.',
-    flagTitle: 'Bandeira Oficial da República Digital de Novatlantis',
-    flagDesc:
-      'Fundo Azul-Cobalto Soberano (#082F72) com Triângulo Azul-Oceânico (#009EE0) à tralha. Ao centro, a Coroa de Louros Prateada envolve a Constelação Neural Dourada de 9 Nós (8 Agentes Ministeriais de IA interconectados ao Cidadão Soberano no centro).',
-    coatTitle: 'Brasão de Armas Soberano — "NOVATLANTIS • LIBERTAS IN DIGITALI"',
-    coatDesc:
-      'Timbrado pela Águia Dourada e Azul sob o Sol da IA, empunhando a Chave Criptográfica Ed25519 e a Onda Atlântica. Escudo partido: à destra (azul), o Caduceu e a Balança da Justiça Algorítmica; à sinistra (verde-esmeralda), a Árvore Cibernética da Vida ascendendo às Nuvens Soberanas.',
-    service311Title: 'Central 311 — Zeladoria Urbana e Triagem Agêntica',
-    service311Desc: 'Envie relatos geolocalizados com fotos. O Agente Gemini classifica a secretaria e estima o SLA.',
-    issueInputPlaceholder: 'Descreva o problema urbano (ex: Poste solar apagado ou vazamento na rede pluvial)...',
-    analyze311Btn: 'Acionar Agente de Triagem Urbana (LLM)',
-    llmDepartment: 'Secretaria Responsável',
-    llmSla: 'Prazo Estimado de Reparo (SLA)',
-    llmPriority: 'Prioridade Operacional',
-    service911Title: 'Central 911 — Resposta Tática de Emergência (Alto Contraste)',
-    service911Desc: 'Acionamento com 1 clique, triagem médica/policial por IA de voz/texto e despacho de viaturas.',
-    sosOneClickBtn: 'DISPARO DE EMERGÊNCIA 1-CLIQUE (GEOLOCALIZAÇÃO + BIOMETRIA)',
-    triageInputPlaceholder: 'Relate a emergência por voz ou texto (ex: Dor torácica aguda / Colisão na via)...',
-    dispatchBtn: 'Executar Triagem & Despachar Viaturas no Mapa',
-    unitDispatched: 'Unidades Táticas Despachadas em Tempo Real',
-    serviceHealthTitle: 'Saúde Digital — Prontuário Soberano & Telemedicina Agêntica',
-    serviceHealthDesc: 'Sala de teleconsulta com transcrição clínica ao vivo, sumarização SOAP por IA e prescrição Ed25519.',
-    startTelemedBtn: 'Simular Transcrição Clínica & Gerar Prescrição Assinada',
-    liveTranscriptLabel: 'Transcrição Ao Vivo (Speech-to-Text Médico)',
-    aiSummaryLabel: 'Sumarização Clínica Estruturada (Agente IA)',
-    digitalRxLabel: 'Prescrição Digital Assinada (Ed25519 ICP-Novatlantis)',
-    serviceEduTitle: 'Educação & Tutoria Adaptativa por Faixa Etária',
-    serviceEduDesc: 'Trilhas de aprendizagem geradas dinamicamente por IA com base na idade cadastrada no NID.',
-    adaptiveTrackLabel: 'Trilha Curricular Ativa para sua Idade',
-    askTutorBtn: 'Gerar Nova Lição Adaptativa com IA',
-  },
-  'es-419': {
-    govHeader: 'GOV.NOVATLANTIS.CLOUD • PROYECTO GCP: NOVATLANTIS • LIBERTAS IN DIGITALI',
-    mottoTranslation: 'Libertad en la Era Digital • Estado Soberano AI-First',
-    republicTitle: 'República Digital de Novatlantis',
-    republicSubtitle:
-      'Primera Nación AI-First de la Era Agéntica • Identidad Biométrica NIST • Gobernanza Autónoma en Google Cloud',
-    aiFirstBadge: 'CONSTELACIÓN DE 9 NODOS AGÉNTICOS ACTIVA',
-    langResolutionLabel: 'Resolución de Idioma (3 Capas):',
-    langSourceAuth: 'Capa 1 • Idioma Nativo del Ciudadano Autenticado (BD)',
-    langSourceAnon: 'Capa 2 • Visitante Anónimo (HTTP Accept-Language + GeoIP)',
-    langSourceOverride: 'Capa 3 • Override Explícito del Encabezado (localStorage)',
-    resetLangOverride: 'Restaurar Automático',
-    citizenSelectorLabel: 'Sesión de Ciudadano (Simulador SSO):',
-    anonymousVisitor: 'Visitante Anónimo (Sin Sesión)',
-    navHub: 'NID Hub y Ciudadanía',
-    nav311: '311 Atención Urbana',
-    nav911: '911 Emergencia IA',
-    navHealth: 'Salud y Telemedicina',
-    navEducation: 'Educación Adaptativa',
-    navHeraldry: 'Símbolos Nacionales (Bandera y Escudo)',
-    nidCardTitle: 'Documento Nacional de Identidad (NID)',
-    nidCardSubtitle: 'Estándar ANSI/NIST-ITL 1-2011 • ISO/IEC 19794-5 & 19794-2 • Ed25519',
-    nidVerifiedMod11: 'Módulo 11 Verificado',
-    nidHologramActive: 'Holograma Neural Activo',
-    labelFullName: 'Nombre Civil Completo',
-    labelBirthDate: 'Fecha de Nacimiento',
-    labelAge: 'Edad Cronológica',
-    labelNativeLang: 'Idioma Nativo Registrado',
-    labelFiliation: 'Filiación Soberana',
-    labelAddress: 'Dirección Residencial en Novatlantis',
-    labelPublicKey: 'Clave Pública Asimétrica (Ed25519)',
-    labelNistScore: 'Confianza Biométrica NIST',
-    labelNistFaceHash: 'Plantilla Facial (ISO/IEC 19794-5)',
-    labelMinutiaeCount: 'Minucias Dactilares (ISO/IEC 19794-2)',
-    editProfileBtn: 'Actualizar Dirección y Biometría Facial',
-    saveProfileBtn: 'Firmar con Ed25519 y Guardar en Spanner (Proyecto: novatlantis)',
-    uploadPhotoLabel: 'Cambiar Foto de Perfil (Validación ICAO/NIST en Tiempo Real)',
-    icaoValidatorTitle: 'Motor de Conformidad Facial ICAO 9303 / NIST Type-10',
-    icaoCompliantBadge: 'APROBADO POR EL VALIDADOR NIST/ICAO',
-    icaoFailedBadge: 'RECHAZADO: FUERA DEL ENCUADRE ICAO',
-    icaoCheckEyes: 'Distancia Interpupilar (mín. 90px)',
-    icaoCheckPose: 'Ángulo Cefálico Pitch/Yaw (±5°)',
-    icaoCheckLight: 'Uniformidad de Iluminación (>85%)',
-    simulatePhotoPass: 'Probar Captura Biométrica Conforme (ICAO OK)',
-    simulatePhotoFail: 'Probar Foto Descentrada (Simular Bloqueo NIST)',
-    launchpadTitle: 'Single-Click Launchpad — Malla de Servicios Satélite Agénticos',
-    launchpadSubtitle: 'Transición instantánea Zero-Trust (OIDC/JWT) sin necesidad de volver a iniciar sesión.',
-    ssoBadge: 'SSO Activo • Sin Re-Login',
-    auditPanelTitle: 'Panel de Transparencia y Auditoría Ciudadana (Últimas 48 Horas)',
-    auditPanelSubtitle: 'Registro inmutable de todas las secretarías y agentes de IA que consultaron sus datos soberanos.',
-    auditAgency: 'Secretaría / Organismo',
-    auditAgent: 'Agente de IA / Servicio',
-    auditPurpose: 'Finalidad Constitucional del Acceso',
-    auditTimestamp: 'Horario y Hash',
-    heraldryTitle: 'Identidad Visual Soberana — Bandera y Escudo de Armas de Novatlantis',
-    heraldrySubtitle:
-      'Diseñados para simbolizar la unión entre Democracia Cívica, Soberanía Criptográfica, Sostenibilidad Oceánica e Inteligencia Artificial Agéntica.',
-    flagTitle: 'Bandera Oficial de la República Digital de Novatlantis',
-    flagDesc:
-      'Campo Azul Cobalto Soberano (#082F72) con Triángulo Azul Oceánico (#009EE0). En el centro, la Corona de Laureles Plateada rodea la Constelación Neural Dorada de 9 Nodos (8 Agentes Ministeriales de IA conectados al Ciudadano Soberano en el centro).',
-    coatTitle: 'Escudo de Armas Soberano — "NOVATLANTIS • LIBERTAS IN DIGITALI"',
-    coatDesc:
-      'Coronado por el Águila Dorada y Azul bajo el Sol de la IA, sosteniendo la Llave Criptográfica Ed25519 y la Ola Atlántica. Escudo partido: a la diestra (azul), el Caduceo y la Balanza de la Justicia Algorítmica; a la siniestra (verde esmeralda), el Árbol Cibernético de la Vida ascendiendo a las Nubes Soberanas.',
-    service311Title: 'Central 311 — Mantenimiento Urbano y Triaje Agéntico',
-    service311Desc: 'Envíe reportes geolocalizados con fotos. El Agente Gemini clasifica el departamento y estima el SLA.',
-    issueInputPlaceholder: 'Describa el incidente urbano (ej: Luminaria solar apagada o fuga hidráulica)...',
-    analyze311Btn: 'Activar Agente de Triaje Urbano (LLM)',
-    llmDepartment: 'Secretaría Responsable',
-    llmSla: 'Tiempo Estimado de Reparación (SLA)',
-    llmPriority: 'Prioridad Operativa',
-    service911Title: 'Central 911 — Respuesta Táctica de Emergencia (Alto Contraste)',
-    service911Desc: 'Activación con 1 clic, triaje médico/policial por IA de voz/texto y despacho de patrullas.',
-    sosOneClickBtn: 'DISPARO DE EMERGENCIA 1-CLIC (GEOLOCALIZACIÓN + BIOMETRÍA)',
-    triageInputPlaceholder: 'Reporte la emergencia por voz o texto (ej: Dolor torácico agudo / Accidente vial)...',
-    dispatchBtn: 'Ejecutar Triaje y Despachar Unidades en el Mapa',
-    unitDispatched: 'Unidades Tácticas Despachadas en Tiempo Real',
-    serviceHealthTitle: 'Salud Digital — Historia Clínica Soberana y Telemedicina Agéntica',
-    serviceHealthDesc: 'Sala de teleconsulta con transcripción en vivo, resumen clínico por IA y receta firmada Ed25519.',
-    startTelemedBtn: 'Simular Transcripción Clínica y Emitir Receta Firmada',
-    liveTranscriptLabel: 'Transcripción en Vivo (Speech-to-Text Médico)',
-    aiSummaryLabel: 'Resumen Clínico Estructurado (Agente IA)',
-    digitalRxLabel: 'Receta Digital Firmada (Ed25519 ICP-Novatlantis)',
-    serviceEduTitle: 'Educación y Tutoría Adaptativa por Edad',
-    serviceEduDesc: 'Rutas de aprendizaje personalizadas por IA según la edad registrada en el NID del estudiante.',
-    adaptiveTrackLabel: 'Ruta Curricular Activa para su Edad',
-    askTutorBtn: 'Generar Nueva Lección Adaptativa con IA',
-  },
-  'en-US': {
-    govHeader: 'GOV.NOVATLANTIS.CLOUD • GCP PROJECT: NOVATLANTIS • LIBERTAS IN DIGITALI',
-    mottoTranslation: 'Liberty in the Digital Age • AI-First Sovereign State',
-    republicTitle: 'Digital Republic of Novatlantis',
-    republicSubtitle:
-      'First AI-First Nation of the Agentic Era • NIST Biometric Identity • Autonomous Governance on Google Cloud',
-    aiFirstBadge: '9-NODE AGENTIC NEURAL CONSTELLATION ACTIVE',
-    langResolutionLabel: 'Language Resolution (3-Tier):',
-    langSourceAuth: 'Tier 1 • Authenticated Citizen Native Language (DB)',
-    langSourceAnon: 'Tier 2 • Anonymous Visitor (HTTP Accept-Language + GeoIP)',
-    langSourceOverride: 'Tier 3 • Explicit Global Header Override (localStorage)',
-    resetLangOverride: 'Reset to Automatic',
-    citizenSelectorLabel: 'Citizen Session (SSO Simulator):',
-    anonymousVisitor: 'Anonymous Visitor (No Session)',
-    navHub: 'NID Hub & Citizenship',
-    nav311: '311 Urban Services',
-    nav911: '911 AI Emergency',
-    navHealth: 'Health & Telemedicine',
-    navEducation: 'Adaptive Education',
-    navHeraldry: 'National Symbols (Flag & Coat of Arms)',
-    nidCardTitle: 'National Identity Card (NID)',
-    nidCardSubtitle: 'ANSI/NIST-ITL 1-2011 Standard • ISO/IEC 19794-5 & 19794-2 • Ed25519',
-    nidVerifiedMod11: 'Modulo-11 Verified',
-    nidHologramActive: 'Neural Hologram Active',
-    labelFullName: 'Full Legal Name',
-    labelBirthDate: 'Date of Birth',
-    labelAge: 'Chronological Age',
-    labelNativeLang: 'Registered Native Language',
-    labelFiliation: 'Sovereign Filiation (Parents)',
-    labelAddress: 'Residential Address in Novatlantis',
-    labelPublicKey: 'Asymmetric Public Key (Ed25519)',
-    labelNistScore: 'NIST Biometric Confidence',
-    labelNistFaceHash: 'Facial Template (ISO/IEC 19794-5)',
-    labelMinutiaeCount: 'Fingerprint Minutiae (ISO/IEC 19794-2)',
-    editProfileBtn: 'Update Address & Facial Biometrics',
-    saveProfileBtn: 'Sign with Ed25519 & Save to Spanner (Project: novatlantis)',
-    uploadPhotoLabel: 'Replace Profile Photo (Real-Time ICAO/NIST Validation)',
-    icaoValidatorTitle: 'ICAO 9303 / NIST Type-10 Facial Framing Engine',
-    icaoCompliantBadge: 'PASSED NIST/ICAO BIOMETRIC VALIDATION',
-    icaoFailedBadge: 'REJECTED: NON-COMPLIANT ICAO FRAMING',
-    icaoCheckEyes: 'Inter-pupillary Distance (min. 90px)',
-    icaoCheckPose: 'Head Pitch/Yaw Angle (±5°)',
-    icaoCheckLight: 'Illumination Uniformity (>85%)',
-    simulatePhotoPass: 'Test Compliant Biometric Capture (ICAO OK)',
-    simulatePhotoFail: 'Test Off-Center Photo (Simulate NIST Rejection)',
-    launchpadTitle: 'Single-Click Launchpad — Agentic Satellite Services Mesh',
-    launchpadSubtitle: 'Instant Zero-Trust (OIDC/JWT) handoff with zero re-login required.',
-    ssoBadge: 'Active SSO • Zero Re-Login',
-    auditPanelTitle: 'Citizen Data Transparency & Audit Ledger (Last 48 Hours)',
-    auditPanelSubtitle: 'Immutable log of every ministry and AI agent that accessed your sovereign records.',
-    auditAgency: 'Ministry / Secretariat',
-    auditAgent: 'AI Agent / Service ID',
-    auditPurpose: 'Constitutional Access Purpose',
-    auditTimestamp: 'Timestamp & Hash',
-    heraldryTitle: 'Sovereign Visual Identity — Flag & Coat of Arms of Novatlantis',
-    heraldrySubtitle:
-      'Designed to symbolize the union of Civic Democracy, Cryptographic Sovereignty, Oceanic Sustainability, and Agentic Artificial Intelligence.',
-    flagTitle: 'Official Flag of the Digital Republic of Novatlantis',
-    flagDesc:
-      'Sovereign Cobalt Blue field (#082F72) with an Oceanic Cyan hoist triangle (#009EE0). At the center, the Silver Laurel Wreath encircles the 9-Node Golden Neural Constellation (8 Ministerial AI Agents interconnected with the Sovereign Citizen at the core).',
-    coatTitle: 'Sovereign Coat of Arms — "NOVATLANTIS • LIBERTAS IN DIGITALI"',
-    coatDesc:
-      'Crested by the Golden-and-Azure Eagle rising before the AI Sun, clutching the Ed25519 Cryptographic Key and the Atlantic Wave. Shield divided per pale: dexter (azure) features the Caduceus & Scales of Algorithmic Justice; sinister (emerald) features the Cybernetic Tree of Life ascending into Sovereign Clouds.',
-    service311Title: '311 Center — Urban Maintenance & Agentic Triage',
-    service311Desc: 'Submit geolocated reports with photos. The Gemini Agent classifies the department and estimates SLA.',
-    issueInputPlaceholder: 'Describe the urban issue (e.g., Solar streetlight outage or water main leak)...',
-    analyze311Btn: 'Trigger Urban Triage AI Agent (LLM)',
-    llmDepartment: 'Responsible Department',
-    llmSla: 'Estimated Repair SLA',
-    llmPriority: 'Operational Priority',
-    service911Title: '911 Center — High-Contrast Tactical Emergency Dispatch',
-    service911Desc: '1-Click SOS trigger, voice/text AI medical & police triage, and live autonomous unit dispatch.',
-    sosOneClickBtn: '1-CLICK EMERGENCY SOS (GEOLOCATION + BIOMETRIC DISPATCH)',
-    triageInputPlaceholder: 'Report the emergency via voice or text (e.g., Acute chest pain / Traffic collision)...',
-    dispatchBtn: 'Run AI Triage & Dispatch Tactical Units on Map',
-    unitDispatched: 'Real-Time Dispatched Tactical Units',
-    serviceHealthTitle: 'Digital Health — Sovereign EHR & Agentic Telemedicine',
-    serviceHealthDesc: 'Virtual consultation room with live speech transcription, AI clinical summary, and Ed25519 e-Rx.',
-    startTelemedBtn: 'Simulate Live Clinical Transcription & Sign Digital Rx',
-    liveTranscriptLabel: 'Live Medical Speech-to-Text Transcription',
-    aiSummaryLabel: 'AI Clinical SOAP Summary',
-    digitalRxLabel: 'Digitally Signed Prescription (Ed25519 ICP-Novatlantis)',
-    serviceEduTitle: 'Education & Age-Adaptive AI Tutoring',
-    serviceEduDesc: 'Personalized learning pathways generated by AI based on the student’s registered NID age.',
-    adaptiveTrackLabel: 'Active Curriculum Pathway for Your Age',
-    askTutorBtn: 'Generate New Adaptive AI Lesson',
-  },
+];
+
+const SATELLITE_URLS = {
+  nid: 'https://novatlantis-identity-nid-wpahcxvhuq-uc.a.run.app',
+  s311: 'https://novatlantis-services-311-wpahcxvhuq-uc.a.run.app',
+  s911: 'https://novatlantis-emergency-911-wpahcxvhuq-uc.a.run.app',
+  health: 'https://novatlantis-health-telemed-wpahcxvhuq-uc.a.run.app',
+  edu: 'https://novatlantis-education-learn-wpahcxvhuq-uc.a.run.app'
 };
 
-// ============================================================================
-// PERFIS SINTÉTICOS DE DEMONSTRAÇÃO (EXTRAÍDOS DO LOTE DE 100.000 CIDADÃOS)
-// ============================================================================
+export function App() {
+  const [locale, setLocale] = useState<Locale>('pt-BR');
+  const [view, setView] = useState<WorkspaceView>('PUBLIC_PORTAL');
+  const [backstageTab, setBackstageTab] = useState<BackstageTab>('pm_cabinet');
 
-const DEMO_CITIZENS: Record<string, CitizenProfile> = {
-  'NID-100-0000-0019': {
-    nid: 'NID-100-0000-0019',
-    fullName: 'Helena Oliveira Silva',
-    nativeLanguage: 'pt-BR',
-    birthDate: '1992-05-14',
-    ageYears: 34,
-    filiation: {
-      motherName: 'Clara Oliveira Silva',
-      fatherName: 'Rafael Santos Silva',
-    },
-    address: {
-      street: 'Av. Ada Lovelace, 1024',
-      district: 'Distrito Tecnológico',
-      postalCode: 'NV-10-412',
-      lat: -23.5412,
-      lng: -46.6481,
-    },
-    avatarUrl:
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
-    publicKeyEd25519: 'MCowBQYDK2VwAyEA8f92aB4c7dE10F39aBcDeF0123456789NovatlantisKey=',
-    biometrics: {
-      nistFaceTemplate: 'Rk1gIDIwAAH0AAB+L2f9pQ8zX1vN4mK7jH2gT5rB9yW3cE6uI0oP==',
-      nistFingerprintMinutiae: [
-        { x: 142, y: 218, theta: 45, quality: 96, type: 'RIDGE_ENDING' },
-        { x: 205, y: 184, theta: 128, quality: 94, type: 'BIFURCATION' },
-        { x: 288, y: 310, theta: 215, quality: 92, type: 'RIDGE_ENDING' },
-        { x: 176, y: 342, theta: 302, quality: 98, type: 'BIFURCATION' },
-      ],
-      biometricConfidenceScore: 0.984,
-      icaoCompliant: true,
-      eyeDistancePx: 118,
-      headPitchDeg: 1.2,
-      illuminationScore: 96,
-    },
-  },
-  'NID-100-0000-0027': {
-    nid: 'NID-100-0000-0027',
-    fullName: 'Mateo Hernández García',
-    nativeLanguage: 'es-419',
-    birthDate: '2011-11-03',
-    ageYears: 14,
-    filiation: {
-      motherName: 'Sofía Hernández García',
-      fatherName: 'Santiago López García',
-    },
-    address: {
-      street: 'Orla das Marés Limpas, 450',
-      district: 'Distrito Oceânico',
-      postalCode: 'NV-20-805',
-      lat: -23.591,
-      lng: -46.672,
-    },
-    avatarUrl:
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    publicKeyEd25519: 'MCowBQYDK2VwAyEA4k81mP2x9zL05V71cDeFgH9876543210NovatlantisKey=',
-    biometrics: {
-      nistFaceTemplate: 'Rk1gIDIwAAH0AAC9K3m8wP1xZ4nB7vC2lQ5tR8yU0iO3pA6sD9fG==',
-      nistFingerprintMinutiae: [
-        { x: 112, y: 190, theta: 32, quality: 95, type: 'RIDGE_ENDING' },
-        { x: 244, y: 210, theta: 164, quality: 91, type: 'BIFURCATION' },
-        { x: 310, y: 295, theta: 275, quality: 93, type: 'RIDGE_ENDING' },
-      ],
-      biometricConfidenceScore: 0.971,
-      icaoCompliant: true,
-      eyeDistancePx: 112,
-      headPitchDeg: -1.8,
-      illuminationScore: 93,
-    },
-  },
-  'NID-100-0000-0035': {
-    nid: 'NID-100-0000-0035',
-    fullName: 'Olivia Sterling Davis',
-    nativeLanguage: 'en-US',
-    birthDate: '2019-04-22',
-    ageYears: 7,
-    filiation: {
-      motherName: 'Charlotte Sterling Davis',
-      fatherName: 'William Miller Davis',
-    },
-    address: {
-      street: 'Praça da Constituição Digital, 88',
-      district: 'Colina da Justiça',
-      postalCode: 'NV-30-119',
-      lat: -23.5195,
-      lng: -46.618,
-    },
-    avatarUrl:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-    publicKeyEd25519: 'MCowBQYDK2VwAyEA7z19qW3e5rT8yU2iO4pA6sD8fG0hJ2kLNovatlantisKey=',
-    biometrics: {
-      nistFaceTemplate: 'Rk1gIDIwAAH0AAD7P1q2W3e4R5t6Y7u8I9o0P1a2S3d4F5g6H7j8==',
-      nistFingerprintMinutiae: [
-        { x: 160, y: 175, theta: 18, quality: 97, type: 'BIFURCATION' },
-        { x: 220, y: 260, theta: 140, quality: 95, type: 'RIDGE_ENDING' },
-        { x: 290, y: 310, theta: 255, quality: 90, type: 'BIFURCATION' },
-      ],
-      biometricConfidenceScore: 0.992,
-      icaoCompliant: true,
-      eyeDistancePx: 124,
-      headPitchDeg: 0.6,
-      illuminationScore: 98,
-    },
-  },
-};
+  const [loginInput, setLoginInput] = useState('NID-000-0000-0001-9');
+  const [citizen, setCitizen] = useState<any>(null);
+  const [loadingAuth, setLoadingAuth] = useState(false);
+  const [bannerMsg, setBannerMsg] = useState<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
 
-export function validateNIDMod11Client(nid: string): boolean {
-  if (!/^NID-\d{3}-\d{4}-\d{4}$/.test(nid)) return false;
-  const digits = nid.replace(/^NID-/, '').replace(/-/g, '');
-  const weights = [11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
-  let sum = 0;
-  for (let i = 0; i < 10; i++) {
-    sum += Number(digits[i]) * weights[i];
-  }
-  const rem = sum % 11;
-  const dv = rem < 2 ? 0 : 11 - rem;
-  return Number(digits[10]) === dv;
-}
+  // Command bar on public portal
+  const [agentPrompt, setAgentPrompt] = useState('');
+  const [agentResponse, setAgentResponse] = useState<string | null>(null);
 
-const STORAGE_OVERRIDE_KEY = 'novatlantis_lang_override';
+  // Backstage data states
+  const [overviewData, setOverviewData] = useState<any>(null);
+  const [iamData, setIamData] = useState<any>(null);
+  const [healthData, setHealthData] = useState<any>(null);
+  const [eduData, setEduData] = useState<any>(null);
+  const [opsData, setOpsData] = useState<any>(null);
+  const [justiceData, setJusticeData] = useState<any>(null);
 
-export const App: React.FC = () => {
-  const [selectedCitizenId, setSelectedCitizenId] = useState<string>('NID-100-0000-0019');
-  const [citizensMap, setCitizensMap] = useState<Record<string, CitizenProfile>>(DEMO_CITIZENS);
-  const currentCitizen: CitizenProfile | null =
-    selectedCitizenId === 'ANONYMOUS' ? null : citizensMap[selectedCitizenId] ?? null;
+  // GDF 100k Explorer
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchCredential, setSearchCredential] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [inspectedCitizen, setInspectedCitizen] = useState<any>(null);
 
-  const [explicitLangOverride, setExplicitLangOverride] = useState<SupportedLocale | null>(() => {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_OVERRIDE_KEY);
-      if (saved === 'pt-BR' || saved === 'es-419' || saved === 'en-US') {
-        return saved;
-      }
-    } catch {
-      // Ignore SSR
-    }
-    return null;
+  // Forms for Citizen & Backstage
+  const [new311Category, setNew311Category] = useState('Iluminação Fotovoltaica & Smart Grid');
+  const [new311District, setNew311District] = useState('Distrito Tecnológico');
+  const [new311Desc, setNew311Desc] = useState('');
+
+  const [companyName, setCompanyName] = useState('');
+  const [companySector, setCompanySector] = useState('IA Soberana & Automação Cognitiva');
+
+  const [grantTargetNid, setGrantTargetNid] = useState('NID-000-0000-0005-1');
+  const [grantRoleCode, setGrantRoleCode] = useState('DOCTOR_TELEMED');
+
+  const [telemedPatientNid, setTelemedPatientNid] = useState('NID-000-0000-0010-2');
+  const [telemedComplaint, setTelemedComplaint] = useState('Revisão clínica respiratória e renovação de receita preventiva');
+  const [telemedMedication, setTelemedMedication] = useState('Budesonida 200mcg — 1 aplicação 12/12h por 30 dias');
+
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [gradeForm, setGradeForm] = useState({
+    score_mathematics: 88,
+    score_sciences: 90,
+    score_ai_robotics: 95,
+    score_languages: 86,
+    attendance_rate: 94
   });
+  const [examTitle, setExamTitle] = useState('Exame Nacional de Raciocínio Algorítmico & Robótica');
+  const [examSubject, setExamSubject] = useState('AI & Robotics');
 
-  const { activeLocale, resolutionLayer } = useMemo((): {
-    activeLocale: SupportedLocale;
-    resolutionLayer: 'OVERRIDE' | 'AUTHENTICATED_DB' | 'ANONYMOUS_HEADER';
-  } => {
-    if (explicitLangOverride) {
-      return { activeLocale: explicitLangOverride, resolutionLayer: 'OVERRIDE' };
-    }
-    if (currentCitizen) {
-      return { activeLocale: currentCitizen.nativeLanguage, resolutionLayer: 'AUTHENTICATED_DB' };
-    }
-    const navLang = typeof navigator !== 'undefined' ? navigator.language.toLowerCase() : 'pt-br';
-    if (navLang.startsWith('es')) return { activeLocale: 'es-419', resolutionLayer: 'ANONYMOUS_HEADER' };
-    if (navLang.startsWith('en')) return { activeLocale: 'en-US', resolutionLayer: 'ANONYMOUS_HEADER' };
-    return { activeLocale: 'pt-BR', resolutionLayer: 'ANONYMOUS_HEADER' };
-  }, [explicitLangOverride, currentCitizen]);
+  const notify = (type: 'info' | 'success' | 'error', text: string) => {
+    setBannerMsg({ type, text });
+    setTimeout(() => {
+      setBannerMsg(prev => (prev?.text === text ? null : prev));
+    }, 7000);
+  };
 
-  const t = I18N_DICTIONARY[activeLocale];
-
-  const handleSetLanguageOverride = (locale: SupportedLocale) => {
-    setExplicitLangOverride(locale);
+  const authenticateCitizen = async (identifier: string, switchView?: WorkspaceView) => {
+    setLoadingAuth(true);
     try {
-      window.localStorage.setItem(STORAGE_OVERRIDE_KEY, locale);
-    } catch {
-      // Ignore
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        notify('error', data.error || 'Falha na autenticação GDF.');
+        setLoadingAuth(false);
+        return;
+      }
+      setCitizen(data.citizen);
+      setLoginInput(data.citizen.citizen_id);
+      if (data.citizen.native_language) {
+        setLocale(data.citizen.native_language as Locale);
+      }
+      if (switchView) {
+        if (switchView === 'GOVERNMENT_BACKSTAGE' && !data.citizen.backstage_allowed) {
+          setView('CITIZEN_HUB');
+          notify(
+            'error',
+            `Acesso Backstage Negado pela Identidade 360: ${data.citizen.full_name} possui perfil de Cidadão Comum (CITIZEN_COMMON). Redirecionado ao Espaço do Cidadão.`
+          );
+        } else {
+          setView(switchView);
+        }
+      } else if (view === 'GOVERNMENT_BACKSTAGE' && !data.citizen.backstage_allowed) {
+        setView('CITIZEN_HUB');
+        notify(
+          'info',
+          `Sessão atualizada: ${data.citizen.full_name} não possui permissão ativa na Identidade 360 e está no modo Cidadão Comum.`
+        );
+      }
+      // Ajusta aba inicial do backstage conforme módulos permitidos
+      if (data.citizen.allowed_modules?.length > 0) {
+        if (!data.citizen.allowed_modules.includes(backstageTab)) {
+          setBackstageTab(data.citizen.allowed_modules[0] as BackstageTab);
+        }
+      }
+    } catch (e: any) {
+      notify('error', e.message || 'Erro de conexão com servidor GDF.');
+    } finally {
+      setLoadingAuth(false);
     }
   };
 
-  const handleClearLanguageOverride = () => {
-    setExplicitLangOverride(null);
+  const loadAllBackstageData = async () => {
     try {
-      window.localStorage.removeItem(STORAGE_OVERRIDE_KEY);
-    } catch {
-      // Ignore
+      const [ov, iam, hlth, edu, ops, jst] = await Promise.all([
+        fetch('/api/backstage/overview').then(r => r.json()),
+        fetch('/api/iam360/roles').then(r => r.json()),
+        fetch('/api/backstage/health').then(r => r.json()),
+        fetch('/api/backstage/education').then(r => r.json()),
+        fetch('/api/backstage/operations').then(r => r.json()),
+        fetch('/api/backstage/justice-treasury').then(r => r.json())
+      ]);
+      setOverviewData(ov);
+      setIamData(iam);
+      setHealthData(hlth);
+      setEduData(edu);
+      setOpsData(ops);
+      setJusticeData(jst);
+      if (edu?.students?.length > 0 && !selectedStudent) {
+        const st = edu.students[0];
+        setSelectedStudent(st);
+        setGradeForm({
+          score_mathematics: st.score_mathematics,
+          score_sciences: st.score_sciences,
+          score_ai_robotics: st.score_ai_robotics,
+          score_languages: st.score_languages,
+          attendance_rate: st.attendance_rate
+        });
+      }
+    } catch (e) {
+      console.error('Erro ao carregar dados do Backstage:', e);
     }
   };
 
-  const [activeModule, setActiveModule] = useState<ActiveModule>('hub');
-  const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
-  const [draftDistrict, setDraftDistrict] = useState<string>('Distrito Tecnológico');
-  const [draftStreet, setDraftStreet] = useState<string>('Av. Ada Lovelace, 1024');
-  const [draftPostal, setDraftPostal] = useState<string>('NV-10-412');
+  const runCitizenSearch = async (q = searchQuery, cred = searchCredential) => {
+    try {
+      const res = await fetch(
+        `/api/gdf/search?q=${encodeURIComponent(q)}&credential=${encodeURIComponent(cred)}&limit=30`
+      );
+      const data = await res.json();
+      setSearchResults(data.results || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const inspectCitizenByNid = async (nid: string) => {
+    try {
+      const res = await fetch(`/api/gdf/citizen/${encodeURIComponent(nid)}`);
+      const data = await res.json();
+      if (res.ok) setInspectedCitizen(data.citizen);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
-    if (currentCitizen) {
-      setDraftDistrict(currentCitizen.address.district);
-      setDraftStreet(currentCitizen.address.street);
-      setDraftPostal(currentCitizen.address.postalCode);
-    }
-  }, [currentCitizen]);
+    authenticateCitizen('NID-000-0000-0001-9');
+    loadAllBackstageData();
+    runCitizenSearch('', '');
+  }, []);
 
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([
-    {
-      id: 'AUD-9941',
-      timestamp: '2026-09-30 18:12:04 UTC',
-      relativeTime: '1h 32m',
-      secretariat: 'Ministério da Saúde Digital (Caduceu Prateado)',
-      aiAgent: 'agent-telemed-clinical-v4',
-      purpose: {
-        'pt-BR': 'Verificação de alergias medicamentosas e assinatura de prontuário eletrônico',
-        'es-419': 'Verificación de alergias farmacológicas y firma de historia clínica electrónica',
-        'en-US': 'Medication allergy verification and electronic health record signature check',
-      },
-      fieldsAccessed: ['nid', 'birth_date', 'public_key_ed25519'],
-      hash: 'sha256:9f84b2c1e07a44d9',
-    },
-    {
-      id: 'AUD-9882',
-      timestamp: '2026-09-30 09:45:19 UTC',
-      relativeTime: '10h 01m',
-      secretariat: 'Autoridade Soberana NID (Chave Dourada Ed25519)',
-      aiAgent: 'agent-nist-biometric-verifier',
-      purpose: {
-        'pt-BR': 'Autenticação Single Sign-On (OIDC/JWT) e validação de template ISO/IEC 19794-5',
-        'es-419': 'Autenticación Single Sign-On (OIDC/JWT) y validación de plantilla ISO/IEC 19794-5',
-        'en-US': 'Single Sign-On (OIDC/JWT) authentication & ISO/IEC 19794-5 template verification',
-      },
-      fieldsAccessed: ['nid', 'nist_face_template', 'native_language'],
-      hash: 'sha256:3c71e8a5b42f190c',
-    },
-    {
-      id: 'AUD-9710',
-      timestamp: '2026-09-29 14:20:51 UTC',
-      relativeTime: '29h 23m',
-      secretariat: 'Secretaria de Zeladoria & Árvore Cibernética (311)',
-      aiAgent: 'agent-311-urban-triage-llm',
-      purpose: {
-        'pt-BR': 'Confirmação de jurisdição distrital para protocolo de iluminação fotovoltaica',
-        'es-419': 'Confirmación de jurisdicción distrital para protocolo de iluminación fotovoltaica',
-        'en-US': 'District jurisdiction confirmation for solar streetlight maintenance ticket',
-      },
-      fieldsAccessed: ['nid', 'address.district', 'address.coordinates'],
-      hash: 'sha256:7d29f4c8a11e60b3',
-    },
-  ]);
-
-  const appendAuditLog = (
-    secretariat: string,
-    aiAgent: string,
-    purpose: Record<SupportedLocale, string>,
-    fieldsAccessed: string[]
-  ) => {
-    const randomHex = Math.floor(Math.random() * 0xffffffffffff)
-      .toString(16)
-      .padStart(12, '0');
-    const newEntry: AuditLogEntry = {
-      id: `AUD-${Math.floor(1000 + Math.random() * 9000)}`,
-      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
-      relativeTime: 'Agora / Just now',
-      secretariat,
-      aiAgent,
-      purpose,
-      fieldsAccessed,
-      hash: `sha256:4e91${randomHex}`,
-    };
-    setAuditLogs((prev) => [newEntry, ...prev]);
-  };
-
-  const handleLaunchService = (target: ActiveModule) => {
-    setActiveModule(target);
-    if (target === '311') {
-      appendAuditLog(
-        'Secretaria de Zeladoria Urbana (311)',
-        'agent-311-sso-gateway',
-        {
-          'pt-BR': 'Acesso Single-Click Launchpad (Zero Re-Login) com geolocalização distrital',
-          'es-419': 'Acceso Single-Click Launchpad (Sin Re-Login) con geolocalización distrital',
-          'en-US': 'Single-Click Launchpad SSO access with district geolocation handoff',
-        },
-        ['nid', 'address.district', 'native_language']
+  const handleAgentCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = agentPrompt.trim().toLowerCase();
+    if (!q) return;
+    if (q.includes('empresa') || q.includes('company')) {
+      setView('CITIZEN_HUB');
+      setAgentResponse(
+        'Agente Soberano: Redirecionando para o Módulo de Abertura de Empresa Autônoma em 45s vinculada ao seu NID.'
       );
-    } else if (target === '911') {
-      appendAuditLog(
-        'Comando Tático de Emergências (911)',
-        'agent-911-tactical-dispatcher',
-        {
-          'pt-BR': 'Pré-carregamento de coordenadas GPS e dados vitais de emergência',
-          'es-419': 'Precarga de coordenadas GPS y datos vitales de emergencia',
-          'en-US': 'Pre-loading GPS coordinates and vital emergency profile',
-        },
-        ['nid', 'full_name', 'address.coordinates', 'biometrics']
-      );
-    } else if (target === 'health') {
-      appendAuditLog(
-        'Ministério da Saúde Digital (Telemedicina)',
-        'agent-telemed-scribe-gemini',
-        {
-          'pt-BR': 'Abertura de sessão clínica criptografada e verificação de chave Ed25519',
-          'es-419': 'Apertura de sesión clínica cifrada y verificación de clave Ed25519',
-          'en-US': 'Encrypted clinical session initialization & Ed25519 key verification',
-        },
-        ['nid', 'birth_date', 'public_key_ed25519']
-      );
-    } else if (target === 'education') {
-      appendAuditLog(
-        'Ministério da Educação e Ciência Quântica',
-        'agent-edu-adaptive-tutor',
-        {
-          'pt-BR': 'Consulta de idade cronológica para calibração da trilha curricular adaptativa',
-          'es-419': 'Consulta de edad cronológica para calibración de la ruta curricular adaptativa',
-          'en-US': 'Chronological age lookup for adaptive AI curriculum calibration',
-        },
-        ['nid', 'birth_date', 'age_years', 'native_language']
+    } else if (q.includes('saúde') || q.includes('medico') || q.includes('telemed')) {
+      setView(citizen?.backstage_allowed ? 'GOVERNMENT_BACKSTAGE' : 'CITIZEN_HUB');
+      if (citizen?.backstage_allowed) setBackstageTab('health_backstage');
+      setAgentResponse('Agente Soberano: Abrindo Prontuário Único HL7 FHIR e Sala de Telemedicina.');
+    } else if (q.includes('escola') || q.includes('aluno') || q.includes('professor') || q.includes('nota')) {
+      setView(citizen?.backstage_allowed ? 'GOVERNMENT_BACKSTAGE' : 'CITIZEN_HUB');
+      if (citizen?.backstage_allowed) setBackstageTab('edu_backstage');
+      setAgentResponse('Agente Soberano: Abrindo Gestão Escolar, Notas por Matéria e Alerta de Frequência GDF.');
+    } else if (q.includes('identidade') || q.includes('permiss') || q.includes('360')) {
+      if (citizen?.backstage_allowed) {
+        setView('GOVERNMENT_BACKSTAGE');
+        setBackstageTab('iam_360');
+      } else {
+        setView('CITIZEN_HUB');
+      }
+      setAgentResponse('Agente Soberano: Acessando Autoridade de Identidade 360 (RBAC/ABAC Governamental).');
+    } else {
+      setAgentResponse(
+        `Protocolo Agêntico #NV-${Math.floor(1000 + Math.random() * 9000)}: Solicitação "${agentPrompt}" autenticada para ${
+          citizen?.full_name || 'Cidadão'
+        } (${citizen?.citizen_id || 'NID'}). Você pode concluí-la diretamente no Espaço do Cidadão ou no Backstage.`
       );
     }
   };
 
-  const handleSimulatePhotoUpload = (compliant: boolean) => {
-    if (!currentCitizen) return;
-    const updated: CitizenProfile = {
-      ...currentCitizen,
-      avatarUrl: compliant
-        ? 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80'
-        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-      biometrics: {
-        ...currentCitizen.biometrics,
-        icaoCompliant: compliant,
-        biometricConfidenceScore: compliant ? 0.991 : 0.612,
-        eyeDistancePx: compliant ? 122 : 68,
-        headPitchDeg: compliant ? 0.8 : 14.5,
-        illuminationScore: compliant ? 97 : 64,
-        nistFaceTemplate: compliant
-          ? 'Rk1gIDIwAAH0AAJ9X8v7B6n5M4k3J2h1G0f9D8s7A6p5O4i3U2y1=='
-          : 'INVALID_ICAO_FRAME_LOW_CONFIDENCE',
-      },
-    };
-    setCitizensMap((prev) => ({ ...prev, [currentCitizen.nid]: updated }));
-    appendAuditLog(
-      'Secretaria de Identidade Soberana (NID)',
-      'agent-icao-9303-vision-validator',
-      {
-        'pt-BR': compliant
-          ? 'Validação biométrica facial ANSI/NIST-ITL 1-2011 aprovada (Score: 0.991)'
-          : 'Tentativa de atualização de foto rejeitada por enquadramento fora do padrão ICAO',
-        'es-419': compliant
-          ? 'Validación biométrica facial ANSI/NIST-ITL 1-2011 aprobada (Score: 0.991)'
-          : 'Intento de actualización de foto rechazado por encuadre fuera del estándar ICAO',
-        'en-US': compliant
-          ? 'ANSI/NIST-ITL 1-2011 facial biometric validation passed (Score: 0.991)'
-          : 'Photo update rejected due to non-compliant ICAO 9303 facial framing',
-      },
-      ['biometrics.nist_face_template', 'avatar_url']
-    );
-  };
-
-  const handleSaveAddressUpdate = () => {
-    if (!currentCitizen) return;
-    const updated: CitizenProfile = {
-      ...currentCitizen,
-      address: {
-        ...currentCitizen.address,
-        district: draftDistrict,
-        street: draftStreet,
-        postalCode: draftPostal,
-      },
-    };
-    setCitizensMap((prev) => ({ ...prev, [currentCitizen.nid]: updated }));
-    setIsEditingProfile(false);
-    appendAuditLog(
-      'Cadastro Territorial Soberano (Cloud Spanner: novatlantis)',
-      'agent-nid-registry-signer',
-      {
-        'pt-BR': `Atualização de endereço residencial para ${draftDistrict} assinada via Ed25519`,
-        'es-419': `Actualización de dirección residencial a ${draftDistrict} firmada vía Ed25519`,
-        'en-US': `Residential address update to ${draftDistrict} cryptographically signed via Ed25519`,
-      },
-      ['address.street', 'address.district', 'address.postal_code']
-    );
-  };
-
-  const [issue311Text, setIssue311Text] = useState<string>(
-    'Luminária fotovoltaica inteligente piscando e sensor ambiental offline na Av. Ada Lovelace.'
-  );
-  const [triage311Result, setTriage311Result] = useState<{
-    protocol: string;
-    department: string;
-    sla: string;
-    priority: string;
-    confidence: string;
-  } | null>({
-    protocol: 'NV-311-2026-88412',
-    department: 'Secretaria de Infraestrutura Energética & Smart Grid',
-    sla: '4 horas e 30 minutos (Equipe Autônoma Solar-04)',
-    priority: 'ALTA • INFRAESTRUTURA CRÍTICA',
-    confidence: '99.2% (Gemini 2.5 Flash)',
-  });
-
-  const handleAnalyze311 = () => {
-    const isWater = /água|vazamento|pluvial|water|fuga|maré/i.test(issue311Text);
-    setTriage311Result({
-      protocol: `NV-311-2026-${Math.floor(10000 + Math.random() * 89999)}`,
-      department: isWater
-        ? 'Autoridade Hídrica e Dessalinização Oceânica'
-        : 'Secretaria de Infraestrutura Energética & Smart Grid',
-      sla: isWater ? '2 horas (Unidade Hidráulica H-12)' : '4 horas (Equipe Autônoma Solar-04)',
-      priority: isWater ? 'URGENTE • SEGURANÇA HÍDRICA' : 'ALTA • ZELADORIA INTELIGENTE',
-      confidence: '99.4% (Gemini 2.5 Flash)',
+  const handleGrantRole = async (targetNid: string, roleCode: string) => {
+    if (!citizen) return;
+    const res = await fetch('/api/iam360/grant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actor_nid: citizen.citizen_id,
+        target_nid: targetNid,
+        role_code: roleCode
+      })
     });
-    appendAuditLog(
-      'Secretaria de Zeladoria Urbana (311)',
-      'agent-311-gemini-classifier',
-      {
-        'pt-BR': 'Classificação automatizada de chamado urbano e despacho de equipe de manutenção',
-        'es-419': 'Clasificación automatizada de reporte urbano y despacho de equipo de mantenimiento',
-        'en-US': 'Automated urban maintenance classification and field crew dispatch',
-      },
-      ['nid', 'address.coordinates']
-    );
-  };
-
-  const [emergency911Text, setEmergency911Text] = useState<string>(
-    'Cidadão consciente apresentando dor torácica súbita próximo à estação central do Distrito Tecnológico.'
-  );
-  const [dispatched911Units, setDispatched911Units] = useState<
-    Array<{ code: string; type: string; eta: string; status: string }>
-  >([
-    {
-      code: 'AMB-NV-07 (UTI Móvel Autônoma)',
-      type: 'Suporte Avançado de Vida (Cardiologia)',
-      eta: '2 min 40 seg',
-      status: 'EM ROTA PRIORITÁRIA • SEMÁFOROS ABERTOS POR IA',
-    },
-    {
-      code: 'DRONE-MED-02 (Desfibrilador Aéreo)',
-      type: 'VANT de Resposta Rápida',
-      eta: '55 segundos',
-      status: 'EM VOO • COORDENADAS TRAVADAS',
-    },
-  ]);
-
-  const handleTrigger911SOS = () => {
-    setDispatched911Units([
-      {
-        code: 'AMB-NV-01 (Unidade Alfa)',
-        type: 'Resgate Médico & Trauma',
-        eta: '1 min 50 seg',
-        status: 'DESPACHO IMEDIATO 1-CLIQUE • TELEMETRIA ATIVA',
-      },
-      {
-        code: 'PATRULHA-NV-14 (Guarda Cívica)',
-        type: 'Escolta Viária & Perímetro Seguro',
-        eta: '2 min 10 seg',
-        status: 'SINCRONIZADO COM CENTRAL 911',
-      },
-    ]);
-    appendAuditLog(
-      'Comando Tático de Emergências (911)',
-      'agent-911-autonomous-dispatch',
-      {
-        'pt-BR': 'Acionamento SOS 1-Clique: envio de coordenadas precisas e tipo sanguíneo/alergias às viaturas',
-        'es-419': 'Activación SOS 1-Clic: envío de coordenadas precisas y perfil médico a las unidades',
-        'en-US': '1-Click SOS Dispatch: precise GPS coordinates and vital medical profile sent to units',
-      },
-      ['nid', 'full_name', 'address.coordinates', 'biometrics']
-    );
-  };
-
-  const [telemedPrescriptionId, setTelemedPrescriptionId] = useState<string>('RX-NV-2026-90411-ED25519');
-
-  const handleGenerateTelemedRx = () => {
-    setTelemedPrescriptionId(`RX-NV-2026-${Math.floor(10000 + Math.random() * 89999)}-ED25519`);
-    appendAuditLog(
-      'Ministério da Saúde Digital (Telemedicina)',
-      'agent-clinical-summarizer-pro',
-      {
-        'pt-BR': 'Emissão de sumarização clínica SOAP e prescrição digital assinada com Ed25519',
-        'es-419': 'Emisión de resumen clínico SOAP y receta digital firmada con Ed25519',
-        'en-US': 'SOAP clinical summary generation & Ed25519 digitally signed prescription issuance',
-      },
-      ['nid', 'birth_date', 'public_key_ed25519']
-    );
-  };
-
-  const educationPathway = useMemo(() => {
-    const age = currentCitizen?.ageYears ?? 30;
-    if (age <= 8) {
-      return {
-        stage: 'Educação Infantil & Alfabetização Bilíngue Assistida por IA (01m – 8 anos)',
-        modules: [
-          'Fonética Interativa e Narrativas Visuais da Fauna Atlântica',
-          'Lógica Lúdica com Blocos Espaciais e Música Matemática',
-          'Cidadania Mirim: Cuidando dos Oceanos e Energia Limpa',
-        ],
-        aiTutorNote:
-          'O Agente Pedagógico calibrou atividades visuais curtas (12 min), gamificadas e com síntese de voz acolhedora para a idade de ' +
-          age +
-          ' anos.',
-      };
+    const data = await res.json();
+    if (!res.ok) {
+      notify('error', data.error || 'Erro ao conceder permissão.');
+      return;
     }
-    if (age <= 17) {
-      return {
-        stage: 'Ensino Fundamental II / Médio Tecnológico & Pensamento Computacional (9 – 17 anos)',
-        modules: [
-          'Robótica Sustentável, Python Aplicado e Sensores Urbanos IoT',
-          'História das Democracias Digitais e Direitos Algorítmicos',
-          'Biologia Marinha e Modelagem Climática de Novatlantis',
-        ],
-        aiTutorNote:
-          'O Tutor Socrático ativou laboratórios práticos de código e desafios STEM adaptados para estudantes de ' +
-          age +
-          ' anos.',
-      };
+    notify('success', data.message);
+    await loadAllBackstageData();
+    await runCitizenSearch();
+    if (targetNid === citizen.citizen_id) {
+      await authenticateCitizen(citizen.citizen_id);
     }
-    return {
-      stage: 'Educação Superior, Pós-Graduação & Pesquisa Avançada (18 – 100 anos)',
-      modules: [
-        'Arquitetura de Sistemas Multi-Agentes no Google Cloud & Segurança Zero-Trust',
-        'Criptografia Pós-Quântica e Governança de Dados Públicos (ANSI/NIST)',
-        'Engenharia de Energia Fotovoltaica Offshore e Dessalinização',
-      ],
-      aiTutorNote:
-        'Currículo executivo/universitário personalizado para ' +
-        age +
-        ' anos com simulações de arquitetura em nuvem e artigos científicos revisados por pares.',
-    };
-  }, [currentCitizen]);
+  };
+
+  const handleRevokeRole = async (targetNid: string) => {
+    if (!citizen) return;
+    const res = await fetch('/api/iam360/revoke', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actor_nid: citizen.citizen_id,
+        target_nid: targetNid
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      notify('error', data.error || 'Erro ao revogar permissão.');
+      return;
+    }
+    notify('success', data.message);
+    await loadAllBackstageData();
+    await runCitizenSearch();
+    if (targetNid === citizen.citizen_id) {
+      await authenticateCitizen(citizen.citizen_id);
+    }
+  };
+
+  const handleCreate311 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!citizen) return;
+    const res = await fetch('/api/services/311', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        citizen_id: citizen.citizen_id,
+        category: new311Category,
+        district: new311District,
+        description: new311Desc || 'Solicitação de manutenção preventiva registrada pelo cidadão.'
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', data.message);
+      setNew311Desc('');
+      loadAllBackstageData();
+    }
+  };
+
+  const handleResolve311 = async (ticketId: string) => {
+    const res = await fetch('/api/services/311/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticket_id: ticketId,
+        resolver_nid: citizen?.citizen_id,
+        resolution_notes: `Concluído e auditado no Backstage por ${citizen?.full_name} (${citizen?.citizen_id}).`
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', data.message);
+      loadAllBackstageData();
+    }
+  };
+
+  const handleTrigger911 = async (emergencyType: string) => {
+    if (!citizen) return;
+    const res = await fetch('/api/services/911', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        citizen_id: citizen.citizen_id,
+        emergency_type: emergencyType,
+        location_district: citizen.residence?.district || 'Distrito Tecnológico'
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', data.message);
+      loadAllBackstageData();
+    }
+  };
+
+  const handleOpenCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!citizen) return;
+    const res = await fetch('/api/services/company', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        owner_nid: citizen.citizen_id,
+        company_name: companyName || `${citizen.full_name.split(' ')[0]} Autonomous Ventures NV`,
+        sector: companySector
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', data.message);
+      setCompanyName('');
+      loadAllBackstageData();
+    } else {
+      notify('error', data.error);
+    }
+  };
+
+  const handleRequestPassport = async () => {
+    if (!citizen) return;
+    const res = await fetch('/api/services/passport', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ citizen_id: citizen.citizen_id })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', data.message);
+      authenticateCitizen(citizen.citizen_id);
+      loadAllBackstageData();
+    } else {
+      notify('error', data.error);
+    }
+  };
+
+  const handleRecordTelemed = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch('/api/backstage/health/telemed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patient_nid: telemedPatientNid,
+        doctor_nid: citizen?.citizen_id || 'NID-000-0000-0004-3',
+        hospital_id: 'HOSP-NV-01',
+        chief_complaint: telemedComplaint,
+        prescription_medication: telemedMedication
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', data.message);
+      loadAllBackstageData();
+    }
+  };
+
+  const handleSaveStudentGrades = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    const res = await fetch('/api/backstage/education/grade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        teacher_nid: citizen?.citizen_id,
+        student_nid: selectedStudent.citizen_id,
+        ...gradeForm
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', `${data.message} Nova média: ${data.performance_index}`);
+      loadAllBackstageData();
+    }
+  };
+
+  const handleApplyExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch('/api/backstage/education/exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        institution_id: 'SCH-NV-002',
+        teacher_nid: citizen?.citizen_id || 'NID-000-0000-0006-0',
+        teacher_name: citizen?.full_name || 'Prof. Lucas Albuquerque Silva',
+        subject: examSubject,
+        grade_level: 'FUNDAMENTAL_II',
+        title: examTitle
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify('success', data.message);
+      loadAllBackstageData();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#041434] text-slate-100 font-sans antialiased">
-      {/* ===================================================================
-          BARRA CONSTITUCIONAL SOBERANA + SELETOR DE IDIOMA EM 100% DAS TELAS
-          =================================================================== */}
-      <div className="bg-[#020B1E] text-slate-200 border-b border-blue-900/60 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen flex flex-col bg-[#f7f9fc] text-[#191c1e]">
+      {/* Top Sovereign Status Bar (Austere Institutional Header) */}
+      <div className="bg-[#141a32] text-white py-1.5 px-6 text-xs font-label flex flex-wrap justify-between items-center border-b border-slate-800 gap-2">
+        <div className="flex items-center space-x-3">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#57fbdb]"></span>
+          <span className="tracking-wider uppercase font-semibold">
+            GOVERNO DA REPÚBLICA DIGITAL DE NOVATLANTIS — INFRAESTRUTURA PÚBLICA DIGITAL
+          </span>
+          <span className="hidden lg:inline text-slate-400">|</span>
+          <span className="hidden lg:inline text-slate-300 font-mono text-[11px]">
+            GDF LAKEHOUSE: 100.000 CIDADÃOS ATIVOS (PROJETO GCP: novatlantis)
+          </span>
+        </div>
+        <div className="flex items-center space-x-5">
+          <span className="text-slate-300 hidden sm:inline">
+            STATUS DO CONSENSO: <strong className="text-[#57fbdb]">ATIVO</strong>
+          </span>
+          <span className="text-slate-300 hidden md:inline">
+            REDE SOBERANA: <strong>NÍVEL 1 (ZERO TRUST IAP)</strong>
+          </span>
+          <div className="flex items-center space-x-1 border-l border-slate-700 pl-4">
+            {(['pt-BR', 'es-419', 'en-US'] as Locale[]).map(lang => (
+              <button
+                key={lang}
+                onClick={() => setLocale(lang)}
+                className={`px-2 py-0.5 text-[11px] font-mono uppercase transition-colors ${
+                  locale === lang
+                    ? 'bg-white text-[#141a32] font-bold'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                {lang.split('-')[0].toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Institutional Navigation Header */}
+      <header className="bg-white border-b border-[#c6c6ce]/70 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+          <div className="flex items-center space-x-4">
             <img
-              src="/assets/flag-novatlantis.jpg"
-              alt="Bandeira Oficial de Novatlantis"
-              className="w-7 h-4.5 object-cover rounded-xs border border-amber-400/50 shadow-xs"
+              src="/assets/coat-of-arms-novatlantis.jpg"
+              alt="Brasão Oficial de Novatlantis"
+              className="w-11 h-11 object-contain border border-[#c6c6ce] p-0.5 bg-white"
             />
-            <span className="font-mono tracking-wider uppercase text-amber-300 font-semibold">{t.govHeader}</span>
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg font-bold tracking-tight text-slate-900 font-headline leading-none">
+                  REPÚBLICA DE NOVATLANTIS
+                </span>
+                <img
+                  src="/assets/flag-novatlantis.jpg"
+                  alt="Bandeira de Novatlantis"
+                  className="h-4 w-7 object-cover border border-slate-300"
+                />
+              </div>
+              <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mt-1">
+                Portal Oficial de Serviços, Identidade 360 e Backstage de Estado
+              </span>
+            </div>
           </div>
 
-          {/* Indicador da Arquitetura de Idiomas em 3 Camadas + Botão Seletor Global */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="hidden md:flex items-center gap-1.5 bg-[#082F72]/60 border border-sky-500/30 px-2.5 py-1 rounded text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-              <span className="text-slate-300">{t.langResolutionLabel}</span>
-              <span className="font-medium text-sky-300">
-                {resolutionLayer === 'OVERRIDE'
-                  ? t.langSourceOverride
-                  : resolutionLayer === 'AUTHENTICATED_DB'
-                  ? t.langSourceAuth
-                  : t.langSourceAnon}
+          {/* Primary Workspace Switcher */}
+          <nav className="flex items-center space-x-2">
+            <button
+              onClick={() => setView('PUBLIC_PORTAL')}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-colors flex items-center space-x-1.5 ${
+                view === 'PUBLIC_PORTAL'
+                  ? 'bg-[#141a32] text-white border-[#141a32]'
+                  : 'bg-white text-slate-700 border-[#c6c6ce] hover:bg-slate-50'
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">account_balance</span>
+              <span>Portal da Nação</span>
+            </button>
+
+            <button
+              onClick={() => setView('CITIZEN_HUB')}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-colors flex items-center space-x-1.5 ${
+                view === 'CITIZEN_HUB'
+                  ? 'bg-[#141a32] text-white border-[#141a32]'
+                  : 'bg-white text-slate-700 border-[#c6c6ce] hover:bg-slate-50'
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">badge</span>
+              <span>Espaço do Cidadão (NID)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (!citizen?.backstage_allowed) {
+                  notify(
+                    'error',
+                    `Acesso Restrito: O cidadão ${citizen?.full_name} (${citizen?.citizen_id}) possui perfil CITIZEN_COMMON sem permissão ativa na aplicação Identidade 360.`
+                  );
+                  return;
+                }
+                setView('GOVERNMENT_BACKSTAGE');
+              }}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-colors flex items-center space-x-1.5 ${
+                view === 'GOVERNMENT_BACKSTAGE'
+                  ? 'bg-[#0061a5] text-white border-[#0061a5]'
+                  : citizen?.backstage_allowed
+                  ? 'bg-[#f2f4f7] text-[#0061a5] border-[#0061a5]/40 hover:bg-[#e6e8eb]'
+                  : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+              }`}
+              title={
+                citizen?.backstage_allowed
+                  ? 'Acessar Ambiente Administrativo de Servidores e Gestores Públicos'
+                  : 'Requer permissão administrativa ativa na aplicação Identidade 360'
+              }
+            >
+              <span className="material-symbols-outlined text-base">
+                {citizen?.backstage_allowed ? 'admin_panel_settings' : 'lock'}
               </span>
-              {explicitLangOverride && (
-                <button
-                  onClick={handleClearLanguageOverride}
-                  className="ml-1.5 underline text-amber-300 hover:text-amber-200"
-                >
-                  ({t.resetLangOverride})
-                </button>
+              <span>Backstage Governamental</span>
+              {citizen?.backstage_allowed && (
+                <span className="ml-1 px-1.5 py-0.5 text-[9px] bg-[#00957f] text-white font-mono">
+                  360 ATIVO
+                </span>
               )}
+            </button>
+          </nav>
+        </div>
+
+        {/* Unified Single Sign-On Bar (Mesmo ID / E-mail do Cidadão -> Resolução Identidade 360) */}
+        <div className="bg-[#f2f4f7] border-t border-[#c6c6ce]/60 px-6 py-2.5">
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center">
+                <span className="material-symbols-outlined text-sm mr-1 text-[#0061a5]">verified_user</span>
+                Login Único Cidadão / Servidor (NID ou E-mail):
+              </span>
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  authenticateCitizen(loginInput);
+                }}
+                className="flex items-center"
+              >
+                <input
+                  type="text"
+                  value={loginInput}
+                  onChange={e => setLoginInput(e.target.value)}
+                  placeholder="Ex: NID-000-0000-0001-9 ou email"
+                  className="px-2.5 py-1 text-xs font-mono bg-white border border-[#c6c6ce] text-slate-900 w-56 focus:outline-none focus:border-[#0061a5]"
+                />
+                <button
+                  type="submit"
+                  disabled={loadingAuth}
+                  className="bg-[#141a32] text-white px-3 py-1 text-xs font-bold uppercase tracking-wider hover:bg-slate-800"
+                >
+                  {loadingAuth ? '...' : 'Autenticar'}
+                </button>
+              </form>
+
+              <select
+                value={citizen?.citizen_id || 'NID-000-0000-0001-9'}
+                onChange={e => authenticateCitizen(e.target.value)}
+                className="px-2.5 py-1 text-xs bg-white border border-[#c6c6ce] text-slate-800 font-medium focus:outline-none focus:border-[#0061a5]"
+              >
+                {QUICK_PROFILES.map(p => (
+                  <option key={p.nid} value={p.nid}>
+                    Troca Rápida: {p.label} [{p.nid}]
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="flex items-center gap-1 bg-[#082F72]/80 p-1 rounded-md border border-sky-400/30" role="group">
-              {(['pt-BR', 'es-419', 'en-US'] as SupportedLocale[]).map((loc) => {
-                const active = activeLocale === loc;
+            {citizen && (
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <div className="flex items-center space-x-2 bg-white px-3 py-1 border border-[#c6c6ce]">
+                  <span className="font-mono font-bold text-slate-900">{citizen.citizen_id}</span>
+                  <span className="text-slate-400">•</span>
+                  <span className="font-semibold text-slate-800">{citizen.full_name}</span>
+                  <span className="text-slate-500">({citizen.age}a)</span>
+                </div>
+                <div
+                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider border ${
+                    citizen.backstage_allowed
+                      ? 'bg-[#141a32] text-white border-[#141a32]'
+                      : 'bg-white text-slate-700 border-[#c6c6ce]'
+                  }`}
+                >
+                  Identidade 360: {citizen.effective_role_code}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Global Notification Banner */}
+      {bannerMsg && (
+        <div
+          className={`border-b px-6 py-3 text-xs font-medium ${
+            bannerMsg.type === 'error'
+              ? 'bg-[#ffdad6] text-[#93000a] border-[#ba1a1a]'
+              : bannerMsg.type === 'success'
+              ? 'bg-[#e6f7f4] text-[#005044] border-[#00957f]'
+              : 'bg-[#e8f1fa] text-[#00487c] border-[#0061a5]'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <span className="material-symbols-outlined text-base">
+                {bannerMsg.type === 'error' ? 'error' : 'check_circle'}
+              </span>
+              <span>{bannerMsg.text}</span>
+            </div>
+            <button onClick={() => setBannerMsg(null)} className="text-xs underline font-bold ml-4">
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          VIEW 1: PORTAL INSTITUCIONAL AUSTERO ("SOVEREIGN CIVIC")
+      ===================================================================== */}
+      {view === 'PUBLIC_PORTAL' && (
+        <main className="flex-grow">
+          {/* Hero & Agentic Command Center */}
+          <section className="bg-[#f2f4f7] border-b border-[#c6c6ce]/60 py-14 px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-8">
+                <div className="flex items-center space-x-3 mb-3">
+                  <span className="inline-block px-2.5 py-1 bg-slate-200 text-slate-800 text-[11px] font-bold uppercase tracking-widest">
+                    Estado Digital Soberano • Era Agêntica
+                  </span>
+                  <span className="text-xs font-mono text-slate-600">
+                    Lema Constitucional: NOVATLANTIS • LIBERTAS IN DIGITALI
+                  </span>
+                </div>
+                <h1 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight leading-tight mb-4 font-headline">
+                  Serviços Públicos e Governança Agêntica ao Alcance do Cidadão.
+                </h1>
+                <p className="text-slate-600 text-lg leading-relaxed max-w-2xl">
+                  Bem-vindo ao portal central da República de Novatlantis. Nossa administração opera em regime de
+                  transparência algorítmica total, austeridade institucional e eficiência computacional contínua para
+                  todos os 100.000 cidadãos.
+                </p>
+              </div>
+
+              {/* Agentic Command Bar */}
+              <div className="bg-white p-2 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(20,26,50,1)]">
+                <form onSubmit={handleAgentCommand} className="flex items-center">
+                  <span className="material-symbols-outlined px-4 text-slate-500 text-2xl">terminal</span>
+                  <input
+                    type="text"
+                    value={agentPrompt}
+                    onChange={e => setAgentPrompt(e.target.value)}
+                    placeholder="Solicite qualquer serviço público ao Agente de Estado (ex: 'Abrir empresa em 45s', 'Agendar telemedicina', 'Ver notas escolares')..."
+                    className="w-full py-3.5 px-2 text-slate-900 placeholder-slate-400 focus:outline-none text-base font-body border-none focus:ring-0"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-[#141a32] text-white px-7 py-3.5 font-bold text-xs uppercase tracking-wider hover:bg-slate-800 transition-colors shrink-0"
+                  >
+                    Executar
+                  </button>
+                </form>
+              </div>
+
+              {agentResponse && (
+                <div className="mt-4 bg-white border border-[#0061a5] p-4 flex items-center justify-between">
+                  <div className="text-xs text-slate-800">
+                    <strong className="uppercase text-[#0061a5] mr-2">Despacho do Agente Estatal:</strong>
+                    {agentResponse}
+                  </div>
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="ml-4 px-3 py-1.5 bg-[#141a32] text-white text-[11px] font-bold uppercase tracking-wider shrink-0"
+                  >
+                    Ir ao Serviço
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-wrap gap-2 items-center text-xs text-slate-500">
+                <span className="font-semibold text-slate-700">Comandos frequentes:</span>
+                <button
+                  onClick={() => {
+                    setView('CITIZEN_HUB');
+                  }}
+                  className="bg-white border border-slate-300 px-2.5 py-1 hover:border-slate-600 text-slate-700"
+                >
+                  "Renovar Identidade Soberana (NID)"
+                </button>
+                <button
+                  onClick={() => {
+                    setView('CITIZEN_HUB');
+                  }}
+                  className="bg-white border border-slate-300 px-2.5 py-1 hover:border-slate-600 text-slate-700"
+                >
+                  "Auditar Imposto sobre Computação & UBI"
+                </button>
+                <button
+                  onClick={() => {
+                    setView('CITIZEN_HUB');
+                  }}
+                  className="bg-white border border-slate-300 px-2.5 py-1 hover:border-slate-600 text-slate-700"
+                >
+                  "Requerer Passaporte Digital ICAO"
+                </button>
+                {citizen?.backstage_allowed && (
+                  <button
+                    onClick={() => setView('GOVERNMENT_BACKSTAGE')}
+                    className="bg-[#141a32] text-white px-2.5 py-1 font-semibold"
+                  >
+                    "Acessar Backstage Governamental ({citizen.effective_role_code})"
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Key Sovereign Metrics Bar */}
+          <section className="bg-white border-b border-[#c6c6ce]/60">
+            <div className="max-w-7xl mx-auto px-6 py-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                <div className="pt-4 sm:pt-0 sm:px-4 first:pl-0">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Tempo Médio de Resolução
+                  </p>
+                  <p className="text-3xl font-bold text-slate-900 font-headline tabular-nums">1.4 Segundos</p>
+                  <p className="text-[11px] text-[#006b5b] font-medium mt-1">
+                    99.98% via Agentes Autônomos Auditáveis
+                  </p>
+                </div>
+                <div className="pt-4 sm:pt-0 sm:px-6">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    População Registrada (GDF)
+                  </p>
+                  <p className="text-3xl font-bold text-slate-900 font-headline tabular-nums">
+                    {overviewData?.counts?.dim_citizens?.toLocaleString('pt-BR') || '100.000'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    100% Biometria NIST + {overviewData?.counts?.rel_family_graph?.toLocaleString('pt-BR') || '58.985'}{' '}
+                    Vínculos Familiares
+                  </p>
+                </div>
+                <div className="pt-4 sm:pt-0 sm:px-6">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Custo Operacional do Estado
+                  </p>
+                  <p className="text-3xl font-bold text-slate-900 font-headline tabular-nums">0.42% do PIB</p>
+                  <p className="text-[11px] text-[#006b5b] font-medium mt-1">
+                    Austeridade Máxima • Zero Burocracia Redundante
+                  </p>
+                </div>
+                <div className="pt-4 sm:pt-0 sm:px-6">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                     Soberania de Dados (Lakehouse)
+                  </p>
+                  <p className="text-3xl font-bold text-slate-900 font-headline tabular-nums">Nível 5 (Máx)</p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    BigQuery Silver/Gold + Criptografia Pós-Quântica
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Main Content Grid: Bento Layout of Civic Services */}
+          <section className="max-w-7xl mx-auto px-6 py-14">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 border-b border-slate-300 pb-4 gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight font-headline">
+                  Serviços Essenciais ao Cidadão e ao Gestor Público
+                </h2>
+                <p className="text-slate-600 text-sm mt-1">
+                  Acesso direto aos módulos operacionais da República conectados ao banco de 100.000 cidadãos.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setView('CITIZEN_HUB')}
+                  className="text-[#0061a5] text-xs font-bold uppercase tracking-wider flex items-center hover:underline"
+                >
+                  Abrir Meu Painel do Cidadão
+                  <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Service Card 1 */}
+              <div className="bg-white border border-[#c6c6ce] p-6 hover:border-slate-900 transition-colors flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="material-symbols-outlined text-3xl text-[#141a32]">badge</span>
+                    <span className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 border border-slate-200">
+                      MOD-ID-01 • IDENTIDADE 360
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 font-headline">
+                    Identidade Soberana (NID) & Grafo Familiar
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Gestão de credenciais biométricas NIST, chaves públicas Ed25519, árvore familiar civil e controle de
+                    permissões administrativas (Identidade 360).
+                  </p>
+                </div>
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Emitir / Inspecionar Credencial NID</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (citizen?.backstage_allowed) {
+                        setView('GOVERNMENT_BACKSTAGE');
+                        setBackstageTab('iam_360');
+                      } else {
+                        setView('CITIZEN_HUB');
+                      }
+                    }}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Gerenciar Permissões na Aplicação Identidade 360</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <a
+                    href={SATELLITE_URLS.nid}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full text-left text-xs font-mono text-slate-500 hover:text-slate-900 flex justify-between items-center py-1"
+                  >
+                    <span>Microsserviço Isolado NID (Cloud Run)</span>
+                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Service Card 2 */}
+              <div className="bg-white border border-[#c6c6ce] p-6 hover:border-slate-900 transition-colors flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="material-symbols-outlined text-3xl text-[#141a32]">account_balance_wallet</span>
+                    <span className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 border border-slate-200">
+                      MOD-ECON-02 • TESOURO
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 font-headline">
+                    Tributação Automática, UBI & Empresas em 45s
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Abertura de empresas 100% autônomas em 45 segundos, cota soberana de TFLOPs e recebimento do
+                    Dividendo Universal de Computação (UBI).
+                  </p>
+                </div>
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Abrir Empresa Digital em 45 Segundos</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Extrato do Dividendo Nacional de IA (UBI)</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Service Card 3 */}
+              <div className="bg-white border border-[#c6c6ce] p-6 hover:border-slate-900 transition-colors flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="material-symbols-outlined text-3xl text-[#141a32]">gavel</span>
+                    <span className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 border border-slate-200">
+                      MOD-JUS-03 • FRONTEIRAS
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 font-headline">
+                    Justiça Algorítmica & Passaporte ICAO
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Emissão instantânea de passaporte eletrônico ICAO integrada à verificação criminal e fiscal no GDF
+                    e câmaras de mediação civil por IA.
+                  </p>
+                </div>
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Solicitar / Validar Passaporte Digital ICAO</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (citizen?.backstage_allowed) {
+                        setView('GOVERNMENT_BACKSTAGE');
+                        setBackstageTab('gdf_lakehouse');
+                      } else {
+                        setView('CITIZEN_HUB');
+                      }
+                    }}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Cruzamento Fronteira (Passaporte x Justiça x Fisco)</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Service Card 4 */}
+              <div className="bg-white border border-[#c6c6ce] p-6 hover:border-slate-900 transition-colors flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="material-symbols-outlined text-3xl text-[#141a32]">medical_services</span>
+                    <span className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 border border-slate-200">
+                      MOD-SAU-04 • HL7 FHIR
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 font-headline">
+                    Saúde Preventiva, Hospitais & Telemedicina
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Prontuário único HL7 FHIR, carteira vacinal, teleconsultas com transcrição clínica SOAP e console de
+                    gestão hospitalar e médica no Backstage.
+                  </p>
+                </div>
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Acessar Prontuário HL7 & Vacinas do Cidadão</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (citizen?.backstage_allowed) {
+                        setView('GOVERNMENT_BACKSTAGE');
+                        setBackstageTab('health_backstage');
+                      } else {
+                        setView('CITIZEN_HUB');
+                      }
+                    }}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Backstage Médico: Hospitais & Telemedicina</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <a
+                    href={SATELLITE_URLS.health}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full text-left text-xs font-mono text-slate-500 hover:text-slate-900 flex justify-between items-center py-1"
+                  >
+                    <span>Microsserviço Telemedicina (Cloud Run)</span>
+                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Service Card 5 */}
+              <div className="bg-white border border-[#c6c6ce] p-6 hover:border-slate-900 transition-colors flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="material-symbols-outlined text-3xl text-[#141a32]">domain</span>
+                    <span className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 border border-slate-200">
+                      MOD-URB-05 • 311 & 911
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 font-headline">
+                    Zeladoria Urbana 311 & Emergência 911
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Abertura de demandas urbanas 311 e despacho 911 com cruzamento automático de tipo sanguíneo,
+                    alergias e notificação imediata de familiares.
+                  </p>
+                </div>
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Abrir Demanda 311 ou Acionar Resgate 911</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <div className="flex gap-3 pt-1">
+                    <a
+                      href={SATELLITE_URLS.s311}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-mono text-slate-500 hover:text-slate-900 underline"
+                    >
+                      App 311
+                    </a>
+                    <a
+                      href={SATELLITE_URLS.s911}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-mono text-[#ba1a1a] hover:underline font-semibold"
+                    >
+                      App 911 SOS
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Card 6 */}
+              <div className="bg-white border border-[#c6c6ce] p-6 hover:border-slate-900 transition-colors flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="material-symbols-outlined text-3xl text-[#141a32]">school</span>
+                    <span className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 border border-slate-200">
+                      MOD-EDU-06 • ENSINO
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 font-headline">
+                    Educação Contínua, Escolas & Diário Docente
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Trilhas adaptativas por IA para os 17.993 estudantes matriculados, gestão de escolas, aplicação de
+                    provas e boletim analítico por matéria.
+                  </p>
+                </div>
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => setView('CITIZEN_HUB')}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Painel do Estudante & Desempenho por Matéria</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (citizen?.backstage_allowed) {
+                        setView('GOVERNMENT_BACKSTAGE');
+                        setBackstageTab('edu_backstage');
+                      } else {
+                        setView('CITIZEN_HUB');
+                      }
+                    }}
+                    className="w-full text-left text-xs font-semibold text-[#0061a5] hover:underline flex justify-between items-center py-1"
+                  >
+                    <span>Backstage Professor: Escolas, Provas & Notas</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <a
+                    href={SATELLITE_URLS.edu}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full text-left text-xs font-mono text-slate-500 hover:text-slate-900 flex justify-between items-center py-1"
+                  >
+                    <span>Microsserviço Educação (Cloud Run)</span>
+                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* How Our AI-First Nation Works: Institutional Transparency */}
+          <section className="bg-[#f2f4f7] border-y border-[#c6c6ce]/60 py-14 px-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-10">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#0061a5] block mb-2">
+                  Fundamentos Constitucionais
+                </span>
+                <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight font-headline">
+                  Como Opera a Administração Agêntica de Novatlantis
+                </h2>
+                <p className="text-slate-600 text-sm mt-2 max-w-3xl">
+                  Em Novatlantis, a inteligência artificial não substitui a soberania popular; ela atua como o motor de
+                  execução austero das leis votadas pelos cidadãos, garantindo imparcialidade e custo mínimo.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-white p-6 border-t-4 border-[#141a32] shadow-sm">
+                  <div className="text-xs font-mono text-slate-400 mb-2">PILAR 01 // EXECUÇÃO</div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-3 font-headline">Burocracia Zero por Padrão</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                    O cidadão nunca preenche formulários redundantes. Os agentes estatais solicitam permissão
+                    criptográfica única à sua carteira de dados e processam licenças, benefícios e registros em
+                    milissegundos.
+                  </p>
+                  <div className="text-xs font-semibold text-slate-800 flex items-center">
+                    <span className="material-symbols-outlined text-base mr-1 text-[#006b5b]">verified</span>
+                    Auditado pelo Protocolo Zero-Knowledge
+                  </div>
+                </div>
+                <div className="bg-white p-6 border-t-4 border-[#0061a5] shadow-sm">
+                  <div className="text-xs font-mono text-slate-400 mb-2">PILAR 02 // CONTROLE DE ACESSO</div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-3 font-headline">
+                    Identidade 360 & Revogação Imediata
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                    Todo servidor público autentica-se com seu próprio NID de cidadão. O acesso aos ambientes de
+                    Backstage é concedido pelo Gestor de Identidades nomeado pelo Primeiro-Ministro e cessa no exato
+                    segundo em que a permissão é revogada.
+                  </p>
+                  <div className="text-xs font-semibold text-slate-800 flex items-center">
+                    <span className="material-symbols-outlined text-base mr-1 text-[#0061a5]">security</span>
+                    Governança RBAC/ABAC em Tempo Real
+                  </div>
+                </div>
+                <div className="bg-white p-6 border-t-4 border-[#006b5b] shadow-sm">
+                  <div className="text-xs font-mono text-slate-400 mb-2">PILAR 03 // DATA LAKEHOUSE</div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-3 font-headline">
+                    Arquitetura Medalhão (Bronze, Silver, Gold)
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                    Os 100.000 cidadãos compõem um grafo civil-familiar íntegro no Google Cloud (Cloud Storage +
+                    BigQuery), permitindo cruzamentos vitais em emergências 911, prevenção de evasão escolar e
+                    segurança de fronteiras.
+                  </p>
+                  <div className="text-xs font-semibold text-slate-800 flex items-center">
+                    <span className="material-symbols-outlined text-base mr-1 text-[#006b5b]">database</span>
+                    GDF Lakehouse Ativo em novatlantis
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      )}
+
+      {/* =====================================================================
+          VIEW 2: ESPAÇO DO CIDADÃO (NID 360°, GRAFO FAMILIAR & SERVIÇOS)
+      ===================================================================== */}
+      {view === 'CITIZEN_HUB' && citizen && (
+        <main className="flex-grow max-w-7xl w-full mx-auto px-6 py-10 space-y-8">
+          {/* Citizen Header Summary */}
+          <div className="bg-white border border-[#c6c6ce] p-6 flex flex-col lg:flex-row justify-between gap-6">
+            <div className="flex items-start space-x-5">
+              <div className="w-16 h-16 bg-[#141a32] text-white flex items-center justify-center font-headline font-bold text-2xl shrink-0 border border-slate-800">
+                {citizen.full_name
+                  .split(' ')
+                  .slice(0, 2)
+                  .map((n: string) => n[0])
+                  .join('')}
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-mono uppercase px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-800 font-bold">
+                    {citizen.citizen_id}
+                  </span>
+                  <span className="text-xs font-mono uppercase px-2 py-0.5 bg-[#e6f7f4] text-[#005044] border border-[#00957f]">
+                    NIST BIOMETRIA: {( (citizen.biometrics?.biometric_confidence_score || 0.994) * 100 ).toFixed(2)}%
+                  </span>
+                  <span className="text-xs font-mono uppercase px-2 py-0.5 bg-slate-100 text-slate-700">
+                    CRED: {citizen.professional_credential}
+                  </span>
+                </div>
+                <h1 className="text-2xl font-bold text-slate-900 mt-2 font-headline">{citizen.full_name}</h1>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  {citizen.profession_label} • Nasc.: {citizen.birth_date} ({citizen.age} anos) • E-mail:{' '}
+                  <span className="font-mono">{citizen.email}</span>
+                </p>
+                {citizen.residence && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Residência Oficial: {citizen.residence.street}, {citizen.residence.number} —{' '}
+                    <strong>{citizen.residence.district}</strong> ({citizen.residence.postal_code})
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-between items-start lg:items-end border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-200">
+              <div className="text-left lg:text-right">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">
+                  PERFIL DE ACESSO NA IDENTIDADE 360
+                </span>
+                <span className="text-sm font-bold text-slate-900 block mt-0.5">{citizen.role_title}</span>
+                <span className="text-xs text-slate-500 block">{citizen.ministry_label}</span>
+              </div>
+              <div className="mt-3 flex gap-2">
+                {citizen.backstage_allowed ? (
+                  <button
+                    onClick={() => setView('GOVERNMENT_BACKSTAGE')}
+                    className="bg-[#0061a5] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#00487c] flex items-center space-x-1.5"
+                  >
+                    <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
+                    <span>Abrir Meu Ambiente de Backstage</span>
+                  </button>
+                ) : (
+                  <span className="px-3 py-1.5 bg-slate-100 border border-slate-300 text-slate-600 text-xs font-medium">
+                    Acesso exclusivo de Cidadão Comum (Backstage desabilitado na Identidade 360)
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Grid of Citizen Modules */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Column 1: Family Graph & NIST Biometrics */}
+            <div className="bg-white border border-[#c6c6ce] p-6 space-y-5">
+              <div className="border-b border-slate-200 pb-3 flex justify-between items-center">
+                <h2 className="text-base font-bold text-slate-900 font-headline flex items-center">
+                  <span className="material-symbols-outlined text-lg mr-2 text-[#141a32]">diversity_3</span>
+                  Grafo Familiar Civil (rel_family_graph)
+                </h2>
+                <span className="text-[11px] font-mono text-slate-500">
+                  {citizen.family_links?.length || 0} vínculos
+                </span>
+              </div>
+
+              {citizen.family_links?.length > 0 ? (
+                <div className="space-y-2.5">
+                  {citizen.family_links.map((rel: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-[#f7f9fc] border border-slate-200 flex justify-between items-center text-xs"
+                    >
+                      <div>
+                        <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 bg-[#141a32] text-white mr-2">
+                          {rel.relationship_type}
+                        </span>
+                        <strong className="text-slate-900">{rel.relative_name}</strong> ({rel.relative_age}a)
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                          {rel.relative_nid} • {rel.relative_profession}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => authenticateCitizen(rel.relative_nid)}
+                        className="text-[#0061a5] font-bold hover:underline text-[11px] shrink-0 ml-2"
+                      >
+                        Logar como
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">Nenhum vínculo familiar direto listado para este registro.</p>
+              )}
+
+              <div className="pt-4 border-t border-slate-200">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Assinatura Biométrica Padrão NIST & Ed25519
+                </h3>
+                <div className="bg-[#f2f4f7] p-3 font-mono text-[11px] text-slate-700 space-y-1 break-all border border-slate-300">
+                  <div>
+                    <strong>PK Ed25519:</strong> {citizen.biometrics?.ed25519_public_key}
+                  </div>
+                  <div>
+                    <strong>Template ISO-19794-5:</strong> {citizen.biometrics?.nist_face_preview}
+                  </div>
+                  <div>
+                    <strong>Minúcias (x,y,θ,q):</strong>{' '}
+                    {JSON.stringify(citizen.biometrics?.nist_fingerprint_minutiae?.slice(0, 2) || [])}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Health HL7 FHIR + Student / Education Record */}
+            <div className="bg-white border border-[#c6c6ce] p-6 space-y-5">
+              <div className="border-b border-slate-200 pb-3 flex justify-between items-center">
+                <h2 className="text-base font-bold text-slate-900 font-headline flex items-center">
+                  <span className="material-symbols-outlined text-lg mr-2 text-[#141a32]">medical_information</span>
+                  Prontuário HL7 FHIR & Educação
+                </h2>
+                <span className="text-xs font-mono font-bold text-[#ba1a1a] bg-red-50 px-2 py-0.5 border border-red-200">
+                  Tipo Sanguíneo: {citizen.health?.blood_type || 'O+'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-[#f7f9fc] border border-slate-200">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Alergias Registradas</span>
+                  <strong className="text-slate-900">
+                    {citizen.health?.allergies?.join(', ') || 'Nenhuma'}
+                  </strong>
+                </div>
+                <div className="p-3 bg-[#f7f9fc] border border-slate-200">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Condições Crônicas</span>
+                  <strong className="text-slate-900">
+                    {citizen.health?.chronic_conditions?.join(', ') || 'Hígido'}
+                  </strong>
+                </div>
+                <div className="p-3 bg-[#f7f9fc] border border-slate-200">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Hospital de Referência</span>
+                  <strong className="text-slate-900 font-mono">{citizen.health?.assigned_hospital_id}</strong>
+                </div>
+                <div className="p-3 bg-[#f7f9fc] border border-slate-200">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Médico da Família</span>
+                  <strong className="text-slate-900 font-mono">{citizen.health?.family_doctor_nid}</strong>
+                </div>
+              </div>
+
+              {citizen.education ? (
+                <div className="p-4 bg-[#f2f4f7] border border-slate-300 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold uppercase text-[#141a32]">
+                      Matrícula Escolar Ativa ({citizen.education.grade_level})
+                    </span>
+                    <span className="text-xs font-mono font-bold text-[#006b5b]">
+                      Média: {citizen.education.performance_index} | Freq: {citizen.education.attendance_rate}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">{citizen.education.institution_name}</p>
+                  <div className="grid grid-cols-4 gap-2 pt-2 text-center text-[11px] font-mono">
+                    <div className="bg-white p-1.5 border border-slate-200">
+                      <div className="text-slate-400">MAT</div>
+                      <div className="font-bold">{citizen.education.score_mathematics}</div>
+                    </div>
+                    <div className="bg-white p-1.5 border border-slate-200">
+                      <div className="text-slate-400">CIÊN</div>
+                      <div className="font-bold">{citizen.education.score_sciences}</div>
+                    </div>
+                    <div className="bg-white p-1.5 border border-slate-200">
+                      <div className="text-slate-400">IA/ROB</div>
+                      <div className="font-bold">{citizen.education.score_ai_robotics}</div>
+                    </div>
+                    <div className="bg-white p-1.5 border border-slate-200">
+                      <div className="text-slate-400">LÍNG</div>
+                      <div className="font-bold">{citizen.education.score_languages}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-[#f7f9fc] border border-slate-200 text-xs text-slate-600">
+                  Cidadão fora da faixa escolar obrigatória (4–22 anos) ou formação superior concluída. Dica: selecione{' '}
+                  <button
+                    onClick={() => authenticateCitizen('NID-000-0000-0010-2')}
+                    className="text-[#0061a5] font-bold underline"
+                  >
+                    Pedro Albuquerque (11 anos)
+                  </button>{' '}
+                  para visualizar o boletim estudantil ativo.
+                </div>
+              )}
+
+              {/* Emergency 911 One-Click Trigger */}
+              <div className="pt-2">
+                <button
+                  onClick={() => handleTrigger911('Emergência Médica Aguda (Acionamento Cidadão)')}
+                  className="w-full bg-[#ba1a1a] hover:bg-red-800 text-white py-2.5 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2"
+                >
+                  <span className="material-symbols-outlined text-base">emergency</span>
+                  <span>Acionar SOS 911 (Envia HL7 + Alerta Familiar GDF)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Column 3: Citizen Action Center (311, Company in 45s, ICAO Passport & UBI) */}
+            <div className="bg-white border border-[#c6c6ce] p-6 space-y-5">
+              <div className="border-b border-slate-200 pb-3 flex justify-between items-center">
+                <h2 className="text-base font-bold text-slate-900 font-headline flex items-center">
+                  <span className="material-symbols-outlined text-lg mr-2 text-[#141a32]">rocket_launch</span>
+                  Serviços Digitais Soberanos
+                </h2>
+                <span className="text-xs font-mono font-bold text-[#006b5b]">
+                  UBI: N$ {citizen.ubi_monthly_credits}/mês
+                </span>
+              </div>
+
+              {/* Passport & Border Clearance */}
+              <div className="p-3.5 bg-[#f7f9fc] border border-slate-200 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-slate-800">Passaporte Digital ICAO & Justiça</span>
+                  <span className="font-mono text-[11px] px-2 py-0.5 bg-white border border-slate-300">
+                    {citizen.passport ? `${citizen.passport.passport_number} (${citizen.passport.status})` : 'NÃO EMITIDO'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Status Judicial: <strong>{citizen.justice?.background_check_status}</strong> | Status Fiscal:{' '}
+                  <strong>{citizen.tax_status}</strong>
+                </p>
+                <button
+                  onClick={handleRequestPassport}
+                  className="w-full bg-[#141a32] text-white py-2 text-xs font-bold uppercase tracking-wider hover:bg-slate-800"
+                >
+                  Emitir / Renovar Passaporte Digital (Cruzamento GDF)
+                </button>
+              </div>
+
+              {/* Open Autonomous Company in 45s */}
+              <form onSubmit={handleOpenCompany} className="p-3.5 bg-[#f7f9fc] border border-slate-200 space-y-2">
+                <div className="text-xs font-bold text-slate-800">
+                  Abertura de Empresa Autônoma em 45s (+250 TFLOPs)
+                </div>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={e => setCompanyName(e.target.value)}
+                  placeholder="Razão Social da Empresa AI-First..."
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-[#0061a5] text-white py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#00487c]"
+                >
+                  Registrar Empresa no Tesouro Soberano
+                </button>
+              </form>
+
+              {/* Submit 311 Urban Demand */}
+              <form onSubmit={handleCreate311} className="p-3.5 bg-[#f7f9fc] border border-slate-200 space-y-2">
+                <div className="text-xs font-bold text-slate-800">
+                  Abrir Demanda Urbana 311 (Enviada ao Backstage Público)
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={new311Category}
+                    onChange={e => setNew311Category(e.target.value)}
+                    className="px-2 py-1 text-xs bg-white border border-slate-300"
+                  >
+                    <option>Iluminação Fotovoltaica & Smart Grid</option>
+                    <option>Mobilidade Autônoma & Vias</option>
+                    <option>Saneamento & Qualidade Hídrica</option>
+                    <option>Segurança de Parques & Drones</option>
+                  </select>
+                  <select
+                    value={new311District}
+                    onChange={e => setNew311District(e.target.value)}
+                    className="px-2 py-1 text-xs bg-white border border-slate-300"
+                  >
+                    <option>Distrito Tecnológico</option>
+                    <option>Distrito Oceânico</option>
+                    <option>Colina da Justiça</option>
+                    <option>Porto Solar</option>
+                    <option>Vale das Águas</option>
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  value={new311Desc}
+                  onChange={e => setNew311Desc(e.target.value)}
+                  placeholder="Descreva a demanda para o servidor público..."
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-slate-900 text-white py-2 text-xs font-bold uppercase tracking-wider hover:bg-slate-800"
+                >
+                  Protocolar Demanda 311
+                </button>
+              </form>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* =====================================================================
+          VIEW 3: BACKSTAGE GOVERNAMENTAL (SERVIDORES & GESTORES PÚBLICOS)
+          Protegido dinamicamente pela Aplicação de Identidade 360
+      ===================================================================== */}
+      {view === 'GOVERNMENT_BACKSTAGE' && citizen && (
+        <main className="flex-grow max-w-7xl w-full mx-auto px-6 py-8 space-y-6">
+          {/* Backstage Institutional Banner */}
+          <div className="bg-[#141a32] text-white p-6 border border-slate-800 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-0.5 bg-[#57fbdb] text-[#141a32] text-[10px] font-mono font-bold uppercase">
+                  AMBIENTE ADMINISTRATIVO DE BACKSTAGE • CREDENCIAL VERIFICADA
+                </span>
+                <span className="text-xs font-mono text-slate-300">
+                  Operador: {citizen.full_name} ({citizen.citizen_id})
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold mt-2 font-headline">{citizen.role_title}</h1>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Lotação: {citizen.ministry_label} • Caso esta permissão seja revogada na aplicação Identidade 360, esta
+                sessão reverte automaticamente para Cidadão Comum.
+              </p>
+            </div>
+
+            {/* Sub-navigation of Backstage Modules */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { id: 'pm_cabinet', label: '1. Gabinete Primeiro-Ministro', icon: 'military_tech' },
+                { id: 'iam_360', label: '2. Identidade 360 (Permissões)', icon: 'admin_panel_settings' },
+                { id: 'health_backstage', label: '3. Gestão Saúde & Telemedicina', icon: 'local_hospital' },
+                { id: 'edu_backstage', label: '4. Gestão Educação, Escolas & Provas', icon: 'school' },
+                { id: 'ops_311_911', label: '5. Demandas 311 & Comando 911', icon: 'support_agent' },
+                { id: 'justice_treasury', label: '6. Justiça, Fronteiras & Tesouro', icon: 'gavel' },
+                { id: 'gdf_lakehouse', label: '7. Explorador GDF 100k & Lakehouse', icon: 'database' }
+              ].map(tab => {
+                const isAllowed =
+                  citizen.effective_role_code === 'PRIME_MINISTER_ROOT' ||
+                  citizen.effective_role_code === 'SECRETARY_GENERAL' ||
+                  citizen.allowed_modules?.includes(tab.id);
                 return (
                   <button
-                    key={loc}
-                    onClick={() => handleSetLanguageOverride(loc)}
-                    className={`px-2.5 py-1 rounded text-xs font-bold transition-colors ${
-                      active
-                        ? 'bg-amber-400 text-slate-950 shadow-xs'
-                        : 'text-slate-200 hover:text-white hover:bg-blue-800/60'
+                    key={tab.id}
+                    onClick={() => {
+                      if (!isAllowed) {
+                        notify(
+                          'error',
+                          `Seu perfil atual (${citizen.effective_role_code}) não possui escopo para o módulo ${tab.label}. Troque para Primeiro-Ministro (jopoco) ou solicite escopo na Identidade 360.`
+                        );
+                        return;
+                      }
+                      setBackstageTab(tab.id as BackstageTab);
+                    }}
+                    className={`px-3 py-2 text-[11px] font-bold uppercase tracking-wider flex items-center space-x-1 border transition-colors ${
+                      backstageTab === tab.id
+                        ? 'bg-white text-[#141a32] border-white'
+                        : isAllowed
+                        ? 'bg-slate-800/80 text-slate-200 border-slate-700 hover:bg-slate-700'
+                        : 'bg-slate-900/40 text-slate-500 border-slate-800 cursor-not-allowed'
                     }`}
                   >
-                    {loc === 'pt-BR' ? 'PT-BR' : loc === 'es-419' ? 'ES-419' : 'EN-US'}
+                    <span className="material-symbols-outlined text-sm">{tab.icon}</span>
+                    <span>{tab.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* ===================================================================
-          CABEÇALHO DE ESTADO AI-FIRST COM BRASÃO, BANDEIRA E LEMA OFICIAL
-          =================================================================== */}
-      <header className="bg-gradient-to-r from-[#062356] via-[#082F72] to-[#051C48] border-b border-amber-400/30 sticky top-0 z-30 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {/* Brasão de Armas Oficial de Novatlantis */}
-            <div className="relative shrink-0 bg-white p-1 rounded-2xl border-2 border-amber-400 shadow-lg">
-              <img
-                src="/assets/coat-of-arms-novatlantis.jpg"
-                alt="Brasão de Armas de Novatlantis — Libertas in Digitali"
-                className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-xl"
-              />
-            </div>
-
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-heraldic text-[11px] sm:text-xs tracking-[0.2em] uppercase text-amber-300 font-bold">
-                  NOVATLANTIS • LIBERTAS IN DIGITALI
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-500/40">
-                  ● {t.aiFirstBadge}
-                </span>
-              </div>
-              <h1 className="font-display text-xl sm:text-3xl font-bold tracking-tight text-white mt-0.5">
-                {t.republicTitle}
-              </h1>
-              <p className="text-xs sm:text-sm text-sky-200/90">{t.republicSubtitle}</p>
-            </div>
-          </div>
-
-          {/* Bandeira Oficial + Simulador de Sessão Cidadã */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="hidden xl:flex items-center gap-2.5 bg-[#041434]/80 border border-sky-400/30 px-3 py-1.5 rounded-xl">
-              <img
-                src="/assets/flag-novatlantis.jpg"
-                alt="Bandeira de Novatlantis"
-                className="w-12 h-8 object-cover rounded border border-amber-400/50"
-              />
-              <NovatlantisNeuralEmblemSvg className="w-8 h-8" />
-            </div>
-
-            <div className="flex flex-col">
-              <label htmlFor="citizen-switcher" className="text-[11px] font-semibold text-amber-300 mb-0.5">
-                {t.citizenSelectorLabel}
-              </label>
-              <select
-                id="citizen-switcher"
-                value={selectedCitizenId}
-                onChange={(e) => {
-                  setSelectedCitizenId(e.target.value);
-                  handleClearLanguageOverride();
-                }}
-                className="text-xs sm:text-sm bg-[#041434] border border-amber-400/50 rounded-xl px-3 py-2 font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-              >
-                <option value="NID-100-0000-0019">
-                  Helena Silva (NID-100-0000-0019 • Nativo: pt-BR • 34 anos)
-                </option>
-                <option value="NID-100-0000-0027">
-                  Mateo García (NID-100-0000-0027 • Nativo: es-419 • 14 anos)
-                </option>
-                <option value="NID-100-0000-0035">
-                  Olivia Davis (NID-100-0000-0035 • Nativo: en-US • 7 anos)
-                </option>
-                <option value="ANONYMOUS">{t.anonymousVisitor}</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Barra de Abas dos Serviços Satélites e Símbolos Nacionais */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 overflow-x-auto pb-3">
-          <button
-            onClick={() => setActiveModule('hub')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-              activeModule === 'hub'
-                ? 'bg-amber-400 text-slate-950 shadow-md'
-                : 'text-slate-100 hover:bg-blue-900/60 border border-transparent'
-            }`}
-          >
-            🪪 {t.navHub}
-          </button>
-          <button
-            onClick={() => handleLaunchService('311')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-              activeModule === '311'
-                ? 'bg-[#009EE0] text-slate-950 shadow-md'
-                : 'text-slate-100 hover:bg-blue-900/60'
-            }`}
-          >
-            🏙️ {t.nav311}
-          </button>
-          <button
-            onClick={() => handleLaunchService('911')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-              activeModule === '911'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-red-200 bg-red-950/70 hover:bg-red-900/80 border border-red-500/40'
-            }`}
-          >
-            🚨 {t.nav911}
-          </button>
-          <button
-            onClick={() => handleLaunchService('health')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-              activeModule === 'health'
-                ? 'bg-emerald-500 text-slate-950 shadow-md'
-                : 'text-slate-100 hover:bg-blue-900/60'
-            }`}
-          >
-            🩺 {t.navHealth}
-          </button>
-          <button
-            onClick={() => handleLaunchService('education')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-              activeModule === 'education'
-                ? 'bg-amber-400 text-slate-950 shadow-md'
-                : 'text-slate-100 hover:bg-blue-900/60'
-            }`}
-          >
-            🎓 {t.navEducation}
-          </button>
-          <button
-            onClick={() => setActiveModule('heraldry')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-              activeModule === 'heraldry'
-                ? 'bg-amber-400 text-slate-950 shadow-md'
-                : 'text-amber-300 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-400/40'
-            }`}
-          >
-            🦅 {t.navHeraldry}
-          </button>
-        </div>
-      </header>
-
-      {/* ===================================================================
-          CONTEÚDO PRINCIPAL
-          =================================================================== */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* -----------------------------------------------------------------
-            VISÃO 1: NID HUB, CARD HOLOGRÁFICO COM BANDEIRA/BRASÃO E AUDITORIA
-            ----------------------------------------------------------------- */}
-        {activeModule === 'hub' && (
-          <>
-            {/* Banner de Identidade Nacional AI-First (Bandeira + Brasão + Constelação de 9 Nós) */}
-            <section className="rounded-2xl bg-gradient-to-r from-[#082F72] via-[#06245A] to-[#046A38]/80 border border-amber-400/40 p-5 sm:p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <img
-                  src="/assets/flag-novatlantis.jpg"
-                  alt="Bandeira Oficial da República Digital de Novatlantis"
-                  className="w-28 sm:w-36 h-20 sm:h-24 object-cover rounded-xl border-2 border-amber-400 shadow-lg shrink-0"
-                />
-                <div className="space-y-1">
-                  <div className="text-xs font-heraldic tracking-widest text-amber-300 uppercase font-bold">
-                    NOVATLANTIS • LIBERTAS IN DIGITALI
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-display font-bold text-white">{t.mottoTranslation}</h2>
-                  <p className="text-xs sm:text-sm text-sky-100/90 max-w-2xl">
-                    Ecossistema governamental AI-First implantado no projeto Google Cloud{' '}
-                    <code className="px-1.5 py-0.5 rounded bg-slate-950/70 text-amber-300 font-mono">novatlantis</code>{' '}
-                    com 100.000 cidadãos soberanos, biometria NIST e 8 agentes ministeriais autônomos.
+          {/* -----------------------------------------------------------------
+              TAB 1: GABINETE DO PRIMEIRO-MINISTRO (jopoco) & SECRETÁRIO-GERAL
+          ----------------------------------------------------------------- */}
+          {backstageTab === 'pm_cabinet' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white border border-[#c6c6ce] p-5">
+                  <span className="text-[11px] font-bold uppercase text-slate-500">Primeiro-Ministro (Root)</span>
+                  <p className="text-lg font-bold text-slate-900 mt-1 font-headline">Jopoco (NID-000-0000-0001-9)</p>
+                  <p className="text-xs text-[#006b5b] mt-1 font-mono">admin@jopoco.altostrat.com</p>
+                </div>
+                <div className="bg-white border border-[#c6c6ce] p-5">
+                  <span className="text-[11px] font-bold uppercase text-slate-500">Secretário-Geral de Apoio</span>
+                  <p className="text-lg font-bold text-slate-900 mt-1 font-headline">Alexandre Vance</p>
+                  <p className="text-xs text-slate-600 mt-1 font-mono">NID-000-0000-0002-7</p>
+                </div>
+                <div className="bg-white border border-[#c6c6ce] p-5">
+                  <span className="text-[11px] font-bold uppercase text-slate-500">Gestor de Identidades 360</span>
+                  <p className="text-lg font-bold text-slate-900 mt-1 font-headline">Helena Albuquerque</p>
+                  <p className="text-xs text-[#0061a5] mt-1 font-mono">NID-000-0000-0003-5 (Outorgada pelo PM)</p>
+                </div>
+                <div className="bg-white border border-[#c6c6ce] p-5">
+                  <span className="text-[11px] font-bold uppercase text-slate-500">Servidores com Acesso Backstage</span>
+                  <p className="text-2xl font-bold text-slate-900 mt-1 font-headline">
+                    {overviewData?.counts?.iam_active_roles || 25} Ativos
                   </p>
+                  <p className="text-xs text-slate-500 mt-1">Revogação instantânea via Identidade 360</p>
                 </div>
               </div>
-              <button
-                onClick={() => setActiveModule('heraldry')}
-                className="shrink-0 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-colors cursor-pointer"
-              >
-                🦅 Explorar Bandeira & Brasão
-              </button>
-            </section>
 
-            {currentCitizen ? (
-              <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Coluna Esquerda (7 cols): Card de Identidade Nacional (NID) com Cores da Bandeira */}
-                <div className="lg:col-span-7 bg-gradient-to-br from-[#082F72] via-[#051B44] to-[#03102B] text-white rounded-2xl p-6 sm:p-8 shadow-2xl border-2 border-amber-400/50 relative overflow-hidden">
-                  {/* Cabeçalho do Documento Soberano com Brasão e Emblema Neural */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-5 mb-6 border-b border-sky-400/30">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src="/assets/coat-of-arms-novatlantis.jpg"
-                        alt="Brasão de Novatlantis"
-                        className="w-12 h-12 rounded-lg bg-white p-0.5 border border-amber-400 object-contain"
-                      />
-                      <div>
-                        <span className="text-[11px] font-heraldic uppercase tracking-widest text-amber-300 block font-bold">
-                          REPÚBLICA DIGITAL DE NOVATLANTIS • LIBERTAS IN DIGITALI
-                        </span>
-                        <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight mt-0.5">
-                          {t.nidCardTitle}
-                        </h2>
-                        <p className="text-xs text-sky-200/80">{t.nidCardSubtitle}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/60">
-                        ✓ {t.nidVerifiedMod11}: {validateNIDMod11Client(currentCitizen.nid) ? 'OK' : 'ERR'}
-                      </span>
-                      <span className="text-[11px] font-mono text-amber-300">{t.nidHologramActive}</span>
-                    </div>
-                  </div>
-
-                  {/* Corpo do Documento Virtual Dinâmico */}
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
-                    {/* Foto de Perfil com Retículo Biométrico ICAO/NIST */}
-                    <div className="sm:col-span-4 flex flex-col items-center">
-                      <div className="relative w-36 h-44 rounded-xl overflow-hidden border-2 border-amber-400 shadow-lg bg-slate-900">
-                        <img
-                          src={currentCitizen.avatarUrl}
-                          alt={currentCitizen.fullName}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-2 border border-dashed border-sky-300/80 rounded-lg pointer-events-none flex flex-col justify-between p-1.5">
-                          <span className="text-[9px] font-mono bg-slate-950/85 text-amber-300 px-1 rounded self-start">
-                            ICAO 9303
-                          </span>
-                          <span className="text-[9px] font-mono bg-slate-950/85 text-emerald-300 px-1 rounded self-end">
-                            {(currentCitizen.biometrics.biometricConfidenceScore * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* QR Code Biométrico Assinado + Emblema Neural */}
-                      <div className="mt-4 bg-white p-2.5 rounded-xl shadow-md flex items-center gap-2.5 text-slate-900 w-full justify-center border border-amber-400">
-                        <svg
-                          viewBox="0 0 64 64"
-                          className="w-12 h-12 shrink-0"
-                          aria-label="QR Code Biométrico Soberano"
-                        >
-                          <rect width="64" height="64" fill="#ffffff" />
-                          <rect x="4" y="4" width="18" height="18" fill="#082F72" />
-                          <rect x="7" y="7" width="12" height="12" fill="#ffffff" />
-                          <rect x="10" y="10" width="6" height="6" fill="#009EE0" />
-                          <rect x="42" y="4" width="18" height="18" fill="#082F72" />
-                          <rect x="45" y="7" width="12" height="12" fill="#ffffff" />
-                          <rect x="48" y="10" width="6" height="6" fill="#009EE0" />
-                          <rect x="4" y="42" width="18" height="18" fill="#082F72" />
-                          <rect x="7" y="45" width="12" height="12" fill="#ffffff" />
-                          <rect x="10" y="48" width="6" height="6" fill="#046A38" />
-                          <rect x="26" y="8" width="4" height="4" fill="#082F72" />
-                          <rect x="34" y="12" width="4" height="8" fill="#082F72" />
-                          <rect x="26" y="24" width="12" height="4" fill="#D97706" />
-                          <rect x="12" y="28" width="8" height="4" fill="#082F72" />
-                          <rect x="28" y="34" width="6" height="6" fill="#046A38" />
-                          <rect x="40" y="28" width="4" height="12" fill="#082F72" />
-                          <rect x="50" y="32" width="8" height="4" fill="#082F72" />
-                          <rect x="26" y="46" width="8" height="4" fill="#082F72" />
-                          <rect x="38" y="46" width="6" height="6" fill="#009EE0" />
-                          <rect x="48" y="44" width="10" height="4" fill="#082F72" />
-                          <rect x="44" y="54" width="14" height="6" fill="#082F72" />
-                        </svg>
-                        <div className="text-[10px] leading-tight font-mono">
-                          <div className="font-bold text-[#082F72]">QR BIOMÉTRICO</div>
-                          <div className="text-slate-600">ISO/IEC 19794-5</div>
-                          <div className="text-emerald-700 font-bold">CHAVE ED25519</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Dados Civis e Biométricos do Cidadão */}
-                    <div className="sm:col-span-8 space-y-3 text-sm">
-                      <div className="bg-[#041434]/90 border border-amber-400/40 rounded-xl p-3.5 flex items-center justify-between">
-                        <div>
-                          <span className="text-[11px] uppercase tracking-wider text-amber-300 block font-semibold">
-                            IDENTIDADE SOBERANA (NID)
-                          </span>
-                          <span className="font-mono text-lg sm:text-xl font-bold text-white tracking-wider">
-                            {currentCitizen.nid}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[11px] uppercase tracking-wider text-sky-300 block">
-                            {t.labelNativeLang}
-                          </span>
-                          <span className="font-mono text-sm font-bold text-amber-300">
-                            {currentCitizen.nativeLanguage}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="bg-[#041434]/70 rounded-lg p-3 border border-sky-400/20">
-                          <span className="text-[11px] text-sky-200/70 block">{t.labelFullName}</span>
-                          <span className="font-semibold text-white">{currentCitizen.fullName}</span>
-                        </div>
-                        <div className="bg-[#041434]/70 rounded-lg p-3 border border-sky-400/20">
-                          <span className="text-[11px] text-sky-200/70 block">
-                            {t.labelBirthDate} / {t.labelAge}
-                          </span>
-                          <span className="font-semibold text-white">
-                            {currentCitizen.birthDate} ({currentCitizen.ageYears} yrs)
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="bg-[#041434]/70 rounded-lg p-3 border border-sky-400/20">
-                        <span className="text-[11px] text-sky-200/70 block">{t.labelFiliation}</span>
-                        <span className="text-xs sm:text-sm text-slate-100">
-                          {currentCitizen.filiation.motherName} • {currentCitizen.filiation.fatherName}
-                        </span>
-                      </div>
-
-                      <div className="bg-[#041434]/70 rounded-lg p-3 border border-sky-400/20">
-                        <span className="text-[11px] text-sky-200/70 block">{t.labelAddress}</span>
-                        <span className="text-xs sm:text-sm font-medium text-amber-300">
-                          {currentCitizen.address.street} — {currentCitizen.address.district} (
-                          {currentCitizen.address.postalCode})
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs font-mono">
-                        <div className="bg-slate-950/90 p-2.5 rounded-lg border border-sky-500/30">
-                          <span className="text-[10px] text-sky-300 block">{t.labelNistFaceHash}</span>
-                          <span className="text-slate-200 truncate block">
-                            {currentCitizen.biometrics.nistFaceTemplate}
-                          </span>
-                        </div>
-                        <div className="bg-slate-950/90 p-2.5 rounded-lg border border-emerald-500/30">
-                          <span className="text-[10px] text-emerald-300 block">{t.labelMinutiaeCount}</span>
-                          <span className="text-amber-300 block">
-                            {currentCitizen.biometrics.nistFingerprintMinutiae.length} pts (x,y,θ,q) • Score:{' '}
-                            {currentCitizen.biometrics.biometricConfidenceScore.toFixed(3)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Coluna Direita (5 cols): Gestão Cadastral + Validador Facial ICAO/NIST */}
-                <div className="lg:col-span-5 bg-[#071F4A] rounded-2xl p-6 shadow-xl border border-sky-400/30 space-y-5">
-                  <div className="flex items-center justify-between border-b border-sky-400/20 pb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Constitutional Delegation of Identity Manager 360 */}
+                <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                  <h2 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                    Prerrogativa Exclusiva do Primeiro-Ministro: Nomeação do Gestor de Identidades 360
+                  </h2>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Conforme diretriz constitucional de Novatlantis, o <strong>Primeiro-Ministro (jopoco)</strong> —
+                    apoiado pelo Secretário-Geral — é o administrador geral da nação e detém a competência exclusiva
+                    para habilitar ou substituir o <strong>Gestor de Identidades do Governo (IDENTITY_MANAGER_360)</strong>.
+                  </p>
+                  <div className="p-4 bg-[#f2f4f7] border border-slate-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                      <h3 className="text-base font-bold text-white">{t.icaoValidatorTitle}</h3>
-                      <p className="text-xs text-sky-200/80">{t.uploadPhotoLabel}</p>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                        currentCitizen.biometrics.icaoCompliant
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50'
-                          : 'bg-red-950 text-red-300 border border-red-500/50'
-                      }`}
-                    >
-                      {currentCitizen.biometrics.icaoCompliant ? t.icaoCompliantBadge : t.icaoFailedBadge}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2.5 text-center">
-                    <div className="p-3 rounded-xl bg-[#041434] border border-sky-400/20">
-                      <span className="text-[11px] text-sky-200/80 block">{t.icaoCheckEyes}</span>
-                      <span className="font-mono font-bold text-sm text-amber-300">
-                        {currentCitizen.biometrics.eyeDistancePx} px
+                      <span className="text-[10px] font-mono uppercase bg-[#141a32] text-white px-2 py-0.5">
+                        TITULAR ATUAL • NID-000-0000-0003-5
                       </span>
+                      <p className="text-sm font-bold text-slate-900 mt-1">Helena Albuquerque</p>
+                      <p className="text-xs text-slate-600">Autoridade Nacional de Identidade 360 & Acesso</p>
                     </div>
-                    <div className="p-3 rounded-xl bg-[#041434] border border-sky-400/20">
-                      <span className="text-[11px] text-sky-200/80 block">{t.icaoCheckPose}</span>
-                      <span className="font-mono font-bold text-sm text-amber-300">
-                        {currentCitizen.biometrics.headPitchDeg}°
-                      </span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-[#041434] border border-sky-400/20">
-                      <span className="text-[11px] text-sky-200/80 block">{t.icaoCheckLight}</span>
-                      <span className="font-mono font-bold text-sm text-amber-300">
-                        {currentCitizen.biometrics.illuminationScore}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      onClick={() => handleSimulatePhotoUpload(true)}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors cursor-pointer"
-                    >
-                      📷 {t.simulatePhotoPass}
-                    </button>
-                    <button
-                      onClick={() => handleSimulatePhotoUpload(false)}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/30 text-xs font-bold transition-colors cursor-pointer"
-                    >
-                      ⚠️ {t.simulatePhotoFail}
-                    </button>
-                  </div>
-
-                  <div className="pt-3 border-t border-sky-400/20 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                        {t.labelAddress}
-                      </span>
+                    <div className="flex gap-2">
                       <button
-                        onClick={() => setIsEditingProfile(!isEditingProfile)}
-                        className="text-xs font-bold text-sky-300 hover:underline cursor-pointer"
+                        onClick={() => handleGrantRole('NID-000-0000-0003-5', 'IDENTITY_MANAGER_360')}
+                        className="px-3 py-1.5 bg-[#006b5b] text-white text-xs font-bold uppercase tracking-wider"
                       >
-                        {t.editProfileBtn}
+                        Revalidar Outorga
+                      </button>
+                      <button
+                        onClick={() => handleRevokeRole('NID-000-0000-0003-5')}
+                        className="px-3 py-1.5 bg-[#ba1a1a] text-white text-xs font-bold uppercase tracking-wider"
+                      >
+                        Destituir Gestor
                       </button>
                     </div>
+                  </div>
+                </div>
 
-                    {isEditingProfile ? (
-                      <div className="space-y-3 bg-[#041434] p-4 rounded-xl border border-amber-400/40">
-                        <div>
-                          <label className="block text-xs font-medium text-sky-200 mb-1">Distrito Soberano</label>
-                          <select
-                            value={draftDistrict}
-                            onChange={(e) => setDraftDistrict(e.target.value)}
-                            className="w-full text-sm bg-[#082F72] border border-sky-400/40 text-white rounded-lg px-3 py-2"
-                          >
-                            <option value="Distrito Tecnológico">Distrito Tecnológico</option>
-                            <option value="Distrito Oceânico">Distrito Oceânico</option>
-                            <option value="Colina da Justiça">Colina da Justiça</option>
-                            <option value="Porto Solar">Porto Solar</option>
-                            <option value="Vale da Inovação">Vale da Inovação</option>
-                            <option value="Bosque Esmeralda">Bosque Esmeralda</option>
-                          </select>
+                {/* Live Audit Trail */}
+                <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                  <h2 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                    Diário Oficial de Auditoria de Estado (ops_audit_log)
+                  </h2>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {overviewData?.audit_logs?.map((log: any) => (
+                      <div key={log.audit_id} className="p-2.5 bg-[#f7f9fc] border border-slate-200 text-xs">
+                        <div className="flex justify-between font-mono text-[10px] text-slate-500">
+                          <span>
+                            {log.action_type} • Por: {log.actor_nid}
+                          </span>
+                          <span>{log.created_at?.slice(0, 19).replace('T', ' ')}</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="col-span-2">
-                            <label className="block text-xs font-medium text-sky-200 mb-1">Logradouro e Número</label>
-                            <input
-                              type="text"
-                              value={draftStreet}
-                              onChange={(e) => setDraftStreet(e.target.value)}
-                              className="w-full text-sm bg-[#082F72] border border-sky-400/40 text-white rounded-lg px-3 py-2"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-sky-200 mb-1">Código Postal</label>
-                            <input
-                              type="text"
-                              value={draftPostal}
-                              onChange={(e) => setDraftPostal(e.target.value)}
-                              className="w-full text-sm bg-[#082F72] border border-sky-400/40 text-white rounded-lg px-3 py-2 font-mono"
-                            />
-                          </div>
-                        </div>
-                        <button
-                          onClick={handleSaveAddressUpdate}
-                          className="w-full py-2.5 px-4 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          🔏 {t.saveProfileBtn}
-                        </button>
+                        <p className="text-slate-800 mt-1">{log.details}</p>
                       </div>
-                    ) : (
-                      <div className="text-xs text-sky-200 bg-[#041434] p-3 rounded-lg border border-sky-400/20 font-mono truncate">
-                        🔑 {currentCitizen.publicKeyEd25519}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </section>
-            ) : (
-              <section className="bg-[#071F4A] border border-amber-400/40 rounded-2xl p-8 text-center space-y-4">
-                <h2 className="text-xl font-bold text-white">{t.anonymousVisitor}</h2>
-                <p className="text-sm text-sky-200 max-w-2xl mx-auto">
-                  {t.langSourceAnon}. Selecione um cidadão no menu superior para autenticar via Biometria NIST / SSO.
-                </p>
-              </section>
-            )}
-
-            {/* Single-Click Launchpad para os 4 Serviços Satélites */}
-            <section className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-lg sm:text-xl font-display font-bold text-white">{t.launchpadTitle}</h2>
-                  <p className="text-xs sm:text-sm text-sky-200/80">{t.launchpadSubtitle}</p>
-                </div>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40">
-                  🔐 {t.ssoBadge}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button
-                  onClick={() => handleLaunchService('311')}
-                  className="text-left bg-[#071F4A] hover:bg-[#092961] p-5 rounded-2xl border border-sky-400/30 shadow-lg transition-all group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-[#009EE0]/20 text-sky-300 border border-sky-400/40 flex items-center justify-center text-xl mb-3">
-                    🏙️
-                  </div>
-                  <h3 className="font-bold text-white group-hover:text-amber-300">{t.nav311}</h3>
-                  <p className="text-xs text-sky-200/80 mt-1">{t.service311Desc}</p>
-                </button>
-
-                <button
-                  onClick={() => handleLaunchService('911')}
-                  className="text-left bg-red-950/90 hover:bg-red-900 text-white p-5 rounded-2xl border-2 border-red-500/60 shadow-lg transition-all cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center text-xl mb-3 font-bold">
-                    🚨
-                  </div>
-                  <h3 className="font-bold text-white">{t.nav911}</h3>
-                  <p className="text-xs text-red-200 mt-1">{t.service911Desc}</p>
-                </button>
-
-                <button
-                  onClick={() => handleLaunchService('health')}
-                  className="text-left bg-[#071F4A] hover:bg-[#092961] p-5 rounded-2xl border border-emerald-400/30 shadow-lg transition-all group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex items-center justify-center text-xl mb-3">
-                    🩺
-                  </div>
-                  <h3 className="font-bold text-white group-hover:text-emerald-300">{t.navHealth}</h3>
-                  <p className="text-xs text-sky-200/80 mt-1">{t.serviceHealthDesc}</p>
-                </button>
-
-                <button
-                  onClick={() => handleLaunchService('education')}
-                  className="text-left bg-[#071F4A] hover:bg-[#092961] p-5 rounded-2xl border border-amber-400/30 shadow-lg transition-all group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-xl mb-3">
-                    🎓
-                  </div>
-                  <h3 className="font-bold text-white group-hover:text-amber-300">{t.navEducation}</h3>
-                  <p className="text-xs text-sky-200/80 mt-1">{t.serviceEduDesc}</p>
-                </button>
-              </div>
-            </section>
-
-            {/* Painel de Auditoria em Tempo Real (Últimas 48 Horas) */}
-            <section className="bg-[#071F4A] rounded-2xl border border-sky-400/30 shadow-xl overflow-hidden">
-              <div className="p-6 border-b border-sky-400/20 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-display font-bold text-white">🛡️ {t.auditPanelTitle}</h2>
-                  <p className="text-xs sm:text-sm text-sky-200/80">{t.auditPanelSubtitle}</p>
-                </div>
-                <span className="font-mono text-xs bg-[#041434] text-amber-300 px-3 py-1.5 rounded-lg border border-amber-400/30">
-                  GCP Project: novatlantis • Spanner Audit • {auditLogs.length} eventos (48h)
-                </span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                  <thead>
-                    <tr className="bg-[#041434] text-amber-300 border-b border-sky-400/20 uppercase text-[11px] tracking-wider">
-                      <th className="py-3 px-4">{t.auditAgency}</th>
-                      <th className="py-3 px-4">{t.auditAgent}</th>
-                      <th className="py-3 px-4">{t.auditPurpose}</th>
-                      <th className="py-3 px-4">{t.auditTimestamp}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-sky-400/15">
-                    {auditLogs.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-[#082F72]/50">
-                        <td className="py-3.5 px-4 font-semibold text-white">{entry.secretariat}</td>
-                        <td className="py-3.5 px-4 font-mono text-xs text-sky-300">{entry.aiAgent}</td>
-                        <td className="py-3.5 px-4 text-slate-200">
-                          <div>{entry.purpose[activeLocale]}</div>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {entry.fieldsAccessed.map((f) => (
-                              <span
-                                key={f}
-                                className="px-1.5 py-0.5 bg-[#041434] text-amber-300 border border-amber-400/30 rounded text-[10px] font-mono"
-                              >
-                                {f}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-xs text-sky-200/70 whitespace-nowrap">
-                          <div className="text-white font-medium">{entry.relativeTime}</div>
-                          <div>{entry.hash}</div>
-                        </td>
-                      </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* -----------------------------------------------------------------
-            VISÃO HERÁLDICA: BANDEIRA OFICIAL & BRASÃO DE ARMAS DE NOVATLANTIS
-            ----------------------------------------------------------------- */}
-        {activeModule === 'heraldry' && (
-          <section className="space-y-8">
-            <div className="bg-[#071F4A] border border-amber-400/40 rounded-2xl p-6 sm:p-8 shadow-xl">
-              <span className="font-heraldic text-xs uppercase tracking-[0.25em] text-amber-300 block font-bold">
-                NOVATLANTIS • LIBERTAS IN DIGITALI
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-white mt-1">{t.heraldryTitle}</h2>
-              <p className="text-sm text-sky-200/90 mt-2 max-w-3xl">{t.heraldrySubtitle}</p>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                {/* Card da Bandeira Oficial */}
-                <div className="bg-[#041434] rounded-2xl p-6 border border-sky-400/30 flex flex-col justify-between space-y-4">
-                  <div className="rounded-xl overflow-hidden border-2 border-amber-400/60 bg-slate-900 flex items-center justify-center p-3">
-                    <img
-                      src="/assets/flag-novatlantis.jpg"
-                      alt="Bandeira Oficial de Novatlantis"
-                      className="w-full max-h-72 object-contain rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-display font-bold text-amber-300">{t.flagTitle}</h3>
-                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{t.flagDesc}</p>
-                  </div>
-                </div>
-
-                {/* Card do Brasão de Armas Oficial */}
-                <div className="bg-[#041434] rounded-2xl p-6 border border-amber-400/40 flex flex-col justify-between space-y-4">
-                  <div className="rounded-xl overflow-hidden border-2 border-amber-400/60 bg-white flex items-center justify-center p-3">
-                    <img
-                      src="/assets/coat-of-arms-novatlantis.jpg"
-                      alt="Brasão de Armas de Novatlantis"
-                      className="w-full max-h-72 object-contain rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-heraldic font-bold text-amber-300">{t.coatTitle}</h3>
-                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{t.coatDesc}</p>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          )}
 
-        {/* -----------------------------------------------------------------
-            VISÃO 2: APP 311 (SERVIÇOS URBANOS & ZELADORIA COM AGENTE LLM)
-            ----------------------------------------------------------------- */}
-        {activeModule === '311' && (
-          <section className="bg-[#071F4A] rounded-2xl border border-sky-400/40 p-6 sm:p-8 shadow-xl space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-sky-400/20 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white">🏙️ {t.service311Title}</h2>
-                <p className="text-sm text-sky-200">{t.service311Desc}</p>
-              </div>
-              <span className="font-mono text-xs bg-[#041434] text-sky-300 px-3 py-1.5 rounded-lg border border-sky-400/30">
-                📍 GPS: {currentCitizen?.address.district ?? 'Distrito Tecnológico'} ({currentCitizen?.address.lat},{' '}
-                {currentCitizen?.address.lng})
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <label className="block text-xs font-bold uppercase tracking-wider text-amber-300">
-                  Relato do Cidadão + Evidência Fotográfica Georreferenciada
-                </label>
-                <textarea
-                  rows={4}
-                  value={issue311Text}
-                  onChange={(e) => setIssue311Text(e.target.value)}
-                  placeholder={t.issueInputPlaceholder}
-                  className="w-full rounded-xl bg-[#041434] border border-sky-400/40 text-white p-3.5 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
-                />
-                <button
-                  onClick={handleAnalyze311}
-                  className="w-full py-3 px-4 rounded-xl bg-[#009EE0] hover:bg-sky-400 text-slate-950 font-bold text-sm transition-colors cursor-pointer"
-                >
-                  🤖 {t.analyze311Btn}
-                </button>
-              </div>
-
-              {triage311Result && (
-                <div className="bg-[#041434] text-white rounded-xl p-6 space-y-4 border border-amber-400/40">
-                  <div className="flex items-center justify-between border-b border-sky-400/20 pb-3">
-                    <span className="font-mono text-xs text-amber-300">PROTOCOLO: {triage311Result.protocol}</span>
-                    <span className="px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-600 text-xs font-semibold">
-                      {triage311Result.confidence}
-                    </span>
-                  </div>
+          {/* -----------------------------------------------------------------
+              TAB 2: APLICAÇÃO IDENTIDADE 360 (GESTÃO DE PERMISSÕES RBAC/ABAC)
+          ----------------------------------------------------------------- */}
+          {backstageTab === 'iam_360' && (
+            <div className="space-y-6">
+              <div className="bg-white border border-[#c6c6ce] p-6">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-200 pb-4 mb-5">
                   <div>
-                    <span className="text-xs text-sky-200/70 block">{t.llmDepartment}</span>
-                    <span className="text-base font-bold text-white">{triage311Result.department}</span>
+                    <h2 className="text-lg font-bold text-slate-900 font-headline">
+                      Aplicação Governamental Identidade 360 — Controle de Acesso por Perfil Profissional
+                    </h2>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Conceda ou revogue permissões de Backstage. <strong>Regra de Estado:</strong> Uma vez que a
+                      permissão é removida abaixo, o servidor público volta imediatamente a ser <strong>Cidadão Comum</strong> e perde todo acesso ao Backstage.
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#082F72]/60 p-3 rounded-lg border border-sky-400/20">
-                      <span className="text-xs text-sky-200/70 block">{t.llmSla}</span>
-                      <span className="text-sm font-semibold text-emerald-300">{triage311Result.sla}</span>
-                    </div>
-                    <div className="bg-[#082F72]/60 p-3 rounded-lg border border-sky-400/20">
-                      <span className="text-xs text-sky-200/70 block">{t.llmPriority}</span>
-                      <span className="text-sm font-semibold text-amber-300">{triage311Result.priority}</span>
-                    </div>
+
+                  {/* Form to Grant Role by NID */}
+                  <div className="flex flex-wrap items-center gap-2 bg-[#f2f4f7] p-3 border border-slate-300">
+                    <input
+                      type="text"
+                      value={grantTargetNid}
+                      onChange={e => setGrantTargetNid(e.target.value)}
+                      placeholder="NID do Cidadão..."
+                      className="px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-300 w-44"
+                    />
+                    <select
+                      value={grantRoleCode}
+                      onChange={e => setGrantRoleCode(e.target.value)}
+                      className="px-2.5 py-1.5 text-xs bg-white border border-slate-300"
+                    >
+                      <option value="DOCTOR_TELEMED">DOCTOR_TELEMED (Médico Telemedicina)</option>
+                      <option value="DOCTOR_AND_HEALTH_MANAGER">DOCTOR_AND_HEALTH_MANAGER (Gestor Saúde)</option>
+                      <option value="TEACHER_EDUCATOR">TEACHER_EDUCATOR (Professor)</option>
+                      <option value="TEACHER_AND_EDU_MANAGER">TEACHER_AND_EDU_MANAGER (Gestor Educação)</option>
+                      <option value="OPERATIONS_311_911_MANAGER">OPERATIONS_311_911_MANAGER (Gestor 311/911)</option>
+                      <option value="JUSTICE_AND_TREASURY_MANAGER">JUSTICE_AND_TREASURY_MANAGER (Justiça/Tesouro)</option>
+                      <option value="IDENTITY_MANAGER_360">IDENTITY_MANAGER_360 (Somente PM/Sec.Geral)</option>
+                    </select>
+                    <button
+                      onClick={() => handleGrantRole(grantTargetNid, grantRoleCode)}
+                      className="bg-[#141a32] text-white px-4 py-1.5 text-xs font-bold uppercase tracking-wider hover:bg-slate-800"
+                    >
+                      Conceder Permissão
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          </section>
-        )}
 
-        {/* -----------------------------------------------------------------
-            VISÃO 3: APP 911 (EMERGÊNCIA DE ALTO CONTRASTE & DESPACHO TÁTICO)
-            ----------------------------------------------------------------- */}
-        {activeModule === '911' && (
-          <section className="bg-zinc-950 text-white rounded-2xl border-2 border-red-600 p-6 sm:p-8 shadow-2xl space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-4">
-              <div>
-                <h2 className="text-2xl font-black tracking-tight text-red-500 uppercase">🚨 {t.service911Title}</h2>
-                <p className="text-sm text-zinc-300">{t.service911Desc}</p>
+                {/* Active & Revoked Permissions Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-[#f2f4f7] border-y border-slate-300 text-slate-700 uppercase font-mono text-[11px]">
+                        <th className="py-2.5 px-3">NID do Cidadão</th>
+                        <th className="py-2.5 px-3">Nome Completo</th>
+                        <th className="py-2.5 px-3">Credencial Profissional</th>
+                        <th className="py-2.5 px-3">Papel Backstage (Role)</th>
+                        <th className="py-2.5 px-3">Status 360</th>
+                        <th className="py-2.5 px-3">Outorgado Por</th>
+                        <th className="py-2.5 px-3 text-right">Ação de Governança</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {iamData?.assigned_roles?.map((r: any) => (
+                        <tr key={r.citizen_id} className="hover:bg-slate-50">
+                          <td className="py-2.5 px-3 font-mono font-bold text-slate-900">{r.citizen_id}</td>
+                          <td className="py-2.5 px-3 font-semibold text-slate-800">
+                            {r.full_name}
+                            <div className="text-[11px] text-slate-500 font-normal">{r.email}</div>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-[11px]">{r.professional_credential}</td>
+                          <td className="py-2.5 px-3 font-mono font-semibold text-[#0061a5]">{r.role_code}</td>
+                          <td className="py-2.5 px-3">
+                            {Number(r.is_active) === 1 ? (
+                              <span className="px-2 py-0.5 bg-[#e6f7f4] text-[#005044] border border-[#00957f] font-mono text-[10px] font-bold">
+                                ATIVO NO BACKSTAGE
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-red-50 text-[#ba1a1a] border border-red-200 font-mono text-[10px] font-bold">
+                                REVOGADO (CIDADÃO COMUM)
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500">{r.granted_by_nid}</td>
+                          <td className="py-2.5 px-3 text-right space-x-2">
+                            {Number(r.is_active) === 1 ? (
+                              r.citizen_id !== 'NID-000-0000-0001-9' && (
+                                <button
+                                  onClick={() => handleRevokeRole(r.citizen_id)}
+                                  className="px-2.5 py-1 bg-[#ba1a1a] text-white text-[11px] font-bold uppercase hover:bg-red-800"
+                                >
+                                  Revogar Permissão
+                                </button>
+                              )
+                            ) : (
+                              <button
+                                onClick={() => handleGrantRole(r.citizen_id, r.role_code)}
+                                className="px-2.5 py-1 bg-[#006b5b] text-white text-[11px] font-bold uppercase hover:bg-teal-800"
+                              >
+                                Restaurar Acesso
+                              </button>
+                            )}
+                            <button
+                              onClick={() => authenticateCitizen(r.citizen_id)}
+                              className="px-2 py-1 border border-slate-300 bg-white text-slate-700 text-[11px] hover:bg-slate-100"
+                            >
+                              Testar Login
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <button
-                onClick={handleTrigger911SOS}
-                className="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-sm tracking-wide shadow-lg border-2 border-white cursor-pointer"
-              >
-                ⚡ {t.sosOneClickBtn}
-              </button>
             </div>
+          )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <label className="block text-xs font-bold uppercase tracking-wider text-red-400">
-                  Triagem Agêntica de Voz / Texto em Tempo Real
-                </label>
-                <textarea
-                  rows={3}
-                  value={emergency911Text}
-                  onChange={(e) => setEmergency911Text(e.target.value)}
-                  placeholder={t.triageInputPlaceholder}
-                  className="w-full rounded-xl bg-zinc-900 border-2 border-zinc-700 text-white p-3.5 text-sm focus:border-red-500 focus:outline-none"
-                />
-                <button
-                  onClick={handleTrigger911SOS}
-                  className="w-full py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-sm uppercase cursor-pointer"
-                >
-                  📡 {t.dispatchBtn}
-                </button>
+          {/* -----------------------------------------------------------------
+              TAB 3: GESTÃO DA SAÚDE, HOSPITAIS, CLÍNICAS E TELEMEDICINA MÉDICA
+          ----------------------------------------------------------------- */}
+          {backstageTab === 'health_backstage' && (
+            <div className="space-y-6">
+              {/* Hospitals & Clinics Network */}
+              <div className="bg-white border border-[#c6c6ce] p-6">
+                <h2 className="text-lg font-bold text-slate-900 font-headline mb-4">
+                  Rede Nacional de Hospitais e Clínicas de Novatlantis (100.000 Prontuários HL7 Vinculados)
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {healthData?.hospitals?.map((h: any) => (
+                    <div key={h.hospital_id} className="p-4 bg-[#f7f9fc] border border-slate-300 space-y-1.5">
+                      <div className="flex justify-between items-center font-mono text-[11px]">
+                        <span className="font-bold text-[#141a32]">{h.hospital_id}</span>
+                        <span className="px-1.5 py-0.5 bg-white border border-slate-300 text-slate-700">
+                          UTI: {h.icu_occupancy_pct}%
+                        </span>
+                      </div>
+                      <h3 className="text-xs font-bold text-slate-900 leading-snug">{h.name}</h3>
+                      <p className="text-[11px] text-slate-500">{h.district}</p>
+                      <p className="text-xs font-mono font-bold text-[#0061a5] pt-1">
+                        {h.linked_citizens?.toLocaleString('pt-BR')} cidadãos adscritos
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800 space-y-3">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-amber-400">
-                  🗺️ {t.unitDispatched} ({currentCitizen?.address.district ?? 'Distrito Tecnológico'})
-                </h3>
-                {dispatched911Units.map((u) => (
-                  <div
-                    key={u.code}
-                    className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-between gap-3"
-                  >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Doctor Telemedicine Console */}
+                <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                    Console Médico de Atendimento via Telemedicina & Prescrição Ed25519
+                  </h3>
+                  <form onSubmit={handleRecordTelemed} className="space-y-3 text-xs">
                     <div>
-                      <div className="font-bold text-white text-sm">{u.code}</div>
-                      <div className="text-xs text-zinc-400">{u.type}</div>
-                      <div className="text-[11px] font-mono text-emerald-400 mt-1">{u.status}</div>
+                      <label className="font-bold text-slate-700 block mb-1">NID do Paciente (Base GDF 100k):</label>
+                      <input
+                        type="text"
+                        value={telemedPatientNid}
+                        onChange={e => setTelemedPatientNid(e.target.value)}
+                        className="w-full px-3 py-1.5 font-mono bg-white border border-slate-300"
+                      />
                     </div>
-                    <div className="text-right font-mono">
-                      <span className="text-xs text-zinc-400 block">ETA</span>
-                      <span className="text-base font-black text-amber-400">{u.eta}</span>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Queixa Principal / Evolução SOAP IA:</label>
+                      <input
+                        type="text"
+                        value={telemedComplaint}
+                        onChange={e => setTelemedComplaint(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300"
+                      />
                     </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Prescrição Digital Assinada:</label>
+                      <input
+                        type="text"
+                        value={telemedMedication}
+                        onChange={e => setTelemedMedication(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-[#141a32] text-white py-2.5 font-bold uppercase tracking-wider hover:bg-slate-800"
+                    >
+                      Concluir Teleconsulta & Emitir Receita Ed25519
+                    </button>
+                  </form>
+
+                  <div className="pt-3 border-t border-slate-200 space-y-2">
+                    <div className="text-xs font-bold uppercase text-slate-500">Últimas Teleconsultas Registradas</div>
+                    {healthData?.telemed_sessions?.map((s: any) => (
+                      <div key={s.session_id} className="p-3 bg-[#f7f9fc] border border-slate-200 text-xs space-y-1">
+                        <div className="flex justify-between font-mono text-[11px]">
+                          <span className="font-bold text-[#0061a5]">
+                            {s.session_id} • Paciente: {s.patient_name} ({s.patient_nid})
+                          </span>
+                          <span className="text-[#006b5b] font-bold">{s.status}</span>
+                        </div>
+                        <p className="text-slate-700">{s.ai_soap_notes}</p>
+                        <p className="font-mono text-[11px] text-slate-900">
+                          <strong>Rx:</strong> {s.prescription_medication}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
+                </div>
 
-        {/* -----------------------------------------------------------------
-            VISÃO 4: APP SAÚDE (TELEMEDICINA AGÊNTICA & PRESCRIÇÃO ED25519)
-            ----------------------------------------------------------------- */}
-        {activeModule === 'health' && (
-          <section className="bg-[#071F4A] rounded-2xl border border-emerald-400/40 p-6 sm:p-8 shadow-xl space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-sky-400/20 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white">🩺 {t.serviceHealthTitle}</h2>
-                <p className="text-sm text-sky-200">{t.serviceHealthDesc}</p>
-              </div>
-              <button
-                onClick={handleGenerateTelemedRx}
-                className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm cursor-pointer"
-              >
-                🎙️ {t.startTelemedBtn}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-[#041434] rounded-xl p-4 border border-sky-400/30 space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-sky-300">{t.liveTranscriptLabel}</h3>
-                <p className="text-xs sm:text-sm text-slate-200 font-mono leading-relaxed">
-                  [00:14] Médica: &quot;Olá {currentCitizen?.fullName ?? 'Cidadão'}, como está a recuperação?&quot;
-                  <br />
-                  [00:22] Paciente: &quot;Sem febre nas últimas 48h, apenas leve fadiga muscular.&quot;
-                  <br />
-                  [00:35] Médica: &quot;Sinais vitais normais na telemetria wearable (SpO2 99%, FC 68 bpm).&quot;
-                </p>
-              </div>
-
-              <div className="bg-[#041434] rounded-xl p-4 border border-emerald-400/40 space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-300">{t.aiSummaryLabel}</h3>
-                <ul className="text-xs sm:text-sm text-slate-200 space-y-1.5">
-                  <li>
-                    <strong className="text-amber-300">Subjetivo (S):</strong> Paciente afebril há 48h, relata melhora
-                    clínica progressiva.
-                  </li>
-                  <li>
-                    <strong className="text-amber-300">Objetivo (O):</strong> Telemetria SpO2 99%, FC 68 bpm, PA 118/76
-                    mmHg.
-                  </li>
-                  <li>
-                    <strong className="text-amber-300">Avaliação (A):</strong> Convalescença viral sem complicações
-                    respiratórias.
-                  </li>
-                  <li>
-                    <strong className="text-amber-300">Plano (P):</strong> Hidratação, reposição eletrolítica e retorno
-                    preventivo em 14 dias.
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-slate-950 text-white rounded-xl p-4 border border-amber-400/50 space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300">{t.digitalRxLabel}</h3>
-                <div className="text-xs font-mono space-y-1 text-slate-300">
-                  <div>ID: {telemedPrescriptionId}</div>
-                  <div>PACIENTE: {currentCitizen?.nid ?? 'NID-100-0000-0019'}</div>
-                  <div>PRESCRIÇÃO: Complexo Polivitamínico & Hidratação Oral 500ml 2x/dia</div>
-                  <div className="text-emerald-300 pt-1 truncate">
-                    ASSINATURA ED25519: {currentCitizen?.publicKeyEd25519}
+                {/* Credentialed Doctors Roster */}
+                <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                    Corpo Clínico Nacional (Médicos Credenciados no GDF)
+                  </h3>
+                  <div className="overflow-y-auto max-h-96">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-[#f2f4f7] border-y border-slate-300 text-[11px] font-mono uppercase">
+                          <th className="py-2 px-2.5">NID Médico</th>
+                          <th className="py-2 px-2.5">Nome / Especialidade</th>
+                          <th className="py-2 px-2.5">Cidadãos Vinculados</th>
+                          <th className="py-2 px-2.5">Status 360</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {healthData?.doctors?.map((d: any) => (
+                          <tr key={d.citizen_id} className="hover:bg-slate-50">
+                            <td className="py-2 px-2.5 font-mono font-bold">{d.citizen_id}</td>
+                            <td className="py-2 px-2.5">
+                              <div className="font-semibold text-slate-900">{d.full_name}</div>
+                              <div className="text-[11px] text-slate-500">{d.profession_label}</div>
+                            </td>
+                            <td className="py-2 px-2.5 font-mono">{d.assigned_patients}</td>
+                            <td className="py-2 px-2.5 font-mono text-[10px]">{d.role_code}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          )}
 
-        {/* -----------------------------------------------------------------
-            VISÃO 5: APP EDUCAÇÃO (TUTORIA ADAPTATIVA POR FAIXA ETÁRIA)
-            ----------------------------------------------------------------- */}
-        {activeModule === 'education' && (
-          <section className="bg-[#071F4A] rounded-2xl border border-amber-400/40 p-6 sm:p-8 shadow-xl space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-sky-400/20 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white">🎓 {t.serviceEduTitle}</h2>
-                <p className="text-sm text-sky-200">{t.serviceEduDesc}</p>
+          {/* -----------------------------------------------------------------
+              TAB 4: GESTÃO DA EDUCAÇÃO, ESCOLAS, ALUNOS, PROVAS E PROFESSORES
+          ----------------------------------------------------------------- */}
+          {backstageTab === 'edu_backstage' && (
+            <div className="space-y-6">
+              {/* Schools Overview */}
+              <div className="bg-white border border-[#c6c6ce] p-6">
+                <h2 className="text-lg font-bold text-slate-900 font-headline mb-4">
+                  Rede Nacional de Escolas, Liceus e Universidades (17.993 Alunos Matriculados)
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {eduData?.institutions?.map((inst: any) => (
+                    <div key={inst.institution_id} className="p-4 bg-[#f7f9fc] border border-slate-300 space-y-1">
+                      <div className="flex justify-between font-mono text-[11px]">
+                        <span className="font-bold text-[#141a32]">{inst.institution_id}</span>
+                        <span className="text-[#006b5b] font-bold">
+                          Média: {inst.avg_performance} | Freq: {inst.avg_attendance}%
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900">{inst.name}</h3>
+                      <p className="text-xs text-slate-600">
+                        Distrito: {inst.district} • Direção: {inst.director_name}
+                      </p>
+                      <p className="text-xs font-mono font-bold text-[#0061a5] pt-1">
+                        {inst.enrolled_students?.toLocaleString('pt-BR')} alunos ativos
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-400 text-slate-950">
-                Idade Cadastrada no NID: {currentCitizen?.ageYears ?? 34} anos
-              </span>
-            </div>
 
-            <div className="bg-[#041434] text-white rounded-xl p-6 space-y-4 border border-sky-400/30">
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-amber-300 block">
-                  {t.adaptiveTrackLabel}
-                </span>
-                <h3 className="text-lg font-bold mt-1">{educationPathway.stage}</h3>
-                <p className="text-xs sm:text-sm text-sky-200 mt-1">{educationPathway.aiTutorNote}</p>
-              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Teacher Gradebook per Subject & Exam Creation */}
+                <div className="bg-white border border-[#c6c6ce] p-6 space-y-5">
+                  <h3 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                    Diário Digital do Professor — Avaliação de Desempenho por Matéria
+                  </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                {educationPathway.modules.map((mod, idx) => (
-                  <div key={mod} className="bg-[#082F72]/60 border border-amber-400/30 rounded-xl p-4 space-y-2">
-                    <span className="text-xs font-mono text-amber-300">MÓDULO 0{idx + 1}</span>
-                    <h4 className="font-semibold text-sm text-white">{mod}</h4>
+                  {selectedStudent && (
+                    <form onSubmit={handleSaveStudentGrades} className="p-4 bg-[#f2f4f7] border border-slate-300 space-y-3 text-xs">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="font-mono text-[11px] text-[#0061a5] font-bold">
+                            ALUNO SELECIONADO: {selectedStudent.citizen_id}
+                          </span>
+                          <h4 className="text-sm font-bold text-slate-900">
+                            {selectedStudent.student_name} ({selectedStudent.student_age} anos —{' '}
+                            {selectedStudent.grade_level})
+                          </h4>
+                          <p className="text-[11px] text-slate-600">
+                            Responsável no Grafo Familiar: <strong>{selectedStudent.parent_name || 'N/D'}</strong> (
+                            {selectedStudent.parent_nid || 'N/D'})
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase text-slate-600">Matemática</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={gradeForm.score_mathematics}
+                            onChange={e => setGradeForm({ ...gradeForm, score_mathematics: Number(e.target.value) })}
+                            className="w-full px-2 py-1 bg-white border border-slate-300 font-mono font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase text-slate-600">Ciências</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={gradeForm.score_sciences}
+                            onChange={e => setGradeForm({ ...gradeForm, score_sciences: Number(e.target.value) })}
+                            className="w-full px-2 py-1 bg-white border border-slate-300 font-mono font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase text-slate-600">IA & Robótica</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={gradeForm.score_ai_robotics}
+                            onChange={e => setGradeForm({ ...gradeForm, score_ai_robotics: Number(e.target.value) })}
+                            className="w-full px-2 py-1 bg-white border border-slate-300 font-mono font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase text-slate-600">Linguagens</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={gradeForm.score_languages}
+                            onChange={e => setGradeForm({ ...gradeForm, score_languages: Number(e.target.value) })}
+                            className="w-full px-2 py-1 bg-white border border-slate-300 font-mono font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase text-slate-600">Frequência %</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={gradeForm.attendance_rate}
+                            onChange={e => setGradeForm({ ...gradeForm, attendance_rate: Number(e.target.value) })}
+                            className="w-full px-2 py-1 bg-white border border-slate-300 font-mono font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-[#141a32] text-white py-2 font-bold uppercase tracking-wider hover:bg-slate-800"
+                      >
+                        Salvar Notas no GDF & Recalcular Alerta Pedagógico
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Apply New Exam */}
+                  <form onSubmit={handleApplyExam} className="space-y-3 text-xs pt-2 border-t border-slate-200">
+                    <div className="font-bold text-slate-800 uppercase">Aplicar Nova Prova Nacional Assistida por IA</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <input
+                        type="text"
+                        value={examTitle}
+                        onChange={e => setExamTitle(e.target.value)}
+                        className="sm:col-span-2 px-2.5 py-1.5 bg-white border border-slate-300"
+                        placeholder="Título da Avaliação..."
+                      />
+                      <select
+                        value={examSubject}
+                        onChange={e => setExamSubject(e.target.value)}
+                        className="px-2.5 py-1.5 bg-white border border-slate-300"
+                      >
+                        <option value="AI & Robotics">IA & Robótica</option>
+                        <option value="Mathematics">Matemática</option>
+                        <option value="Sciences">Ciências Naturais</option>
+                        <option value="Languages">Linguagens (PT/ES/EN)</option>
+                      </select>
+                    </div>
+                    <button
+                      type="submit"
+                      className="bg-[#0061a5] text-white px-4 py-2 font-bold uppercase tracking-wider hover:bg-[#00487c]"
+                    >
+                      Aplicar Prova & Corrigir com Agente Avaliador
+                    </button>
+                  </form>
+                </div>
+
+                {/* Students Table with Subject Scores */}
+                <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                    Alunos Matriculados — Clique para Editar Notas por Matéria
+                  </h3>
+                  <div className="overflow-x-auto max-h-96">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-[#f2f4f7] border-y border-slate-300 text-[10px] font-mono uppercase">
+                          <th className="py-2 px-2">Aluno (NID)</th>
+                          <th className="py-2 px-2">Mat</th>
+                          <th className="py-2 px-2">Ciên</th>
+                          <th className="py-2 px-2">IA</th>
+                          <th className="py-2 px-2">Líng</th>
+                          <th className="py-2 px-2">Freq%</th>
+                          <th className="py-2 px-2">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {eduData?.students?.map((st: any) => (
+                          <tr
+                            key={st.citizen_id}
+                            className={`hover:bg-slate-50 ${
+                              selectedStudent?.citizen_id === st.citizen_id ? 'bg-blue-50/60' : ''
+                            }`}
+                          >
+                            <td className="py-2 px-2">
+                              <div className="font-bold text-slate-900">{st.student_name}</div>
+                              <div className="font-mono text-[10px] text-slate-500">
+                                {st.citizen_id} • Pai/Mãe: {st.parent_name || 'GDF'}
+                              </div>
+                            </td>
+                            <td className="py-2 px-2 font-mono">{st.score_mathematics}</td>
+                            <td className="py-2 px-2 font-mono">{st.score_sciences}</td>
+                            <td className="py-2 px-2 font-mono">{st.score_ai_robotics}</td>
+                            <td className="py-2 px-2 font-mono">{st.score_languages}</td>
+                            <td
+                              className={`py-2 px-2 font-mono font-bold ${
+                                st.attendance_rate < 75 ? 'text-[#ba1a1a]' : 'text-[#006b5b]'
+                              }`}
+                            >
+                              {st.attendance_rate}%
+                            </td>
+                            <td className="py-2 px-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedStudent(st);
+                                  setGradeForm({
+                                    score_mathematics: st.score_mathematics,
+                                    score_sciences: st.score_sciences,
+                                    score_ai_robotics: st.score_ai_robotics,
+                                    score_languages: st.score_languages,
+                                    attendance_rate: st.attendance_rate
+                                  });
+                                }}
+                                className="px-2 py-1 bg-[#141a32] text-white text-[10px] font-bold uppercase"
+                              >
+                                Avaliar
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
-          </section>
-        )}
-      </main>
+          )}
+
+          {/* -----------------------------------------------------------------
+              TAB 5: BACKSTAGE 311 (ZELADORIA URBANA) & COMANDO 911
+          ----------------------------------------------------------------- */}
+          {backstageTab === 'ops_311_911' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 311 Queue for Public Servants */}
+              <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                <h2 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                  Fila de Atendimento do Servidor Público — Demandas Urbanas 311
+                </h2>
+                <div className="space-y-3">
+                  {opsData?.tickets_311?.map((t: any) => (
+                    <div key={t.ticket_id} className="p-4 bg-[#f7f9fc] border border-slate-300 space-y-2 text-xs">
+                      <div className="flex justify-between items-center font-mono text-[11px]">
+                        <span className="font-bold text-[#141a32]">
+                          {t.ticket_id} • {t.district}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 font-bold ${
+                            t.status === 'RESOLVED'
+                              ? 'bg-[#e6f7f4] text-[#005044] border border-[#00957f]'
+                              : 'bg-amber-50 text-amber-900 border border-amber-300'
+                          }`}
+                        >
+                          {t.status}
+                        </span>
+                      </div>
+                      <div className="font-bold text-slate-900">{t.category}</div>
+                      <p className="text-slate-700">{t.description}</p>
+                      <p className="text-[11px] text-[#0061a5] font-medium">{t.ai_triage_summary}</p>
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-[11px] text-slate-500">
+                        <span>
+                          Solicitante: {t.citizen_name} ({t.citizen_id})
+                        </span>
+                        {t.status !== 'RESOLVED' && (
+                          <button
+                            onClick={() => handleResolve311(t.ticket_id)}
+                            className="bg-[#006b5b] text-white px-3 py-1 font-bold uppercase tracking-wider"
+                          >
+                            Concluir Demanda
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 911 Emergency Dispatch with GDF Crossing #3 */}
+              <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                <h2 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                  Central de Despacho 911 — Cruzamento Automático GDF (HL7 + Família)
+                </h2>
+                <div className="space-y-3">
+                  {opsData?.dispatches_911?.map((d: any) => (
+                    <div key={d.dispatch_id} className="p-4 bg-red-50/40 border border-[#ba1a1a]/40 space-y-2 text-xs">
+                      <div className="flex justify-between items-center font-mono text-[11px]">
+                        <span className="font-bold text-[#ba1a1a]">
+                          {d.dispatch_id} • {d.priority}
+                        </span>
+                        <span className="px-2 py-0.5 bg-[#ba1a1a] text-white font-bold">
+                          ETA: {d.eta_minutes} MIN
+                        </span>
+                      </div>
+                      <div className="font-bold text-slate-900">
+                        {d.emergency_type} — Paciente: {d.citizen_name} ({d.citizen_id})
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 bg-white p-2.5 border border-slate-200 font-mono text-[11px]">
+                        <div>
+                          <strong>Tipo Sanguíneo:</strong> <span className="text-[#ba1a1a]">{d.blood_type}</span>
+                        </div>
+                        <div>
+                          <strong>Hospital Destino:</strong> {d.assigned_hospital_id}
+                        </div>
+                        <div>
+                          <strong>Alergias HL7:</strong> {d.allergies}
+                        </div>
+                        <div>
+                          <strong>Condições:</strong> {d.chronic_conditions}
+                        </div>
+                      </div>
+                      <div className="p-2 bg-[#141a32] text-white font-mono text-[11px]">
+                        ALERTA FAMILIAR AUTOMÁTICO (rel_family_graph): {d.emergency_contact_name} (
+                        {d.emergency_contact_nid}) • Tel: {d.emergency_contact_phone}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* -----------------------------------------------------------------
+              TAB 6: JUSTIÇA ALGORÍTMICA, FRONTEIRAS & TESOURO SOBERANO
+          ----------------------------------------------------------------- */}
+          {backstageTab === 'justice_treasury' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                <h2 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                  Tesouro Soberano — Empresas AI-First & Dividendo UBI (100.000 Cidadãos)
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {justiceData?.tax_summary?.map((t: any) => (
+                    <div key={t.tax_status} className="p-3 bg-[#f7f9fc] border border-slate-200 text-xs">
+                      <span className="font-mono text-[10px] text-slate-500 block">{t.tax_status}</span>
+                      <strong className="text-lg font-headline text-slate-900">
+                        {t.total?.toLocaleString('pt-BR')}
+                      </strong>
+                      <span className="text-[11px] text-slate-500 block">cidadãos</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-2 pt-2">
+                  <div className="text-xs font-bold uppercase text-slate-500">Empresas Autônomas Registradas</div>
+                  {justiceData?.companies?.map((c: any) => (
+                    <div key={c.company_id} className="p-3 bg-[#f7f9fc] border border-slate-200 text-xs flex justify-between">
+                      <div>
+                        <span className="font-mono font-bold text-[#0061a5] mr-2">{c.company_id}</span>
+                        <strong>{c.company_name}</strong>
+                        <div className="text-[11px] text-slate-500">
+                          Titular: {c.owner_name} ({c.owner_nid}) • Setor: {c.sector}
+                        </div>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-[#006b5b]">
+                        {c.initial_compute_quota_tflops} TFLOPs
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#c6c6ce] p-6 space-y-4">
+                <h2 className="text-base font-bold text-slate-900 font-headline border-b border-slate-200 pb-3">
+                  Suprema Corte Digital — Antecedentes & Segurança Nacional (justice_records)
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {justiceData?.justice_summary?.map((j: any) => (
+                    <div key={j.background_check_status} className="p-3 bg-[#f7f9fc] border border-slate-200 text-xs">
+                      <span className="font-mono text-[10px] text-slate-500 block">{j.background_check_status}</span>
+                      <strong className="text-lg font-headline text-slate-900">
+                        {j.total?.toLocaleString('pt-BR')}
+                      </strong>
+                      <span className="text-[11px] text-slate-500 block">registros</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* -----------------------------------------------------------------
+              TAB 7: EXPLORADOR GDF 100.000 CIDADÃOS & DATA LAKEHOUSE (3 CRUZAMENTOS)
+          ----------------------------------------------------------------- */}
+          {backstageTab === 'gdf_lakehouse' && (
+            <div className="space-y-6">
+              {/* Lakehouse Architecture Banner */}
+              <div className="bg-white border border-[#c6c6ce] p-6">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase bg-[#141a32] text-white px-2 py-0.5">
+                      GOVERNMENT DATA FRAMEWORK (GDF) • ARQUITETURA MEDALHÃO
+                    </span>
+                    <h2 className="text-lg font-bold text-slate-900 font-headline mt-1">
+                      Data Lakehouse Nacional — Cloud Storage (gs://novatlantis-gdf-lakehouse) + BigQuery (gdf_silver /
+                      gdf_gold)
+                    </h2>
+                  </div>
+                  <div className="text-xs font-mono text-slate-600 bg-[#f2f4f7] px-3 py-2 border border-slate-300">
+                    Projeto GCP: <strong>novatlantis</strong> | Cidadãos: <strong>100.000</strong> | Grafo Familiar:{' '}
+                    <strong>58.985 arestas</strong>
+                  </div>
+                </div>
+
+                {/* Search across all 100,000 citizens */}
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    runCitizenSearch(searchQuery, searchCredential);
+                  }}
+                  className="flex flex-wrap gap-2 mb-4"
+                >
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Pesquisar nos 100.000 cidadãos por NID, Nome, Sobrenome, E-mail ou Profissão..."
+                    className="flex-grow px-3 py-2 text-xs bg-white border border-slate-300 font-body"
+                  />
+                  <select
+                    value={searchCredential}
+                    onChange={e => {
+                      setSearchCredential(e.target.value);
+                      runCitizenSearch(searchQuery, e.target.value);
+                    }}
+                    className="px-3 py-2 text-xs bg-white border border-slate-300"
+                  >
+                    <option value="">Todas as Credenciais (100.000)</option>
+                    <option value="STATE_EXECUTIVE">STATE_EXECUTIVE (Governo)</option>
+                    <option value="PHYSICIAN">PHYSICIAN (Médicos)</option>
+                    <option value="TEACHER">TEACHER (Professores)</option>
+                    <option value="MAGISTRATE_JUDGE">MAGISTRATE_JUDGE (Juízes)</option>
+                    <option value="CIVIL_ENGINEER">CIVIL_ENGINEER (Engenheiros)</option>
+                    <option value="NONE">Cidadãos Gerais</option>
+                  </select>
+                  <button
+                    type="submit"
+                    className="bg-[#141a32] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider"
+                  >
+                    Consultar GDF
+                  </button>
+                </form>
+
+                <div className="overflow-x-auto max-h-80 border border-slate-200">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-[#f2f4f7] border-b border-slate-300 text-[10px] font-mono uppercase">
+                        <th className="py-2 px-3">NID (Módulo 11)</th>
+                        <th className="py-2 px-3">Nome Completo</th>
+                        <th className="py-2 px-3">Idade / Idioma</th>
+                        <th className="py-2 px-3">Profissão / Credencial</th>
+                        <th className="py-2 px-3">Distrito</th>
+                        <th className="py-2 px-3">Sangue</th>
+                        <th className="py-2 px-3 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {searchResults.map(c => (
+                        <tr key={c.citizen_id} className="hover:bg-slate-50">
+                          <td className="py-2 px-3 font-mono font-bold text-slate-900">{c.citizen_id}</td>
+                          <td className="py-2 px-3 font-semibold">{c.full_name}</td>
+                          <td className="py-2 px-3 font-mono">
+                            {c.age}a • {c.native_language}
+                          </td>
+                          <td className="py-2 px-3">
+                            {c.profession_label}{' '}
+                            <span className="font-mono text-[10px] text-slate-500">[{c.professional_credential}]</span>
+                          </td>
+                          <td className="py-2 px-3">{c.district}</td>
+                          <td className="py-2 px-3 font-mono font-bold text-[#ba1a1a]">{c.blood_type}</td>
+                          <td className="py-2 px-3 text-right space-x-1.5">
+                            <button
+                              onClick={() => inspectCitizenByNid(c.citizen_id)}
+                              className="px-2 py-0.5 bg-[#0061a5] text-white text-[10px] font-bold uppercase"
+                            >
+                              Ficha 360°
+                            </button>
+                            <button
+                              onClick={() => authenticateCitizen(c.citizen_id)}
+                              className="px-2 py-0.5 border border-slate-300 bg-white text-slate-700 text-[10px] font-bold uppercase"
+                            >
+                              Assumir Login
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Inspected Citizen Modal/Drawer */}
+                {inspectedCitizen && (
+                  <div className="mt-4 p-4 bg-[#f2f4f7] border-2 border-[#141a32] space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <strong className="text-sm font-headline text-[#141a32]">
+                        Ficha Analítica GDF 360°: {inspectedCitizen.full_name} ({inspectedCitizen.citizen_id})
+                      </strong>
+                      <button
+                        onClick={() => setInspectedCitizen(null)}
+                        className="text-xs font-bold uppercase text-[#ba1a1a]"
+                      >
+                        Fechar [X]
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="bg-white p-3 border border-slate-300">
+                        <strong>Dados Civis & Fiscal:</strong> Nasc: {inspectedCitizen.birth_date} ({inspectedCitizen.age}
+                        a) | Fiscal: {inspectedCitizen.tax_status} | UBI: N$ {inspectedCitizen.ubi_monthly_credits}
+                      </div>
+                      <div className="bg-white p-3 border border-slate-300">
+                        <strong>Saúde HL7 & Passaporte:</strong> Sangue: {inspectedCitizen.health?.blood_type} |
+                        Passaporte: {inspectedCitizen.passport?.passport_number || 'N/A'} (
+                        {inspectedCitizen.justice?.background_check_status})
+                      </div>
+                      <div className="bg-white p-3 border border-slate-300">
+                        <strong>Vínculos Familiares ({inspectedCitizen.family_links?.length || 0}):</strong>{' '}
+                        {inspectedCitizen.family_links
+                          ?.map((f: any) => `${f.relationship_type}: ${f.relative_name}`)
+                          .join(' | ') || 'Sem vínculos'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* The 3 Official Cross-Domain Analytical Crossings (Camada Gold) */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Crossing 1: Border & Passport */}
+                <div className="bg-white border border-[#c6c6ce] p-5 space-y-3">
+                  <div className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 inline-block">
+                    CRUZAMENTO GOLD #1 • SEGURANÇA & FRONTEIRA
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 font-headline">
+                    Emissão de Passaporte (sec_passports × justice_records × tax_status)
+                  </h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {overviewData?.crossings?.border_passport_clearance?.map((row: any) => (
+                      <div key={row.citizen_id} className="p-2.5 bg-[#f7f9fc] border border-slate-200 text-[11px]">
+                        <div className="flex justify-between font-mono">
+                          <strong>{row.citizen_id}</strong>
+                          <span
+                            className={
+                              row.border_decision === 'CLEARED_AUTONOMOUS_EGATE'
+                                ? 'text-[#006b5b] font-bold'
+                                : 'text-[#ba1a1a] font-bold'
+                            }
+                          >
+                            {row.border_decision}
+                          </span>
+                        </div>
+                        <div className="text-slate-800 font-semibold">{row.full_name}</div>
+                        <div className="text-slate-500 font-mono text-[10px]">
+                          Justiça: {row.background_check_status} | Fisco: {row.tax_status}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Crossing 2: Education Truancy -> Parent Alert */}
+                <div className="bg-white border border-[#c6c6ce] p-5 space-y-3">
+                  <div className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 inline-block">
+                    CRUZAMENTO GOLD #2 • EDUCAÇÃO & GRAFO FAMILIAR
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 font-headline">
+                    Prevenção de Evasão (edu_enrollments × rel_family_graph → Pais)
+                  </h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {overviewData?.crossings?.school_truancy_family_alerts?.map((row: any, i: number) => (
+                      <div key={i} className="p-2.5 bg-[#f7f9fc] border border-slate-200 text-[11px]">
+                        <div className="flex justify-between font-mono">
+                          <strong>Aluno: {row.student_name}</strong>
+                          <span className={row.attendance_rate < 75 ? 'text-[#ba1a1a] font-bold' : 'text-[#006b5b]'}>
+                            Freq: {row.attendance_rate}%
+                          </span>
+                        </div>
+                        <div className="text-slate-600 text-[10px] font-mono">
+                          Notificar Responsável: <strong>{row.parent_name}</strong> ({row.parent_nid}) •{' '}
+                          {row.parent_phone}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Crossing 3: 911 Medical Emergency -> HL7 + Family */}
+                <div className="bg-white border border-[#c6c6ce] p-5 space-y-3">
+                  <div className="text-[10px] font-mono uppercase bg-slate-100 px-2 py-0.5 text-slate-600 inline-block">
+                    CRUZAMENTO GOLD #3 • SAÚDE HL7 & EMERGÊNCIA 911
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 font-headline">
+                    Resgate 911 (health_records × rel_family_graph → Hospital & Parente)
+                  </h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {overviewData?.crossings?.emergency_911_medical_dispatch?.map((row: any) => (
+                      <div key={row.citizen_id} className="p-2.5 bg-[#f7f9fc] border border-slate-200 text-[11px]">
+                        <div className="flex justify-between font-mono">
+                          <strong>{row.full_name}</strong>
+                          <span className="text-[#ba1a1a] font-bold">Sangue: {row.blood_type}</span>
+                        </div>
+                        <div className="text-slate-600 text-[10px]">
+                          Alergias: {row.allergies} | Hospital: {row.assigned_hospital_id}
+                        </div>
+                        <div className="text-slate-500 font-mono text-[10px]">
+                          Contato Familiar: {row.emergency_contact_name} ({row.emergency_contact_phone})
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* Austere Institutional Footer */}
+      <footer className="bg-white border-t border-slate-300 text-slate-600 py-10 px-6 text-xs mt-12">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center space-x-3">
+            <img
+              src="/assets/coat-of-arms-novatlantis.jpg"
+              alt="Brasão de Novatlantis"
+              className="w-8 h-8 object-contain"
+            />
+            <div>
+              <p className="font-bold text-slate-900 uppercase tracking-wider">
+                Governo da República Digital de Novatlantis — Chancelaria de Infraestrutura Cívica
+              </p>
+              <p className="text-slate-500">
+                Design System Sovereign Civic • GDF 100.000 Cidadãos • Google Cloud Argolis (Project ID: novatlantis)
+              </p>
+            </div>
+          </div>
+          <div className="font-mono text-[11px] text-slate-500">
+            Primeiro-Ministro & Root Admin: jopoco (NID-000-0000-0001-9)
+          </div>
+        </div>
+      </footer>
     </div>
   );
-};
+}
 
 export default App;

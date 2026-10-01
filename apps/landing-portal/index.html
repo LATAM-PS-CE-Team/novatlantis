@@ -1,48 +1,88 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>República Digital de Novatlantis — NOVATLANTIS • LIBERTAS IN DIGITALI</title>
+    <title>Governo da República Digital de Novatlantis — Portal Oficial de Serviços e Estado Soberano</title>
     <meta
       name="description"
-      content="Portal Oficial da República Digital de Novatlantis (Libertas in Digitali) — Nação AI-First da Era Agêntica com Identidade Soberana NIST (NID), 311, 911, Saúde e Educação no Google Cloud."
+      content="Portal Oficial da República Digital de Novatlantis (Libertas in Digitali) — Infraestrutura Pública Digital, Identidade Soberana 360 (GDF 100k), Serviços ao Cidadão e Backstage Governamental."
     />
     <link rel="icon" type="image/jpeg" href="/assets/coat-of-arms-novatlantis.jpg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Public+Sans:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              novatlantis: {
-                cobalt: '#082F72',
-                deep: '#041434',
-                cyan: '#009EE0',
-                gold: '#FBBF24',
-                amber: '#D97706',
-                emerald: '#046A38',
-                silver: '#CBD5E1',
-              },
+              'surface': '#f7f9fc',
+              'surface-dim': '#d8dadd',
+              'surface-bright': '#f7f9fc',
+              'surface-container-lowest': '#ffffff',
+              'surface-container-low': '#f2f4f7',
+              'surface-container': '#eceef1',
+              'surface-container-high': '#e6e8eb',
+              'surface-container-highest': '#e0e3e6',
+              'on-surface': '#191c1e',
+              'on-surface-variant': '#45464d',
+              'primary': '#000000',
+              'primary-container': '#141a32',
+              'on-primary': '#ffffff',
+              'on-primary-container': '#7c83a0',
+              'secondary': '#0061a5',
+              'secondary-container': '#0095f8',
+              'on-secondary': '#ffffff',
+              'tertiary': '#006b5b',
+              'tertiary-container': '#00957f',
+              'tertiary-fixed': '#57fbdb',
+              'error': '#ba1a1a',
+              'error-container': '#ffdad6',
+              'outline': '#76777e',
+              'outline-variant': '#c6c6ce',
+              'sovereign-navy': '#0A1128',
+              'civic-border': '#DCE3EC'
             },
             fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
-              display: ['Space Grotesk', 'Inter', 'sans-serif'],
-              heraldic: ['Cinzel', 'Georgia', 'serif'],
+              headline: ['Public Sans', 'sans-serif'],
+              body: ['Inter', 'sans-serif'],
+              label: ['Public Sans', 'sans-serif'],
               mono: ['JetBrains Mono', 'monospace'],
-            },
-          },
-        },
+              sans: ['Inter', 'system-ui', 'sans-serif']
+            }
+          }
+        }
       };
     </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f7f9fc;
+        color: #191c1e;
+      }
+      h1, h2, h3, h4, .font-headline {
+        font-family: 'Public Sans', sans-serif;
+      }
+      .tabular-nums {
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
   </head>
-  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-400 selection:text-slate-950">
+  <body class="bg-[#f7f9fc] text-[#191c1e] antialiased selection:bg-[#0061a5] selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
