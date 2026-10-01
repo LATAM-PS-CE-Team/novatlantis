@@ -55,10 +55,10 @@ const QUICK_PROFILES = [
     email: 'juiza.clara.sterling@novatlantis.gov.cloud'
   },
   {
-    nid: 'NID-000-0000-0010-2',
+    nid: 'NID-000-0000-0010-8',
     label: 'Cidadão / Estudante (Pedro — 11 anos)',
     roleHint: 'CITIZEN_COMMON',
-    email: 'pedro.albuquerque@cidadania.novatlantis.gov'
+    email: 'pedro.albuquerque@cidadao.novatlantis.gov.cloud'
   }
 ];
 
