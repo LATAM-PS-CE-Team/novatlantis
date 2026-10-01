@@ -21,6 +21,7 @@ import {
   HeartPulse,
   MapPin
 } from 'lucide-react';
+import { TopNavUserWidget } from './components/TopNavUserWidget';
 
 type Language = 'pt-BR' | 'es-419' | 'en-US';
 type CitizenTab = 'identity' | 'family_address' | 'health' | 'education' | 'urban' | 'treasury';
@@ -282,7 +283,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <a
               href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(citizen?.nid || 'NID-000-0000-0001-9')}`}
               className="px-3 py-2 rounded text-xs font-semibold bg-[#f2f4f6] text-[#002046] border border-slate-300 hover:bg-[#dae2ff] transition flex items-center gap-1.5"
@@ -296,88 +297,13 @@ export default function App() {
               <Lock className="w-3.5 h-3.5 text-[#b4c5ff]" /> Backstage Governamental
               <ExternalLink className="w-3 h-3" />
             </a>
-          </div>
-        </div>
 
-        {/* SELETOR E BUSCA NO MÓDULO DE USUÁRIOS (100.000 CIDADÃOS) */}
-        <div className="bg-[#f2f4f6] border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono uppercase text-[11px] text-[#002046] font-bold flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" /> Cidadão Titular (100k Users Module):
-              </span>
-              <select
-                value={citizen?.nid || ''}
-                onChange={(e) => loadCitizen(e.target.value)}
-                className="bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-medium text-[#002046]"
-              >
-                {QUICK_USERS.map((u) => (
-                  <option key={u.nid} value={u.nid}>
-                    {u.label} ({u.nid})
-                  </option>
-                ))}
-                {citizen && !QUICK_USERS.some((u) => u.nid === citizen.nid) && (
-                  <option value={citizen.nid}>
-                    {citizen.full_name} ({citizen.nid})
-                  </option>
-                )}
-              </select>
-
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={loginInput}
-                  onChange={(e) => setLoginInput(e.target.value)}
-                  placeholder="NID ou E-mail..."
-                  className="bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono w-48"
-                />
-                <button
-                  onClick={() => loadCitizen(loginInput)}
-                  className="bg-[#002046] text-white px-2.5 py-1 rounded text-xs font-semibold"
-                >
-                  Trocar Usuário
-                </button>
-              </div>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Pesquisar qualquer dos 100k cidadãos..."
-                  className="bg-white border border-slate-300 rounded px-2.5 py-1 text-xs w-56"
-                />
-                {searchResults.length > 0 && (
-                  <div className="absolute left-0 mt-1 w-96 bg-white border border-slate-300 rounded shadow-xl z-50 max-h-64 overflow-y-auto">
-                    {searchResults.map((c) => (
-                      <button
-                        key={c.nid}
-                        onClick={() => {
-                          loadCitizen(c.nid);
-                          setSearchResults([]);
-                          setSearchQuery('');
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-[#f2f4f6] border-b border-slate-100 flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="font-bold text-[#002046]">{c.full_name}</div>
-                          <div className="font-mono text-[11px] text-slate-600">
-                            {c.nid} • {c.age} anos • {c.profession}
-                          </div>
-                        </div>
-                        <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">{c.district}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="pl-2 border-l border-slate-200">
+              <TopNavUserWidget
+                currentNid={citizen?.nid}
+                onUserAuthenticated={(nid) => loadCitizen(nid)}
+              />
             </div>
-
-            {citizen && (
-              <div className="font-mono text-[11px] text-[#002046]">
-                Distrito: <strong>{citizen.district}</strong> • Papel IAM 360: <strong>{citizen.iam_role}</strong>
-              </div>
-            )}
           </div>
         </div>
 
@@ -539,14 +465,14 @@ export default function App() {
                   <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
                     <div>
                       <h3 className="font-serif-authority text-lg font-bold text-[#002046]">
-                        Árvore e Vínculos Familiares (`rel_family_graph`)
+                        Núcleo e Vínculos Familiares (`GET /api/v1/profile/family`)
                       </h3>
                       <p className="text-xs text-[#43474f]">
-                        Relações civis registradas no Datalake de 100.000 cidadãos com guarda legal e contatos de emergência.
+                        Consulta em modo estritamente <strong>somente leitura (Read-Only)</strong> mantida pelo Registro Civil Central.
                       </p>
                     </div>
-                    <span className="font-mono text-xs bg-[#dae2ff] text-[#001848] px-2.5 py-1 rounded font-bold">
-                      {(dossier?.family?.outgoing?.length || 0) + (dossier?.family?.incoming?.length || 0)} Vínculos
+                    <span className="font-mono text-[11px] bg-slate-800 text-[#b4c5ff] px-2.5 py-1 rounded font-bold">
+                      SOMENTE LEITURA (READ-ONLY)
                     </span>
                   </div>
 
@@ -568,15 +494,12 @@ export default function App() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-[#dae2ff] text-[#001848] font-bold">
+                            <span className="font-mono text-[11px] px-2.5 py-1 rounded bg-[#dae2ff] text-[#001848] font-bold">
                               {rel.relation_type}
                             </span>
-                            <button
-                              onClick={() => loadCitizen(relatedNid)}
-                              className="px-2.5 py-1 rounded bg-[#002046] text-white text-xs font-semibold hover:bg-[#00356e]"
-                            >
-                              Inspecionar Familiar
-                            </button>
+                            <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                              Registro Civil Imutável
+                            </span>
                           </div>
                         </div>
                       );

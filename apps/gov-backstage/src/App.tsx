@@ -20,6 +20,7 @@ import {
   Home,
   UserCheck
 } from 'lucide-react';
+import { TopNavUserWidget } from './components/TopNavUserWidget';
 
 type Language = 'pt-BR' | 'es-419' | 'en-US';
 type BackstageTab = 'pm_cabinet' | 'iam360' | 'health_mgmt' | 'edu_mgmt' | 'ops_311_911' | 'justice_datalake';
@@ -308,7 +309,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <a
               href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
               className="px-3 py-2 rounded text-xs font-semibold bg-[#f2f4f6] text-[#002046] border border-slate-300 hover:bg-[#dae2ff] transition flex items-center gap-1.5"
@@ -322,95 +323,13 @@ export default function App() {
               <UserCheck className="w-3.5 h-3.5 text-[#b4c5ff]" /> Visão Cidadão (Portal do Cidadão)
               <ExternalLink className="w-3 h-3" />
             </a>
-          </div>
-        </div>
 
-        {/* BARRA DE AUTENTICAÇÃO SSO & SIMULADOR RBAC/ABAC */}
-        <div className="bg-[#f2f4f6] border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono uppercase text-[11px] text-[#002046] font-bold flex items-center gap-1">
-                <Lock className="w-3.5 h-3.5" /> Servidor / Cidadão Autenticado:
-              </span>
-              <select
-                value={currentUser?.nid || ''}
-                onChange={(e) => loadUserSession(e.target.value)}
-                className="bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-medium text-[#002046]"
-              >
-                {QUICK_PROFILES.map((p) => (
-                  <option key={p.nid} value={p.nid}>
-                    {p.label} — [{p.roleBadge}]
-                  </option>
-                ))}
-                {currentUser && !QUICK_PROFILES.some((p) => p.nid === currentUser.nid) && (
-                  <option value={currentUser.nid}>
-                    {currentUser.full_name} ({currentUser.nid}) — [{currentUser.iam_role}]
-                  </option>
-                )}
-              </select>
-
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={loginInput}
-                  onChange={(e) => setLoginInput(e.target.value)}
-                  placeholder="NID ou E-mail..."
-                  className="bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono w-48"
-                />
-                <button
-                  onClick={() => loadUserSession(loginInput)}
-                  className="bg-[#002046] text-white px-2.5 py-1 rounded text-xs font-semibold"
-                >
-                  Autenticar
-                </button>
-              </div>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => handleCitizenSearch(e.target.value)}
-                  placeholder="Buscar nos 100k cidadãos..."
-                  className="bg-white border border-slate-300 rounded px-2.5 py-1 text-xs w-48"
-                />
-                {searchResults.length > 0 && (
-                  <div className="absolute left-0 mt-1 w-96 bg-white border border-slate-300 rounded shadow-xl z-50 max-h-64 overflow-y-auto">
-                    {searchResults.map((c) => (
-                      <button
-                        key={c.nid}
-                        onClick={() => {
-                          loadUserSession(c.nid);
-                          setSearchResults([]);
-                          setSearchQuery('');
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-[#f2f4f6] border-b border-slate-100 flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="font-bold text-[#002046]">{c.full_name}</div>
-                          <div className="font-mono text-[11px] text-slate-600">
-                            {c.nid} • {c.profession}
-                          </div>
-                        </div>
-                        <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">{c.iam_role}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="pl-2 border-l border-slate-200">
+              <TopNavUserWidget
+                currentNid={currentUser?.nid}
+                onUserAuthenticated={(nid) => loadUserSession(nid)}
+              />
             </div>
-
-            {currentUser && (
-              <div className="flex items-center gap-2 font-mono text-[11px]">
-                <span>Clearance Level: <strong>L{currentUser.role_info?.clearance_level || 1}</strong></span>
-                <span
-                  className={`px-2 py-0.5 rounded font-bold ${
-                    currentUser.backstage_allowed ? 'bg-emerald-100 text-emerald-900' : 'bg-red-100 text-red-900'
-                  }`}
-                >
-                  {currentUser.iam_role}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 

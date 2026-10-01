@@ -4,6 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
+import { handleCentralAuthAndProfileRoutes } from './authModule.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -825,6 +826,11 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     const pathname = url.pathname;
+
+    if (pathname.startsWith('/api/v1/auth/') || pathname.startsWith('/api/v1/profile/')) {
+      const handled = await handleCentralAuthAndProfileRoutes(req, res, db, pathname, url, readBody, sendJson);
+      if (handled !== false) return;
+    }
 
     if (pathname === '/api/health') {
       const totalCitizens = db.prepare('SELECT COUNT(*) AS cnt FROM dim_citizens').get().cnt;

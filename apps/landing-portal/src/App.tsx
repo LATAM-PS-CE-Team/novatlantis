@@ -31,6 +31,7 @@ import {
   ChevronRight,
   Layers
 } from 'lucide-react';
+import { TopNavUserWidget } from './components/TopNavUserWidget';
 
 type Language = 'pt-BR' | 'es-419' | 'en-US';
 
@@ -429,8 +430,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* NAVEGAÇÃO ENTRE AS 3 APLICAÇÕES FULL-STACK SEPARADAS */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* NAVEGAÇÃO ENTRE AS 3 APLICAÇÕES FULL-STACK E WIDGET CENTRAL DE AUTENTICAÇÃO */}
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => setChatOpen(true)}
               className="px-3.5 py-2 rounded text-xs font-semibold flex items-center gap-1.5 bg-[#00356e] text-white hover:bg-[#002046] transition shadow-sm"
@@ -454,103 +455,13 @@ export default function App() {
               Backstage Governamental
               <ExternalLink className="w-3 h-3" />
             </a>
-          </div>
-        </div>
 
-        {/* BARRA DE SESSÃO SOBERANA (MÓDULO DE USUÁRIOS GDF 100.000 CIDADÃOS) */}
-        <div className="bg-[#f2f4f6] border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono uppercase text-[11px] text-[#43474f] font-semibold flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-[#002046]" />
-                Cidadão Autenticado (Base 100k):
-              </span>
-              <select
-                value={currentUser?.nid || ''}
-                onChange={(e) => loadUser(e.target.value)}
-                className="bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-medium text-[#002046] focus:outline-none focus:border-[#002046]"
-              >
-                {QUICK_PROFILES.map((p) => (
-                  <option key={p.nid} value={p.nid}>
-                    {p.label} — [{p.roleBadge}]
-                  </option>
-                ))}
-                {currentUser && !QUICK_PROFILES.some((p) => p.nid === currentUser.nid) && (
-                  <option value={currentUser.nid}>
-                    {currentUser.full_name} ({currentUser.nid}) — [{currentUser.iam_role}]
-                  </option>
-                )}
-              </select>
-
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={loginInput}
-                  onChange={(e) => setLoginInput(e.target.value)}
-                  placeholder="NID ou E-mail de qualquer dos 100k cidadãos"
-                  className="bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono w-56"
-                />
-                <button
-                  onClick={() => loadUser(loginInput)}
-                  className="bg-[#002046] text-white px-2.5 py-1 rounded text-xs font-medium hover:bg-[#00356e]"
-                >
-                  Autenticar SSO
-                </button>
-              </div>
-
-              {/* Busca rápida nos 100.000 cidadãos */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={citizenSearchQuery}
-                  onChange={(e) => handleCitizenDirectorySearch(e.target.value)}
-                  placeholder="Buscar cidadão na base 100k..."
-                  className="bg-white border border-slate-300 rounded px-2.5 py-1 text-xs w-52"
-                />
-                {citizenSearchResults.length > 0 && (
-                  <div className="absolute left-0 mt-1 w-96 bg-white border border-slate-300 rounded shadow-lg z-50 max-h-64 overflow-y-auto">
-                    {citizenSearchResults.map((c) => (
-                      <button
-                        key={c.nid}
-                        onClick={() => {
-                          loadUser(c.nid);
-                          setCitizenSearchResults([]);
-                          setCitizenSearchQuery('');
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-[#f2f4f6] border-b border-slate-100 flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="font-semibold text-[#002046]">{c.full_name}</div>
-                          <div className="text-[11px] text-[#43474f] font-mono">
-                            {c.nid} • {c.profession}
-                          </div>
-                        </div>
-                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
-                          {c.iam_role}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="pl-2 border-l border-slate-200">
+              <TopNavUserWidget
+                currentNid={currentUser?.nid}
+                onUserAuthenticated={(nid) => loadUser(nid)}
+              />
             </div>
-
-            {currentUser && (
-              <div className="flex items-center gap-2">
-                <span className="text-[#43474f]">
-                  Usuário: <strong className="text-[#191c1e]">{currentUser.full_name}</strong>
-                </span>
-                <span
-                  className={`font-mono text-[11px] px-2 py-0.5 rounded font-semibold ${
-                    currentUser.backstage_allowed
-                      ? 'bg-[#dae2ff] text-[#001848] border border-[#002046]/20'
-                      : 'bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {currentUser.iam_role}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </header>
