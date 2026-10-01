@@ -312,6 +312,10 @@ function getFullCitizenProfile(nidOrEmail) {
 
   return {
     ...row,
+    nid: row.citizen_id,
+    iam_role: effectiveRoleCode,
+    profession: row.professional_credential,
+    specialty: row.profession_label,
     phone: `+550 98100-${nid.slice(-6, -2)}`,
     ubi_monthly_credits: row.age >= 18 ? 1250.0 : 450.0,
     effective_role_code: effectiveRoleCode,
@@ -724,14 +728,50 @@ function runSovereignOrchestrator(profile, userMessage) {
     now
   );
 
+  const orchestrationSteps = orchestrationTrace.map((t, idx) => ({
+    agent: idx === 0 ? 'IAM-360-ZeroTrust' : idx === 1 ? delegatedAgent.split(' ')[0] : 'GDF-SQLite-Engine',
+    step: `${t.node}: ${t.detail}`,
+    status: 'OK',
+    latency_ms: 14 + idx * 19
+  }));
+
+  const actionCard = executedAction
+    ? {
+        type: executedAction.type,
+        title: executedAction.summary,
+        reference_id: executedAction.protocol,
+        status: 'EXECUTADO NO GDF',
+        target_portal: 'citizen-portal',
+        target_url: suggestedLinks[0]?.url || `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}`,
+        details: {
+          Titular: `${profile.full_name} (${profile.citizen_id})`,
+          Agente: delegatedAgent,
+          Distrito: profile.residence?.district || 'Distrito Tecnológico',
+          Protocolo: executedAction.protocol
+        }
+      }
+    : null;
+
   return {
+    message_id: `MSG-NOV-${Date.now()}`,
+    intent: executedAction ? executedAction.type : 'STATE_ORCHESTRATION',
     citizen_id: profile.citizen_id,
     citizen_name: profile.full_name,
     delegated_agent: delegatedAgent,
     executed_action: executedAction,
+    action_card: actionCard,
     orchestration_trace: orchestrationTrace,
+    orchestration_steps: orchestrationSteps,
     reply,
     suggested_links: suggestedLinks,
+    suggested_prompts: [
+      'Consultar meu prontuário completo e família no GDF',
+      'Emitir ou validar meu Passaporte Digital ICAO',
+      'Abrir uma empresa em 45 segundos no Distrito Tecnológico',
+      'Agendar teleconsulta médica com resumo clínico IA',
+      'Verificar notas escolares e desempenho em IA & Robótica',
+      'Abrir chamado 311 para reparo de iluminação pública'
+    ],
     timestamp: now
   };
 }
@@ -788,6 +828,9 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/health') {
       const totalCitizens = db.prepare('SELECT COUNT(*) AS cnt FROM dim_citizens').get().cnt;
+      const totalFamily = db.prepare('SELECT COUNT(*) AS cnt FROM rel_family_graph').get().cnt;
+      const totalEdu = db.prepare('SELECT COUNT(*) AS cnt FROM edu_enrollments').get().cnt;
+      const totalPassports = db.prepare('SELECT COUNT(*) AS cnt FROM sec_passports').get().cnt;
       const activeRoles = db.prepare('SELECT COUNT(*) AS cnt FROM iam_identity_360_roles WHERE is_active = 1').get().cnt;
       return sendJson(res, 200, {
         status: 'ok',
@@ -795,6 +838,12 @@ const server = http.createServer(async (req, res) => {
         project_id: 'novatlantis',
         citizens_total: totalCitizens,
         active_backstage_roles: activeRoles,
+        lakehouse_counts: {
+          citizens: totalCitizens,
+          family_links: totalFamily,
+          edu_enrollments: totalEdu,
+          passports: totalPassports
+        },
         connected_applications: {
           landing_portal: 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app',
           citizen_portal: CITIZEN_PORTAL_URL,
@@ -805,6 +854,21 @@ const server = http.createServer(async (req, res) => {
           bigquery_datasets: ['novatlantis:gdf_bronze', 'novatlantis:gdf_silver', 'novatlantis:gdf_gold']
         }
       });
+    }
+
+    if ((pathname === '/api/users/search' || pathname === '/api/gdf/search') && req.method === 'GET') {
+      const q = String(url.searchParams.get('q') || '').trim();
+      const limit = Math.min(Number(url.searchParams.get('limit') || 15), 50);
+      const pattern = `%${q || 'NID-000'}%`;
+      const rows = db
+        .prepare(`
+          SELECT nid, full_name, email, age, gender, native_language, profession, specialty, iam_role, district, tax_status
+          FROM dim_citizens
+          WHERE nid LIKE ? OR full_name LIKE ? OR email LIKE ? OR profession LIKE ?
+          LIMIT ?
+        `)
+        .all(pattern, pattern, pattern, pattern, limit);
+      return sendJson(res, 200, { query: q, count: rows.length, results: rows });
     }
 
     if (pathname === '/api/auth/login' && req.method === 'POST') {
@@ -821,9 +885,8 @@ const server = http.createServer(async (req, res) => {
     // Endpoint Principal do Agente Orquestrador de Estado (Chat Interativo)
     if (pathname === '/api/orchestrator/chat' && req.method === 'POST') {
       const body = await readBody(req);
-      const profile =
-        getFullCitizenProfile(body.citizen_id || 'NID-000-0000-0001-9') ||
-        getFullCitizenProfile('NID-000-0000-0001-9');
+      const targetNid = body.nid || body.citizen_id || 'NID-000-0000-0001-9';
+      const profile = getFullCitizenProfile(targetNid) || getFullCitizenProfile('NID-000-0000-0001-9');
       const result = runSovereignOrchestrator(profile, body.message || '');
       return sendJson(res, 200, result);
     }
