@@ -10,7 +10,6 @@ set -euo pipefail
 export PATH="/google/data/ro/teams/cloud-sdk:/usr/lib/google-cloud-sdk/bin:${PATH}"
 export CLOUDSDK_ACTIVE_CONFIG_NAME="${CLOUDSDK_ACTIVE_CONFIG_NAME:-argolis}"
 PROJECT_ID="novatlantis"
-PROJECT_NUMBER="1054221034062"
 REGION="us-central1"
 BUCKET_NAME="novatlantis-gdf-lakehouse"
 
@@ -18,12 +17,6 @@ echo "======================================================================"
 echo " NOVATLANTIS GDF DATA LAKEHOUSE PROVISIONING (Project: ${PROJECT_ID})"
 echo "======================================================================"
 
-gcloud services enable bigquery.googleapis.com storage.googleapis.com --project="${PROJECT_ID}"
-
-echo "[1/3] Sincronizando lotes NDJSON.gz (100.000 cidadãos) na Camada Bronze (gs://${BUCKET_NAME})..."
-gcloud storage cp data-generator/lakehouse/*.ndjson.gz "gs://${BUCKET_NAME}/bronze/" --project="${PROJECT_ID}"
-
-echo "[2/3] Carregando 11 tabelas GDF em novatlantis:gdf_silver e 3 Views em novatlantis:gdf_gold..."
 cat > /tmp/cloudbuild-bq-rest.yaml <<'EOF'
 steps:
   - name: 'python:3.12-slim'
@@ -31,7 +24,7 @@ steps:
     args:
       - '-c'
       - |
-        import json, time, urllib.request
+        import json, time, urllib.request, uuid
 
         PROJECT_ID = "novatlantis"
         REGION = "us-central1"
@@ -44,8 +37,9 @@ steps:
         token = json.loads(urllib.request.urlopen(req).read().decode())["access_token"]
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-        def api_post(url, payload):
-            r = urllib.request.Request(url, data=json.dumps(payload).encode(), headers=headers, method="POST")
+        def api_req(url, payload=None, method="POST"):
+            data = json.dumps(payload).encode() if payload is not None else None
+            r = urllib.request.Request(url, data=data, headers=headers, method=method)
             try:
                 with urllib.request.urlopen(r) as resp:
                     return json.loads(resp.read().decode())
@@ -56,12 +50,12 @@ steps:
                 raise RuntimeError(f"HTTP {e.code}: {body}")
 
         for ds in ["gdf_bronze", "gdf_silver", "gdf_gold"]:
-            api_post(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/datasets", {
+            api_req(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/datasets", {
                 "datasetReference": {"projectId": PROJECT_ID, "datasetId": ds},
                 "location": REGION,
                 "description": f"Novatlantis Government Data Framework ({ds})"
             })
-            print(f"[OK] Dataset {PROJECT_ID}:{ds} ready.")
+            print(f"[OK] Dataset {PROJECT_ID}:{ds} ready.", flush=True)
 
         tables = [
             "dim_citizens", "sec_biometrics_nist", "rel_family_graph",
@@ -69,8 +63,15 @@ steps:
             "health_vaccinations", "edu_enrollments", "sec_passports",
             "justice_records", "iam_identity_360_roles"
         ]
+        job_ids = []
         for tbl in tables:
-            api_post(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/jobs", {
+            jid = f"load_{tbl}_{uuid.uuid4().hex[:8]}"
+            res = api_req(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/jobs", {
+                "jobReference": {
+                    "projectId": PROJECT_ID,
+                    "jobId": jid,
+                    "location": REGION
+                },
                 "configuration": {
                     "load": {
                         "sourceUris": [f"gs://{BUCKET}/bronze/{tbl}.ndjson.gz"],
@@ -81,9 +82,23 @@ steps:
                     }
                 }
             })
-            print(f"[OK] Triggered load job for gdf_silver.{tbl}")
+            job_ids.append((tbl, jid))
+            print(f"[OK] Triggered load job {jid} for gdf_silver.{tbl}", flush=True)
 
-        time.sleep(15)
+        for tbl, jid in job_ids:
+            while True:
+                jstatus = api_req(
+                    f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/jobs/{jid}?location={REGION}",
+                    None, "GET"
+                )
+                state = jstatus.get("status", {}).get("state")
+                if state == "DONE":
+                    err = jstatus.get("status", {}).get("errorResult")
+                    if err:
+                        raise RuntimeError(f"Load job {jid} ({tbl}) failed: {err}")
+                    print(f"[DONE] Loaded gdf_silver.{tbl}", flush=True)
+                    break
+                time.sleep(1.5)
 
         views = {
             "vw_border_passport_clearance": """
@@ -121,16 +136,16 @@ steps:
             """
         }
         for name, sql in views.items():
-            api_post(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/queries", {
+            api_req(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/queries", {
                 "query": sql, "useLegacySql": False, "location": REGION
             })
-            print(f"[OK] Created Gold View gdf_gold.{name}")
+            print(f"[OK] Created Gold View gdf_gold.{name}", flush=True)
 
-        res = api_post(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/queries", {
+        res = api_req(f"https://bigquery.googleapis.com/bigquery/v2/projects/{PROJECT_ID}/queries", {
             "query": "SELECT COUNT(*) AS total FROM `novatlantis.gdf_silver.dim_citizens`",
             "useLegacySql": False, "location": REGION
         })
-        print("[SUCCESS] BigQuery gdf_silver.dim_citizens row count:", res.get("rows"))
+        print("[SUCCESS] BigQuery gdf_silver.dim_citizens row count:", res.get("rows"), flush=True)
 EOF
 
 gcloud builds submit --no-source --config=/tmp/cloudbuild-bq-rest.yaml --project="${PROJECT_ID}"

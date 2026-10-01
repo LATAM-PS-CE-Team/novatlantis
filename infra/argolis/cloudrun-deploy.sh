@@ -20,6 +20,8 @@ ARMOR_POLICY="novatlantis-owasp-waf-policy"
 
 SERVICES=(
   "landing-portal"
+  "citizen-portal"
+  "gov-backstage"
   "identity-nid"
   "services-311"
   "emergency-911"
