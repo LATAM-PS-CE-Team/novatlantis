@@ -127,7 +127,7 @@ for SVC in "${SERVICES[@]}"; do
     --min-instances=0 \
     --max-instances=20 \
     --cpu=1 \
-    --memory=512Mi \
+    --memory=1Gi \
     --set-env-vars="NODE_ENV=production,NOVATLANTIS_SERVICE=${SVC},GCP_PROJECT_ID=${PROJECT_ID},SUPPORTED_LOCALES=pt-BR|es-419|en-US" \
     --set-secrets="NOVATLANTIS_JWT_SECRET=novatlantis-internal-jwt-authority:latest" \
     --quiet || \
@@ -141,7 +141,7 @@ for SVC in "${SERVICES[@]}"; do
     --min-instances=0 \
     --max-instances=20 \
     --cpu=1 \
-    --memory=512Mi \
+    --memory=1Gi \
     --set-env-vars="NODE_ENV=production,NOVATLANTIS_SERVICE=${SVC},GCP_PROJECT_ID=${PROJECT_ID},SUPPORTED_LOCALES=pt-BR|es-419|en-US" \
     --set-secrets="NOVATLANTIS_JWT_SECRET=novatlantis-internal-jwt-authority:latest" \
     --quiet
