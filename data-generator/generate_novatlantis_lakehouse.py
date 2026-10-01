@@ -3,7 +3,7 @@
 """
 Novatlantis Government Data Framework (GDF) — Master Synthetic Lakehouse Generator
 Gera 100.000 registros completos de cidadãos com integridade referencial estrita:
-  - dim_citizens (100.000 linhas — incluindo Primeiro-Ministro jopoco, Secretário-Geral,
+  - dim_citizens (100.000 linhas — incluindo Primeiro-Ministro Joao Thiago Poço (JT), Secretário-Geral,
     Gestor de Identidades 360, Médicos, Professores, Gestores Públicos e Cidadãos)
   - sec_biometrics_nist (100.000 linhas — ANSI/NIST-ITL 1-2011 / ISO 19794-5 & 19794-2)
   - rel_family_graph (~160.000+ vínculos formando árvores genealógicas coerentes:
@@ -214,9 +214,9 @@ def generate_all() -> None:
     # Perfis fixos nas primeiras posições para login imediato e testes funcionais completos
     named_Overrides: Dict[int, Dict[str, Any]] = {
         1: {
-            "full_name": "Jopoco (Primeiro-Ministro da República)",
-            "email": "jopoco@novatlantis.gov.cloud",
-            "alt_email": "admin@jopoco.altostrat.com",
+            "full_name": "Joao Thiago Poço (JT) (Primeiro-Ministro da República)",
+            "email": "jt@novatlantis.gov.cloud",
+            "alt_email": "jt@novatlantis.gov.cloud",
             "age": 42,
             "gender": "M",
             "native_language": "pt-BR",
@@ -553,7 +553,7 @@ def generate_all() -> None:
         (calculate_nid(6), calculate_nid(11), "BIOLOGICAL_PARENT", True, True, "2020-07-21"),
         (calculate_nid(3), calculate_nid(11), "BIOLOGICAL_PARENT", True, True, "2020-07-21"),
         (calculate_nid(10), calculate_nid(11), "SIBLING", False, False, "2020-07-21"),
-        # Primeiro-Ministro Jopoco (1, 42a) & Dra. Sofia Mendes (4, 39a) -> Cônjuges / Contato 911
+        # Primeiro-Ministro Joao Thiago Poço (JT) (1, 42a) & Dra. Sofia Mendes (4, 39a) -> Cônjuges / Contato 911
         (calculate_nid(1), calculate_nid(4), "SPOUSE", True, True, "2014-11-02"),
         (calculate_nid(4), calculate_nid(1), "SPOUSE", True, True, "2014-11-02"),
     ]

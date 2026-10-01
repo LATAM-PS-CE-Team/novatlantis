@@ -105,7 +105,7 @@ const serviceTickets311 = [
   {
     ticket_id: '311-2026-9902',
     citizen_nid: 'NID-000-0000-0001-9',
-    citizen_name: 'Jopoco (Primeiro-Ministro da República)',
+    citizen_name: 'Joao Thiago Poço (JT) (Primeiro-Ministro da República)',
     category: 'Zeladoria Viária & Drenagem Pluvial',
     district: 'Colina da Justiça',
     description: 'Inspeção preventiva de drenagem pluvial em frente ao Palácio da Chancelaria.',
@@ -149,7 +149,7 @@ const telemedConsultations = [
   {
     consult_id: 'TM-2026-502',
     patient_nid: 'NID-000-0000-0001-9',
-    patient_name: 'Jopoco (Primeiro-Ministro da República)',
+    patient_name: 'Joao Thiago Poço (JT) (Primeiro-Ministro da República)',
     doctor_nid: 'NID-000-0000-0005-1',
     doctor_name: 'Dr. Mateo Vargas Ríos',
     facility: 'Instituto de Telemedicina Avançada & Genômica',
@@ -165,7 +165,7 @@ const instantCompanies = [
   {
     company_id: 'EMP-NOV-2026-001',
     owner_nid: 'NID-000-0000-0001-9',
-    owner_name: 'Jopoco (Primeiro-Ministro da República)',
+    owner_name: 'Joao Thiago Poço (JT) (Primeiro-Ministro da República)',
     company_name: 'Novatlantis Sovereign AI Labs S.A.',
     sector: 'Infraestrutura de IA Soberana & Computação Quântica',
     tax_regime: 'Zona Franca de Inovação Agêntica (Alíquota 4.5%)',
@@ -180,7 +180,7 @@ const auditTrailLog = [
     id: 'AUD-9001',
     timestamp: new Date(Date.now() - 1800_000).toISOString(),
     actor_nid: 'NID-000-0000-0001-9',
-    actor_name: 'Jopoco (Primeiro-Ministro da República)',
+    actor_name: 'Joao Thiago Poço (JT) (Primeiro-Ministro da República)',
     action: 'PORTAL_CIDADAO_SSO_LOGIN',
     target_nid: 'NID-000-0000-0001-9',
     details: 'Sessão soberana autenticada no Portal do Cidadão via chave pública Ed25519 e validação biométrica NIST.'
@@ -373,9 +373,9 @@ const server = http.createServer(async (req, res) => {
     let rawCitizen = null;
 
     if (
-      identifier.toLowerCase() === 'admin@jopoco.altostrat.com' ||
-      identifier.toLowerCase() === 'jopoco' ||
-      identifier.toLowerCase() === 'jopoco@novatlantis.gov.cloud'
+      identifier.toLowerCase() === 'jt@novatlantis.gov.cloud' ||
+      identifier.toLowerCase() === 'jt' ||
+      identifier.toLowerCase() === 'jt@novatlantis.gov.cloud'
     ) {
       rawCitizen = stmtCitizenByNid.get('NID-000-0000-0001-9');
     } else if (identifier.toUpperCase().startsWith('NID-')) {
@@ -387,7 +387,7 @@ const server = http.createServer(async (req, res) => {
     if (!rawCitizen) {
       return sendJson(res, 404, {
         error: 'Cidadão não encontrado na base nacional de 100.000 cidadãos.',
-        hint: 'Use NID-000-0000-0001-9 (Jopoco) ou NID-000-0000-0010-8 (Pedro Albuquerque)'
+        hint: 'Use NID-000-0000-0001-9 (Joao Thiago Poço - JT) ou NID-000-0000-0010-8 (Pedro Albuquerque)'
       });
     }
 

@@ -298,21 +298,21 @@ const POPULAR_SERVICES: ServiceEntry[] = [
     icon: <SchoolIcon sx={{ color: '#0a2240' }} />
   },
   {
-    id: 'urban',
+    id: 'urban_311',
     title: {
-      'pt-BR': 'Zeladoria Urbana 311 & Emergência 911',
-      'es-419': 'Mantenimiento Urbano 311 y Emergencia 911',
-      'en-US': '311 Urban Maintenance & 911 Emergency'
+      'pt-BR': 'Zeladoria Urbana 311',
+      'es-419': 'Mantenimiento Urbano 311',
+      'en-US': '311 Urban Maintenance'
     },
     agency: {
-      'pt-BR': 'Centro Integrado de Comando Urbano',
-      'es-419': 'Centro Integrado de Comando Urbano',
-      'en-US': 'Integrated Urban Command Center'
+      'pt-BR': 'Secretaria de Zeladoria & Infraestrutura Urbana',
+      'es-419': 'Secretaría de Mantenimiento e Infraestructura Urbana',
+      'en-US': 'Department of Urban Maintenance & Infrastructure'
     },
     description: {
-      'pt-BR': 'Solicitação de reparos de iluminação, vias e saneamento (SLA 6h) ou despacho tático de emergência 911.',
-      'es-419': 'Solicitud de reparaciones de alumbrado, vías y saneamiento (SLA 6h) o despacho táctico de emergencia 911.',
-      'en-US': 'Request street lighting, road, and sanitation repairs (6h SLA) or tactical 911 emergency dispatch.'
+      'pt-BR': 'Solicitação de reparos de iluminação pública, vias, pavimentação e saneamento com triagem IA (SLA 6h).',
+      'es-419': 'Solicitud de reparaciones de alumbrado público, vías, pavimentación y saneamiento con triaje IA (SLA 6h).',
+      'en-US': 'Request street lighting, road, paving, and sanitation repairs with AI triage (6h SLA).'
     },
     questionPrompt: {
       'pt-BR': 'Como abrir um chamado urbano 311 no meu distrito?',
@@ -324,8 +324,38 @@ const POPULAR_SERVICES: ServiceEntry[] = [
       'es-419': 'Abrir reporte 311 para reparación de alumbrado y mantenimiento en mi distrito',
       'en-US': 'Open a 311 ticket for lighting repair and urban maintenance in my district'
     },
-    tab: 'urban',
+    tab: 'urban_311',
     icon: <UrbanIcon sx={{ color: '#0a2240' }} />
+  },
+  {
+    id: 'emergency_911',
+    title: {
+      'pt-BR': 'Emergência 911 (SOS Tático & Médico)',
+      'es-419': 'Emergencia 911 (SOS Táctico y Médico)',
+      'en-US': '911 Emergency (Tactical & Medical SOS)'
+    },
+    agency: {
+      'pt-BR': 'Central Nacional de Despacho de Emergências 911',
+      'es-419': 'Central Nacional de Despacho de Emergencias 911',
+      'en-US': 'National 911 Emergency Dispatch Center'
+    },
+    description: {
+      'pt-BR': 'Acionamento imediato de viaturas e ambulâncias com cruzamento automático de Prontuário HL7 e contato familiar.',
+      'es-419': 'Despacho inmediato de patrullas y ambulancias con cruce automático de Historia Clínica HL7 y contacto familiar.',
+      'en-US': 'Immediate dispatch of patrol units and ambulances with automatic HL7 health record and family contact lookup.'
+    },
+    questionPrompt: {
+      'pt-BR': 'Como funciona o despacho de Emergência 911 com prontuário HL7?',
+      'es-419': '¿Cómo funciona el despacho de Emergencia 911 con historia clínica HL7?',
+      'en-US': 'How does 911 Emergency dispatch with HL7 health records work?'
+    },
+    servicePrompt: {
+      'pt-BR': 'Acionar protocolo de Emergência 911 com suporte médico HL7',
+      'es-419': 'Activar protocolo de Emergencia 911 con soporte médico HL7',
+      'en-US': 'Trigger 911 Emergency protocol with HL7 medical support'
+    },
+    tab: 'emergency_911',
+    icon: <ShieldIcon sx={{ color: '#b91c1c' }} />
   },
   {
     id: 'identity',
@@ -817,16 +847,16 @@ export function App() {
             {/* Esquerda: Botão Hambúrguer (☰) + Brasão + Título Institucional Ampliado */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <IconButton
-                onClick={() => setNavDrawerOpen(true)}
+                onClick={() => setNavDrawerOpen((prev) => !prev)}
                 sx={{
                   border: '1px solid #d1d5db',
                   borderRadius: 2,
                   p: 1,
                   color: '#0a2240',
-                  bgcolor: '#ffffff',
+                  bgcolor: navDrawerOpen ? '#e2e8f0' : '#ffffff',
                   '&:hover': { bgcolor: '#f3f4f6', borderColor: '#0a2240' }
                 }}
-                aria-label="Abrir Menu de Navegação da Nação"
+                aria-label="Alternar Navigation Drawer da Nação"
               >
                 <MenuIcon />
               </IconButton>
@@ -914,134 +944,169 @@ export function App() {
         </Container>
       </AppBar>
 
-      {/* MENU HAMBÚRGUER GLOBAL DA NAÇÃO (Drawer Lateral Estilo america.gov) */}
-      <Drawer
-        anchor="left"
-        open={navDrawerOpen}
-        onClose={() => setNavDrawerOpen(false)}
-        PaperProps={{
-          sx: { width: 340, bgcolor: '#fcfbf9', borderRight: '1px solid #e5e4dc' }
-        }}
-      >
-        <Box sx={{ p: 2.5, bgcolor: '#0a2240', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              {t.govTitle}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
-              {t.drawerSubtitle}
-            </Typography>
-          </Box>
-          <IconButton onClick={() => setNavDrawerOpen(false)} sx={{ color: '#ffffff' }} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
+      {/* LAYOUT FLEX PRINCIPAL: NAVIGATION DRAWER PERSISTENTE (GOOGLE MATERIAL DESIGN SIDEBAR) + CONTEÚDO DA PÁGINA */}
+      <Box sx={{ display: 'flex', flex: 1, minHeight: 'calc(100vh - 110px)' }}>
+        <Box
+          component="aside"
+          sx={{
+            width: navDrawerOpen ? { xs: 290, sm: 340 } : 0,
+            flexShrink: 0,
+            bgcolor: '#fcfbf9',
+            borderRight: navDrawerOpen ? '1px solid #e5e4dc' : 'none',
+            transition: 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+            overflowX: 'hidden',
+            overflowY: navDrawerOpen ? 'auto' : 'hidden'
+          }}
+        >
+          <Box sx={{ minWidth: 290 }}>
+            <Box sx={{ p: 2.5, bgcolor: '#0a2240', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  {t.govTitle}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
+                  {t.drawerSubtitle}
+                </Typography>
+              </Box>
+              <IconButton onClick={() => setNavDrawerOpen(false)} sx={{ color: '#ffffff' }} size="small">
+                <CloseIcon />
+              </IconButton>
+            </Box>
 
-        {/* Seletor de Idiomas também dentro do Menu Hambúrguer */}
-        <Box sx={{ px: 2.5, py: 1.5, bgcolor: '#f1f0ec', borderBottom: '1px solid #e5e4dc' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <LanguageIcon sx={{ fontSize: 16, color: '#0a2240' }} />
-            <Typography variant="caption" sx={{ fontWeight: 800, color: '#0a2240', letterSpacing: '0.05em' }}>
-              {t.drawerLanguageTitle}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {(
-              [
-                { code: 'pt-BR', label: 'Português' },
-                { code: 'es-419', label: 'Español' },
-                { code: 'en-US', label: 'English' }
-              ] as { code: SupportedLanguage; label: string }[]
-            ).map((l) => (
-              <Button
-                key={l.code}
-                size="small"
-                variant={lang === l.code ? 'contained' : 'outlined'}
-                onClick={() => handleLanguageChange(l.code)}
-                sx={{
-                  flex: 1,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
-                  bgcolor: lang === l.code ? '#0a2240' : '#ffffff',
-                  color: lang === l.code ? '#ffffff' : '#0a2240',
-                  borderColor: '#cbd5e1'
+            {/* Seletor de Idiomas também dentro do Navigation Drawer */}
+            <Box sx={{ px: 2.5, py: 1.5, bgcolor: '#f1f0ec', borderBottom: '1px solid #e5e4dc' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <LanguageIcon sx={{ fontSize: 16, color: '#0a2240' }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: '#0a2240', letterSpacing: '0.05em' }}>
+                  {t.drawerLanguageTitle}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {(
+                  [
+                    { code: 'pt-BR', label: 'Português' },
+                    { code: 'es-419', label: 'Español' },
+                    { code: 'en-US', label: 'English' }
+                  ] as { code: SupportedLanguage; label: string }[]
+                ).map((l) => (
+                  <Button
+                    key={l.code}
+                    size="small"
+                    variant={lang === l.code ? 'contained' : 'outlined'}
+                    onClick={() => handleLanguageChange(l.code)}
+                    sx={{
+                      flex: 1,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.78rem',
+                      bgcolor: lang === l.code ? '#0a2240' : '#ffffff',
+                      color: lang === l.code ? '#ffffff' : '#0a2240',
+                      borderColor: '#cbd5e1'
+                    }}
+                  >
+                    {l.label}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+
+            <List sx={{ py: 1.5 }}>
+              <Box sx={{ px: 2.5, py: 0.75 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
+                  {t.drawerOfficialEnvs}
+                </Typography>
+              </Box>
+
+              <ListItemButton
+                onClick={() => {
+                  handleNavigateToPortal('citizen', 'identity');
                 }}
               >
-                {l.label}
-              </Button>
-            ))}
+                <ListItemIcon>
+                  <BadgeIcon sx={{ color: '#0a2240' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.citizenPortalLabel}
+                  secondary={currentUser ? `${t.citizenPortalSubAuth}: ${currentUser.nid}` : t.citizenPortalSubAnon}
+                  primaryTypographyProps={{ fontWeight: 700 }}
+                />
+              </ListItemButton>
+
+              <ListItemButton
+                onClick={() => {
+                  handleNavigateToPortal('citizen', 'urban_311');
+                }}
+              >
+                <ListItemIcon>
+                  <UrbanIcon sx={{ color: '#0a2240' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Módulo Zeladoria Urbana 311"
+                  secondary="Reparos urbanos, vias e iluminação"
+                  primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem' }}
+                />
+              </ListItemButton>
+
+              <ListItemButton
+                onClick={() => {
+                  handleNavigateToPortal('citizen', 'emergency_911');
+                }}
+              >
+                <ListItemIcon>
+                  <ShieldIcon sx={{ color: '#b91c1c' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Módulo Emergência 911 (SOS)"
+                  secondary="Despacho imediato com prontuário HL7"
+                  primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem', color: '#991b1b' }}
+                />
+              </ListItemButton>
+
+              <ListItemButton
+                onClick={() => {
+                  handleNavigateToPortal('backstage');
+                }}
+              >
+                <ListItemIcon>
+                  <AdminIcon sx={{ color: '#0f766e' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.backstageLabel}
+                  secondary={t.backstageSub}
+                  primaryTypographyProps={{ fontWeight: 700 }}
+                />
+              </ListItemButton>
+
+              <Divider sx={{ my: 1.5 }} />
+
+              <Box sx={{ px: 2.5, py: 0.75 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
+                  {t.drawerAskConcierge}
+                </Typography>
+              </Box>
+
+              {POPULAR_SERVICES.map((srv) => (
+                <ListItemButton
+                  key={srv.id}
+                  onClick={() => {
+                    sendToConcierge(srv.questionPrompt[lang]);
+                  }}
+                >
+                  <ListItemIcon>{srv.icon}</ListItemIcon>
+                  <ListItemText
+                    primary={srv.title[lang]}
+                    secondary={srv.agency[lang]}
+                    primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 600 }}
+                    secondaryTypographyProps={{ fontSize: '0.73rem' }}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
           </Box>
         </Box>
 
-        <List sx={{ py: 1.5 }}>
-          <Box sx={{ px: 2.5, py: 0.75 }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-              {t.drawerOfficialEnvs}
-            </Typography>
-          </Box>
-
-          <ListItemButton
-            onClick={() => {
-              setNavDrawerOpen(false);
-              handleNavigateToPortal('citizen', 'identity');
-            }}
-          >
-            <ListItemIcon>
-              <BadgeIcon sx={{ color: '#0a2240' }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={t.citizenPortalLabel}
-              secondary={currentUser ? `${t.citizenPortalSubAuth}: ${currentUser.nid}` : t.citizenPortalSubAnon}
-              primaryTypographyProps={{ fontWeight: 700 }}
-            />
-          </ListItemButton>
-
-          <ListItemButton
-            onClick={() => {
-              setNavDrawerOpen(false);
-              handleNavigateToPortal('backstage');
-            }}
-          >
-            <ListItemIcon>
-              <AdminIcon sx={{ color: '#0f766e' }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={t.backstageLabel}
-              secondary={t.backstageSub}
-              primaryTypographyProps={{ fontWeight: 700 }}
-            />
-          </ListItemButton>
-
-          <Divider sx={{ my: 1.5 }} />
-
-          <Box sx={{ px: 2.5, py: 0.75 }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-              {t.drawerAskConcierge}
-            </Typography>
-          </Box>
-
-          {POPULAR_SERVICES.map((srv) => (
-            <ListItemButton
-              key={srv.id}
-              onClick={() => {
-                setNavDrawerOpen(false);
-                sendToConcierge(srv.questionPrompt[lang]);
-              }}
-            >
-              <ListItemIcon>{srv.icon}</ListItemIcon>
-              <ListItemText
-                primary={srv.title[lang]}
-                secondary={srv.agency[lang]}
-                primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 600 }}
-                secondaryTypographyProps={{ fontSize: '0.73rem' }}
-              />
-            </ListItemButton>
-          ))}
-        </List>
-      </Drawer>
-
-      {/* 3. HERO PRINCIPAL INSPIRADO EM HTTPS://AMERICA.GOV/ ("Whatever you need from government, start here") */}
+        <Box component="main" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          {/* 3. HERO PRINCIPAL INSPIRADO EM HTTPS://AMERICA.GOV/ ("Whatever you need from government, start here") */}
       <Box
         sx={{
           position: 'relative',
@@ -1636,6 +1701,8 @@ export function App() {
             </Grid>
           </Grid>
         </Container>
+      </Box>
+        </Box>
       </Box>
     </ThemeProvider>
   );

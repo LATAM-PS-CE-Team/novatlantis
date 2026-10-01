@@ -225,8 +225,8 @@ function getFullCitizenProfile(nidOrEmail) {
   let clean = String(nidOrEmail || '').trim();
   if (!clean) return null;
   const aliases = {
-    'admin@jopoco.altostrat.com': 'NID-000-0000-0001-9',
-    'jopoco': 'NID-000-0000-0001-9',
+    'jt@novatlantis.gov.cloud': 'NID-000-0000-0001-9',
+    'jt': 'NID-000-0000-0001-9',
     'nid-000-0000-0010-2': 'NID-000-0000-0010-8',
     'nid-000-0000-0011-0': 'NID-000-0000-0011-6',
     'dra.sofia.mendes@novatlantis.gov.cloud': 'NID-000-0000-0004-3',

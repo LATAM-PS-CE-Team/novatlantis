@@ -20,7 +20,7 @@ SUBNET_NAME="novatlantis-us-central1"
 PSA_RANGE_NAME="novatlantis-alloydb-psa"
 ALLOYDB_CLUSTER="novatlantis-sovereign-cluster"
 ALLOYDB_INSTANCE="novatlantis-primary-01"
-ALLOYDB_PASS="ATs32=34"
+ALLOYDB_PASS="NovatlantisSovereignDB2026!"
 
 log_info() {
   printf "\033[1;34m[NOVATLANTIS-INFRA]\033[0m %s\n" "$1"

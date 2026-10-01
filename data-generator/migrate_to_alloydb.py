@@ -12,7 +12,7 @@ import sys
 ALLOYDB_HOST = os.environ.get("ALLOYDB_HOST", "127.0.0.1")
 ALLOYDB_PORT = int(os.environ.get("ALLOYDB_PORT", "5432"))
 ALLOYDB_USER = os.environ.get("ALLOYDB_USER", "postgres")
-ALLOYDB_PASSWORD = os.environ.get("ALLOYDB_PASSWORD", "ATs32=34")
+ALLOYDB_PASSWORD = os.environ.get("ALLOYDB_PASSWORD", "NovatlantisSovereignDB2026!")
 ALLOYDB_DB = os.environ.get("ALLOYDB_DB", "postgres")
 
 SQLITE_SOURCE = os.path.join(os.path.dirname(__file__), "../apps/landing-portal/gdf_sovereign.db")

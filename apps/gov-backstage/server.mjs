@@ -137,7 +137,7 @@ const telemedConsultations = [
   {
     consult_id: 'TM-2026-502',
     patient_nid: 'NID-000-0000-0001-9',
-    patient_name: 'Jopoco (Primeiro-Ministro da República)',
+    patient_name: 'Joao Thiago Poço (JT) (Primeiro-Ministro da República)',
     doctor_nid: 'NID-000-0000-0005-1',
     doctor_name: 'Dr. Mateo Vargas Ríos',
     facility: 'Instituto de Telemedicina Avançada & Genômica',
@@ -173,7 +173,7 @@ const serviceTickets311 = [
   {
     ticket_id: '311-2026-9902',
     citizen_nid: 'NID-000-0000-0001-9',
-    citizen_name: 'Jopoco (Primeiro-Ministro da República)',
+    citizen_name: 'Joao Thiago Poço (JT) (Primeiro-Ministro da República)',
     category: 'Zeladoria Viária & Drenagem Pluvial',
     district: 'Colina da Justiça',
     description: 'Inspeção preventiva de drenagem pluvial em frente ao Palácio da Chancelaria.',
@@ -318,9 +318,9 @@ const server = http.createServer(async (req, res) => {
     let rawCitizen = null;
 
     if (
-      identifier.toLowerCase() === 'admin@jopoco.altostrat.com' ||
-      identifier.toLowerCase() === 'jopoco' ||
-      identifier.toLowerCase() === 'jopoco@novatlantis.gov.cloud'
+      identifier.toLowerCase() === 'jt@novatlantis.gov.cloud' ||
+      identifier.toLowerCase() === 'jt' ||
+      identifier.toLowerCase() === 'jt@novatlantis.gov.cloud'
     ) {
       rawCitizen = stmtCitizenByNid.get('NID-000-0000-0001-9');
     } else if (identifier.toUpperCase().startsWith('NID-')) {

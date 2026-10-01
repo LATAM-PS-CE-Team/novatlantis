@@ -51,7 +51,14 @@ import { novatlantisTheme } from './theme';
 import { TopNavUserWidget, SupportedLanguage, resolveInitialLanguage } from './components/TopNavUserWidget';
 
 type Language = SupportedLanguage;
-type BackstageTab = 'pm_cabinet' | 'iam360' | 'health_mgmt' | 'edu_mgmt' | 'ops_311_911' | 'justice_datalake';
+type BackstageTab =
+  | 'pm_cabinet'
+  | 'iam360'
+  | 'health_mgmt'
+  | 'edu_mgmt'
+  | 'ops_311'
+  | 'ops_911'
+  | 'justice_datalake';
 
 const LANDING_PORTAL_URL = 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app';
 const CITIZEN_PORTAL_URL = 'https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app';
@@ -60,9 +67,9 @@ const BACKSTAGE_MENU_ITEMS: { id: BackstageTab; title: Record<Language, string>;
   {
     id: 'pm_cabinet',
     title: {
-      'pt-BR': '1. Gabinete Primeiro-Ministro & Secretário-Geral',
-      'es-419': '1. Gabinete del Primer Ministro y Secretario General',
-      'en-US': '1. Prime Minister & Secretary-General Cabinet'
+      'pt-BR': '1. Gabinete Primeiro-Ministro (JT) & Secretário-Geral',
+      'es-419': '1. Gabinete del Primer Ministro (JT) y Secretario General',
+      'en-US': '1. Prime Minister (JT) & Secretary-General Cabinet'
     },
     subtitle: {
       'pt-BR': 'Comando executivo da nação e KPIs soberanos',
@@ -110,24 +117,37 @@ const BACKSTAGE_MENU_ITEMS: { id: BackstageTab; title: Record<Language, string>;
     }
   },
   {
-    id: 'ops_311_911',
+    id: 'ops_311',
     title: {
-      'pt-BR': '5. Comando 311 & 911 (Demandas do Cidadão)',
-      'es-419': '5. Comando 311 y 911 (Demandas Ciudadanas)',
-      'en-US': '5. 311 & 911 Command (Citizen Requests)'
+      'pt-BR': '5. Comando de Zeladoria Urbana 311',
+      'es-419': '5. Comando de Mantenimiento Urbano 311',
+      'en-US': '5. 311 Urban Maintenance Command'
     },
     subtitle: {
-      'pt-BR': 'Resolução de chamados urbanos e despacho tático',
-      'es-419': 'Resolución de reportes urbanos y despacho táctico',
-      'en-US': 'Urban ticket resolution and tactical dispatch'
+      'pt-BR': 'Atendimento e baixa de chamados urbanos 311 dos cidadãos',
+      'es-419': 'Atención y resolución de reportes urbanos 311 de los ciudadanos',
+      'en-US': 'Handling and resolution of citizen 311 urban service tickets'
+    }
+  },
+  {
+    id: 'ops_911',
+    title: {
+      'pt-BR': '6. Central de Despacho de Emergência 911',
+      'es-419': '6. Central de Despacho de Emergencia 911',
+      'en-US': '6. 911 Emergency Dispatch Command'
+    },
+    subtitle: {
+      'pt-BR': 'Despacho tático imediato de UTI móvel, defesa civil e guarda costeira',
+      'es-419': 'Despacho táctico inmediato de UCI móvil, defensa civil y guardia costera',
+      'en-US': 'Immediate tactical dispatch of ICU ambulance, civil defense, and coast guard'
     }
   },
   {
     id: 'justice_datalake',
     title: {
-      'pt-BR': '6. Justiça, Tesouro, AlloyDB & GDP 100k',
-      'es-419': '6. Justicia, Tesoro, AlloyDB y GDP 100k',
-      'en-US': '6. Justice, Treasury, AlloyDB & GDP 100k'
+      'pt-BR': '7. Justiça, Tesouro, AlloyDB & GDP 100k',
+      'es-419': '7. Justicia, Tesoro, AlloyDB y GDP 100k',
+      'en-US': '7. Justice, Treasury, AlloyDB & GDP 100k'
     },
     subtitle: {
       'pt-BR': 'Explorador de 100.000 cidadãos e auditoria fiscal',
@@ -175,10 +195,10 @@ const BACKSTAGE_I18N: Record<
     drawerBackHomeSub: 'Portal Principal da Nação',
     authWallTitle: 'Backstage Governamental • Identidade 360',
     authWallDesc:
-      'Nenhum servidor público está logado no momento. O acesso ao Backstage Governamental exige autenticação com um NID que possua nomeação ativa na aplicação Identidade 360 (Primeiro-Ministro, Secretário-Geral, Gestor IAM 360, Médico, Professor ou Comando 311/911).',
+      'Nenhum servidor público está logado no momento. O acesso ao Backstage Governamental exige autenticação com um NID que possua nomeação ativa na aplicação Identidade 360 (Primeiro-Ministro Joao Thiago Poço - JT, Secretário-Geral, Gestor IAM 360, Médico, Professor, Comando 311 ou Comando 911).',
     loginPublicServantBtn: 'Entrar com NID (Servidor Público)',
     backHomeBtn: 'Voltar à Home Page',
-    switchEnvBtn: 'Alternar Ambiente (☰)',
+    switchEnvBtn: 'Alternar Sidebar (☰)',
     authenticatedServantChip: 'Servidor Autenticado'
   },
   'es-419': {
@@ -196,10 +216,10 @@ const BACKSTAGE_I18N: Record<
     drawerBackHomeSub: 'Portal Principal de la Nación',
     authWallTitle: 'Backstage Gubernamental • Identidad 360',
     authWallDesc:
-      'Ningún servidor público ha iniciado sesión en este momento. El acceso al Backstage Gubernamental requiere autenticación con un NID que posea nombramiento activo en la aplicación Identidad 360 (Primer Ministro, Secretario General, Gestor IAM 360, Médico, Profesor o Comando 311/911).',
+      'Ningún servidor público ha iniciado sesión en este momento. El acceso al Backstage Gubernamental requiere autenticación con un NID que posea nombramiento activo en la aplicación Identidad 360 (Primer Ministro Joao Thiago Poço - JT, Secretario General, Gestor IAM 360, Médico, Profesor, Comando 311 o Comando 911).',
     loginPublicServantBtn: 'Ingresar con NID (Servidor Público)',
     backHomeBtn: 'Volver a la Página Principal',
-    switchEnvBtn: 'Cambiar Entorno (☰)',
+    switchEnvBtn: 'Alternar Barra Lateral (☰)',
     authenticatedServantChip: 'Servidor Autenticado'
   },
   'en-US': {
@@ -217,10 +237,10 @@ const BACKSTAGE_I18N: Record<
     drawerBackHomeSub: 'Main National Portal',
     authWallTitle: 'Government Backstage • Identity 360',
     authWallDesc:
-      'No public servant is currently signed in. Access to the Government Backstage requires authentication with an NID holding an active appointment in Identity 360 (Prime Minister, Secretary-General, IAM 360 Manager, Doctor, Teacher, or 311/911 Command).',
+      'No public servant is currently signed in. Access to the Government Backstage requires authentication with an NID holding an active appointment in Identity 360 (Prime Minister Joao Thiago Poço - JT, Secretary-General, IAM 360 Manager, Doctor, Teacher, 311 Command, or 911 Command).',
     loginPublicServantBtn: 'Sign In with NID (Public Servant)',
     backHomeBtn: 'Back to Home Page',
-    switchEnvBtn: 'Switch Environment (☰)',
+    switchEnvBtn: 'Toggle Sidebar (☰)',
     authenticatedServantChip: 'Authenticated Servant'
   }
 };
@@ -235,7 +255,7 @@ export default function App() {
     localStorage.setItem('novatlantis_lang_explicit', '1');
   };
   const [backstageTab, setBackstageTab] = useState<BackstageTab>('pm_cabinet');
-  const [hamburgerOpen, setHamburgerOpen] = useState(false);
+  const [hamburgerOpen, setHamburgerOpen] = useState(true);
   const [loginTriggerCount, setLoginTriggerCount] = useState(0);
   const [ssoToken, setSsoToken] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -488,16 +508,19 @@ export default function App() {
             <Toolbar disableGutters sx={{ py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
               <Stack direction="row" spacing={2} alignItems="center">
                 <IconButton
-                  onClick={() => setHamburgerOpen(true)}
+                  onClick={() => setHamburgerOpen((prev) => !prev)}
                   sx={{
                     border: '1px solid #d1d5db',
                     borderRadius: 2,
                     p: 1,
-                    color: '#0a2240',
-                    bgcolor: '#ffffff',
-                    '&:hover': { bgcolor: '#f3f4f6', borderColor: '#0a2240' }
+                    color: hamburgerOpen ? '#ffffff' : '#0a2240',
+                    bgcolor: hamburgerOpen ? '#0a2240' : '#ffffff',
+                    '&:hover': {
+                      bgcolor: hamburgerOpen ? '#163a66' : '#f3f4f6',
+                      borderColor: '#0a2240'
+                    }
                   }}
-                  aria-label="Abrir Menu Hambúrguer do Backstage Governamental"
+                  aria-label="Alternar Navigation Drawer (Sidebar) do Backstage Governamental"
                 >
                   <MenuIcon />
                 </IconButton>
@@ -581,358 +604,373 @@ export default function App() {
           </Container>
         </AppBar>
 
-        {/* MENU HAMBÚRGUER VERTICAL (☰) PARA NAVEGAR ENTRE OS AMBIENTES DO BACKSTAGE */}
-        <Drawer
-          anchor="left"
-          open={hamburgerOpen}
-          onClose={() => setHamburgerOpen(false)}
-          PaperProps={{
-            sx: { width: 350, bgcolor: '#fcfbf9', borderRight: '1px solid #e5e4dc' }
-          }}
-        >
+        {/* LAYOUT GOOGLE MATERIAL DESIGN: PERSISTENT NAVIGATION DRAWER (SIDEBAR AO LADO) + PÁGINA INTEIRA */}
+        <Box sx={{ display: 'flex', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
           <Box
+            component="aside"
             sx={{
-              p: 2.5,
-              bgcolor: '#0a2240',
-              color: '#ffffff',
+              width: hamburgerOpen ? { xs: 295, md: 350 } : 0,
+              flexShrink: 0,
+              overflow: 'hidden',
+              transition: 'width 225ms cubic-bezier(0.4, 0, 0.2, 1)',
+              bgcolor: '#fcfbf9',
+              borderRight: hamburgerOpen ? '1px solid #e5e4dc' : 'none',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
+              flexDirection: 'column'
             }}
           >
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                {t.drawerTitle}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
-                {currentUser ? `${currentUser.full_name} (${currentUser.effective_role_code})` : t.drawerAuthRequired}
-              </Typography>
-            </Box>
-            <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          <List sx={{ py: 1.5 }}>
-            <Box sx={{ px: 2.5, py: 0.75 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-                {t.drawerEnvsHeader}
-              </Typography>
-            </Box>
-
-            {BACKSTAGE_MENU_ITEMS.map((item) => (
-              <ListItemButton
-                key={item.id}
-                selected={backstageTab === item.id}
-                onClick={() => {
-                  setBackstageTab(item.id);
-                  setHamburgerOpen(false);
+            <Box sx={{ width: { xs: 295, md: 350 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Box
+                sx={{
+                  p: 2.5,
+                  bgcolor: '#0a2240',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
                 }}
-                sx={{ py: 1.35 }}
               >
-                <ListItemText
-                  primary={item.title[lang]}
-                  secondary={item.subtitle[lang]}
-                  primaryTypographyProps={{
-                    fontWeight: backstageTab === item.id ? 800 : 600,
-                    fontSize: '0.88rem',
-                    color: '#0a2240'
-                  }}
-                  secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                />
-              </ListItemButton>
-            ))}
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                    {t.drawerTitle}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
+                    {currentUser ? `${currentUser.full_name} (${currentUser.effective_role_code})` : t.drawerAuthRequired}
+                  </Typography>
+                </Box>
+                <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
+                  <CloseIcon />
+                </IconButton>
+              </Box>
 
-            <Divider sx={{ my: 1.5 }} />
+              <List sx={{ py: 1.5, px: 1 }}>
+                <Box sx={{ px: 1.5, py: 0.75 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
+                    {t.drawerEnvsHeader}
+                  </Typography>
+                </Box>
 
-            <ListItemButton
-              component="a"
-              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
-            >
-              <ListItemIcon>
-                <ArrowBackIcon sx={{ color: '#0a2240' }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.drawerBackHome}
-                secondary={t.drawerBackHomeSub}
-                primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem' }}
-              />
-            </ListItemButton>
-
-            <Divider sx={{ my: 1.5 }} />
-
-            {/* Seletor de Idiomas Oficial dentro do Menu Hambúrguer */}
-            <Box sx={{ px: 2.5, py: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em', display: 'block', mb: 1 }}>
-                IDIOMA / IDIOMA / LANGUAGE
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                {([
-                  { code: 'pt-BR', label: 'Português' },
-                  { code: 'es-419', label: 'Español' },
-                  { code: 'en-US', label: 'English' }
-                ] as { code: Language; label: string }[]).map((opt) => (
-                  <Button
-                    key={opt.code}
-                    size="small"
-                    variant={lang === opt.code ? 'contained' : 'outlined'}
-                    onClick={() => handleLanguageChange(opt.code)}
+                {BACKSTAGE_MENU_ITEMS.map((item) => (
+                  <ListItemButton
+                    key={item.id}
+                    selected={backstageTab === item.id}
+                    onClick={() => setBackstageTab(item.id)}
                     sx={{
-                      flex: 1,
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      bgcolor: lang === opt.code ? '#0a2240' : 'transparent',
-                      borderColor: '#0a2240',
-                      color: lang === opt.code ? '#ffffff' : '#0a2240'
+                      py: 1.25,
+                      mb: 0.5,
+                      borderRadius: 2,
+                      '&.Mui-selected': {
+                        bgcolor: '#e0e7ff',
+                        color: '#0a2240',
+                        '&:hover': { bgcolor: '#c7d2fe' }
+                      }
                     }}
                   >
-                    {opt.label}
-                  </Button>
+                    <ListItemText
+                      primary={item.title[lang]}
+                      secondary={item.subtitle[lang]}
+                      primaryTypographyProps={{
+                        fontWeight: backstageTab === item.id ? 800 : 600,
+                        fontSize: '0.86rem',
+                        color: '#0a2240'
+                      }}
+                      secondaryTypographyProps={{ fontSize: '0.73rem' }}
+                    />
+                  </ListItemButton>
                 ))}
-              </Box>
-            </Box>
-          </List>
-        </Drawer>
 
-        {/* BANNER DE STATUS OPERACIONAL */}
-        {statusMessage && (
-          <Container maxWidth="xl" sx={{ pt: 2 }}>
-            <Alert
-              severity="info"
-              onClose={() => setStatusMessage(null)}
-              sx={{ bgcolor: '#dae2ff', color: '#001848', borderLeft: '4px solid #002046', fontWeight: 600 }}
-            >
-              {statusMessage}
-            </Alert>
-          </Container>
-        )}
+                <Divider sx={{ my: 1.5 }} />
 
-        {/* CONTEÚDO PRINCIPAL DO BACKSTAGE */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        {!currentUser ? (
-          <Paper
-            elevation={0}
-            sx={{
-              maxWidth: 650,
-              mx: 'auto',
-              mt: 4,
-              p: { xs: 3.5, md: 5 },
-              textAlign: 'center',
-              borderRadius: 4,
-              bgcolor: '#ffffff',
-              border: '1px solid #e5e4dc',
-              boxShadow: '0 16px 40px -12px rgba(10, 34, 64, 0.08)'
-            }}
-          >
-            <ShieldIcon sx={{ fontSize: 48, color: '#0a2240', mb: 2 }} />
-            <Typography
-              variant="h4"
-              sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
-            >
-              {t.authWallTitle}
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
-              {t.authWallDesc}
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<ShieldIcon />}
-                onClick={() => setLoginTriggerCount((c) => c + 1)}
-                sx={{
-                  bgcolor: '#0a2240',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  borderRadius: 999,
-                  px: 3.5,
-                  py: 1.25,
-                  '&:hover': { bgcolor: '#163a66' }
-                }}
-              >
-                {t.loginPublicServantBtn}
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                href={`${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
-                sx={{
-                  borderColor: '#0a2240',
-                  color: '#0a2240',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  borderRadius: 999,
-                  px: 3
-                }}
-              >
-                {t.backHomeBtn}
-              </Button>
+                <ListItemButton
+                  component="a"
+                  href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
+                  sx={{ borderRadius: 2 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <ArrowBackIcon sx={{ color: '#0a2240' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.drawerBackHome}
+                    secondary={t.drawerBackHomeSub}
+                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.86rem' }}
+                  />
+                </ListItemButton>
+
+                <Divider sx={{ my: 1.5 }} />
+
+                {/* Seletor de Idiomas Oficial dentro do Navigation Drawer */}
+                <Box sx={{ px: 1.5, py: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em', display: 'block', mb: 1 }}>
+                    IDIOMA / IDIOMA / LANGUAGE
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {([
+                      { code: 'pt-BR', label: 'Português' },
+                      { code: 'es-419', label: 'Español' },
+                      { code: 'en-US', label: 'English' }
+                    ] as { code: Language; label: string }[]).map((opt) => (
+                      <Button
+                        key={opt.code}
+                        size="small"
+                        variant={lang === opt.code ? 'contained' : 'outlined'}
+                        onClick={() => handleLanguageChange(opt.code)}
+                        sx={{
+                          flex: 1,
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          bgcolor: lang === opt.code ? '#0a2240' : 'transparent',
+                          borderColor: '#0a2240',
+                          color: lang === opt.code ? '#ffffff' : '#0a2240'
+                        }}
+                      >
+                        {opt.label}
+                      </Button>
+                    ))}
+                  </Box>
+                </Box>
+              </List>
             </Box>
-          </Paper>
-        ) : !currentUser.backstage_allowed ? (
-          <div className="bg-white border-2 border-red-800 rounded p-8 max-w-3xl mx-auto my-8 space-y-5 shadow-sm">
-            <div className="flex items-center gap-3 text-red-900">
-              <AlertTriangle className="w-8 h-8 text-red-700 shrink-0" />
-              <div>
-                <div className="font-mono text-xs uppercase font-bold text-red-700">
-                  POLÍTICA ZERO-TRUST • APLICAÇÃO IDENTIDADE 360 (RBAC/ABAC)
-                </div>
-                <h2 className="font-serif-authority text-2xl font-bold text-[#002046]">
-                  Acesso ao Backstage Governamental Restrito
-                </h2>
+          </Box>
+
+          {/* CONTEÚDO PRINCIPAL DO BACKSTAGE (AO LADO DO NAVIGATION DRAWER) */}
+          <main className="flex-1 min-w-0 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+            {/* BANNER DE STATUS OPERACIONAL */}
+            {statusMessage && (
+              <div className="mb-4 w-full">
+                <Alert
+                  severity="info"
+                  onClose={() => setStatusMessage(null)}
+                  sx={{ bgcolor: '#dae2ff', color: '#001848', borderLeft: '4px solid #002046', fontWeight: 600 }}
+                >
+                  {statusMessage}
+                </Alert>
               </div>
-            </div>
+            )}
 
-            <p className="text-sm text-[#43474f] leading-relaxed">
-              O usuário autenticado <strong>{currentUser.full_name}</strong> (<code className="font-mono">{currentUser.nid}</code> •{' '}
-              <code className="font-mono">{currentUser.email}</code>) possui atualmente o perfil{' '}
-              <strong className="font-mono text-red-800">CITIZEN_COMMON (Cidadão Comum)</strong> na aplicação{' '}
-              <strong>Identidade 360</strong>. Conforme a diretriz soberana da República de Novatlantis, cidadãos comuns ou ex-servidores cuja permissão profissional foi revogada não têm acesso aos ambientes administrativos do Backstage.
-            </p>
-
-            <div className="flex flex-wrap gap-3 pt-2">
-              <a
-                href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${CITIZEN_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
-                className="bg-[#002046] text-white px-5 py-2.5 rounded text-xs font-bold hover:bg-[#00356e] transition flex items-center gap-2"
-              >
-                Ir para o Portal do Cidadão ({currentUser.full_name})
-                <ExternalLink className="w-4 h-4" />
-              </a>
-              <button
-                onClick={() => setLoginTriggerCount((c) => c + 1)}
-                className="bg-[#dae2ff] text-[#001848] px-4 py-2.5 rounded text-xs font-bold hover:bg-[#b4c5ff] transition"
-              >
-                Alternar para Conta de Servidor Público (Login NID)
-              </button>
-            </div>
-          </div>
-        ) : (
-          currentUser && (
-            <>
-              {/* Barra de Ambiente Atual com Atalho para o Menu Hambúrguer (☰) */}
+            {!currentUser ? (
               <Paper
                 elevation={0}
                 sx={{
-                  p: 2,
-                  mb: 3,
-                  borderRadius: 2.5,
+                  maxWidth: 650,
+                  mx: 'auto',
+                  mt: 4,
+                  p: { xs: 3.5, md: 5 },
+                  textAlign: 'center',
+                  borderRadius: 4,
                   bgcolor: '#ffffff',
                   border: '1px solid #e5e4dc',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 2
+                  boxShadow: '0 16px 40px -12px rgba(10, 34, 64, 0.08)'
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <ShieldIcon sx={{ fontSize: 48, color: '#0a2240', mb: 2 }} />
+                <Typography
+                  variant="h4"
+                  sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
+                >
+                  {t.authWallTitle}
+                </Typography>
+                <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
+                  {t.authWallDesc}
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
                   <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<MenuIcon />}
-                    onClick={() => setHamburgerOpen(true)}
+                    variant="contained"
+                    size="large"
+                    startIcon={<ShieldIcon />}
+                    onClick={() => setLoginTriggerCount((c) => c + 1)}
                     sx={{
-                      textTransform: 'none',
+                      bgcolor: '#0a2240',
                       fontWeight: 700,
-                      borderColor: '#0a2240',
-                      color: '#0a2240',
-                      borderRadius: 2
+                      textTransform: 'none',
+                      borderRadius: 999,
+                      px: 3.5,
+                      py: 1.25,
+                      '&:hover': { bgcolor: '#163a66' }
                     }}
                   >
-                    {t.switchEnvBtn}
+                    {t.loginPublicServantBtn}
                   </Button>
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
-                      {activeMenuObj.title[lang]}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {activeMenuObj.subtitle[lang]}
-                    </Typography>
-                  </Box>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    href={`${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
+                    sx={{
+                      borderColor: '#0a2240',
+                      color: '#0a2240',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      borderRadius: 999,
+                      px: 3
+                    }}
+                  >
+                    {t.backHomeBtn}
+                  </Button>
                 </Box>
-                <Chip
-                  label={`${t.authenticatedServantChip}: ${currentUser.full_name} (${currentUser.effective_role_code})`}
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  sx={{ fontFamily: 'monospace', fontWeight: 700 }}
-                />
               </Paper>
-
-              {/* AMBIENTE 1: GABINETE DO PRIMEIRO-MINISTRO (JOPOCO) & SECRETÁRIO-GERAL */}
-              {backstageTab === 'pm_cabinet' && (
-                <div className="space-y-6">
-                  <div className="bg-[#002046] text-white rounded p-6 border-b-4 border-[#b4c5ff] flex flex-wrap items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="font-mono text-xs uppercase text-[#b4c5ff]">
-                        CHANCELARIA SUPREMA DE NOVATLANTIS • COMANDO EXECUTIVO DA NAÇÃO
-                      </div>
-                      <h2 className="font-serif-authority text-2xl font-bold">
-                        Gabinete do Primeiro-Ministro (Jopoco) & Secretaria-Geral
-                      </h2>
-                      <p className="text-xs text-slate-300">
-                        Visão consolidada do Government Data Fabric (100.000 cidadãos), servidores públicos ativos e execução orçamentária.
-                      </p>
+            ) : !currentUser.backstage_allowed ? (
+              <div className="bg-white border-2 border-red-800 rounded p-8 max-w-3xl mx-auto my-8 space-y-5 shadow-sm">
+                <div className="flex items-center gap-3 text-red-900">
+                  <AlertTriangle className="w-8 h-8 text-red-700 shrink-0" />
+                  <div>
+                    <div className="font-mono text-xs uppercase font-bold text-red-700">
+                      POLÍTICA ZERO-TRUST • APLICAÇÃO IDENTIDADE 360 (RBAC/ABAC)
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setBackstageTab('iam360')}
-                        className="bg-[#b4c5ff] text-[#001848] px-4 py-2 rounded text-xs font-bold hover:bg-white transition"
-                      >
-                        Gerenciar Permissões na Identidade 360
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-white border border-slate-200 rounded p-4">
-                      <div className="text-xs text-slate-500 font-mono uppercase">População Total GDF</div>
-                      <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
-                        {backstageOverview?.kpis?.total_citizens?.toLocaleString('pt-BR') || '100.000'}
-                      </div>
-                      <div className="text-[11px] text-emerald-700 font-mono mt-1">100% Identidades Mod-11</div>
-                    </div>
-                    <div className="bg-white border border-slate-200 rounded p-4">
-                      <div className="text-xs text-slate-500 font-mono uppercase">Vínculos Familiares</div>
-                      <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
-                        {backstageOverview?.kpis?.total_family_links?.toLocaleString('pt-BR') || '71.425'}
-                      </div>
-                      <div className="text-[11px] text-slate-600 font-mono mt-1">Tabela rel_family_graph</div>
-                    </div>
-                    <div className="bg-white border border-slate-200 rounded p-4">
-                      <div className="text-xs text-slate-500 font-mono uppercase">Médicos Credenciados</div>
-                      <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
-                        {backstageOverview?.kpis?.total_doctors?.toLocaleString('pt-BR') || '589'}
-                      </div>
-                      <div className="text-[11px] text-slate-600 font-mono mt-1">6 Unidades Hospitalares</div>
-                    </div>
-                    <div className="bg-white border border-slate-200 rounded p-4">
-                      <div className="text-xs text-slate-500 font-mono uppercase">Professores na Rede</div>
-                      <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
-                        {backstageOverview?.kpis?.total_teachers?.toLocaleString('pt-BR') || '912'}
-                      </div>
-                      <div className="text-[11px] text-slate-600 font-mono mt-1">20.440 Alunos Matriculados</div>
-                    </div>
+                    <h2 className="font-serif-authority text-2xl font-bold text-[#002046]">
+                      Acesso ao Backstage Governamental Restrito
+                    </h2>
                   </div>
                 </div>
-              )}
 
-              {/* AMBIENTE 2: IDENTIDADE 360 (GESTÃO DE ACESSOS RBAC/ABAC) */}
-              {backstageTab === 'iam360' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  <div className="lg:col-span-5 bg-white border border-slate-200 rounded p-6 space-y-4">
-                    <div className="border-b border-slate-200 pb-3">
-                      <div className="font-mono text-[10px] uppercase text-[#00356e] font-bold">
-                        GOVERNANÇA SOBERANA DE IDENTIDADES • IAM 360
+                <p className="text-sm text-[#43474f] leading-relaxed">
+                  O usuário autenticado <strong>{currentUser.full_name}</strong> (<code className="font-mono">{currentUser.nid}</code> •{' '}
+                  <code className="font-mono">{currentUser.email}</code>) possui atualmente o perfil{' '}
+                  <strong className="font-mono text-red-800">CITIZEN_COMMON (Cidadão Comum)</strong> na aplicação{' '}
+                  <strong>Identidade 360</strong>. Conforme a diretriz soberana da República de Novatlantis, cidadãos comuns ou ex-servidores cuja permissão profissional foi revogada não têm acesso aos ambientes administrativos do Backstage.
+                </p>
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <a
+                    href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${CITIZEN_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
+                    className="bg-[#002046] text-white px-5 py-2.5 rounded text-xs font-bold hover:bg-[#00356e] transition flex items-center gap-2"
+                  >
+                    Ir para o Portal do Cidadão ({currentUser.full_name})
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                  <button
+                    onClick={() => setLoginTriggerCount((c) => c + 1)}
+                    className="bg-[#dae2ff] text-[#001848] px-4 py-2.5 rounded text-xs font-bold hover:bg-[#b4c5ff] transition"
+                  >
+                    Alternar para Conta de Servidor Público (Login NID)
+                  </button>
+                </div>
+              </div>
+            ) : (
+              currentUser && (
+                <>
+                  {/* Barra de Ambiente Atual com Atalho para o Navigation Drawer (☰) */}
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      mb: 3,
+                      borderRadius: 2.5,
+                      bgcolor: '#ffffff',
+                      border: '1px solid #e5e4dc',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 2
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<MenuIcon />}
+                        onClick={() => setHamburgerOpen((prev) => !prev)}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          borderColor: '#0a2240',
+                          color: '#0a2240',
+                          borderRadius: 2
+                        }}
+                      >
+                        {t.switchEnvBtn}
+                      </Button>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
+                          {activeMenuObj.title[lang]}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {activeMenuObj.subtitle[lang]}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Chip
+                      label={`${t.authenticatedServantChip}: ${currentUser.full_name} (${currentUser.effective_role_code})`}
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      sx={{ fontFamily: 'monospace', fontWeight: 700 }}
+                    />
+                  </Paper>
+
+                  {/* AMBIENTE 1: GABINETE DO PRIMEIRO-MINISTRO (JOAO THIAGO POÇO - JT) & SECRETÁRIO-GERAL */}
+                  {backstageTab === 'pm_cabinet' && (
+                    <div className="space-y-6">
+                      <div className="bg-[#002046] text-white rounded p-6 border-b-4 border-[#b4c5ff] flex flex-wrap items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="font-mono text-xs uppercase text-[#b4c5ff]">
+                            CHANCELARIA SUPREMA DE NOVATLANTIS • COMANDO EXECUTIVO DA NAÇÃO
+                          </div>
+                          <h2 className="font-serif-authority text-2xl font-bold">
+                            Gabinete do Primeiro-Ministro (Joao Thiago Poço - JT) & Secretaria-Geral
+                          </h2>
+                          <p className="text-xs text-slate-300">
+                            Visão consolidada do Government Data Fabric (100.000 cidadãos), servidores públicos ativos e execução orçamentária.
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setBackstageTab('iam360')}
+                            className="bg-[#b4c5ff] text-[#001848] px-4 py-2 rounded text-xs font-bold hover:bg-white transition"
+                          >
+                            Gerenciar Permissões na Identidade 360
+                          </button>
+                        </div>
                       </div>
-                      <h3 className="font-serif-authority text-lg font-bold text-[#002046]">
-                        Conceder Permissão Administrativa a um Cidadão
-                      </h3>
-                      <p className="text-xs text-[#43474f]">
-                        O Primeiro-Ministro (`jopoco`), o Secretário-Geral e o Gestor de Identidades 360 concedem ou revogam acessos profissionais ao Backstage.
-                      </p>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="bg-white border border-slate-200 rounded p-4">
+                          <div className="text-xs text-slate-500 font-mono uppercase">População Total GDF</div>
+                          <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
+                            {backstageOverview?.kpis?.total_citizens?.toLocaleString('pt-BR') || '100.000'}
+                          </div>
+                          <div className="text-[11px] text-emerald-700 font-mono mt-1">100% Identidades Mod-11</div>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded p-4">
+                          <div className="text-xs text-slate-500 font-mono uppercase">Vínculos Familiares</div>
+                          <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
+                            {backstageOverview?.kpis?.total_family_links?.toLocaleString('pt-BR') || '71.425'}
+                          </div>
+                          <div className="text-[11px] text-slate-600 font-mono mt-1">Tabela rel_family_graph</div>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded p-4">
+                          <div className="text-xs text-slate-500 font-mono uppercase">Médicos Credenciados</div>
+                          <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
+                            {backstageOverview?.kpis?.total_doctors?.toLocaleString('pt-BR') || '589'}
+                          </div>
+                          <div className="text-[11px] text-slate-600 font-mono mt-1">6 Unidades Hospitalares</div>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded p-4">
+                          <div className="text-xs text-slate-500 font-mono uppercase">Professores na Rede</div>
+                          <div className="text-2xl font-mono font-bold text-[#002046] mt-1">
+                            {backstageOverview?.kpis?.total_teachers?.toLocaleString('pt-BR') || '912'}
+                          </div>
+                          <div className="text-[11px] text-slate-600 font-mono mt-1">20.440 Alunos Matriculados</div>
+                        </div>
+                      </div>
                     </div>
+                  )}
+
+                  {/* AMBIENTE 2: IDENTIDADE 360 (GESTÃO DE ACESSOS RBAC/ABAC) */}
+                  {backstageTab === 'iam360' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                      <div className="lg:col-span-5 bg-white border border-slate-200 rounded p-6 space-y-4">
+                        <div className="border-b border-slate-200 pb-3">
+                          <div className="font-mono text-[10px] uppercase text-[#00356e] font-bold">
+                            GOVERNANÇA SOBERANA DE IDENTIDADES • IAM 360
+                          </div>
+                          <h3 className="font-serif-authority text-lg font-bold text-[#002046]">
+                            Conceder Permissão Administrativa a um Cidadão
+                          </h3>
+                          <p className="text-xs text-[#43474f]">
+                            O Primeiro-Ministro (`Joao Thiago Poço - JT`), o Secretário-Geral e o Gestor de Identidades 360 concedem ou revogam acessos profissionais ao Backstage.
+                          </p>
+                        </div>
 
                     <form onSubmit={handleGrantRole} className="space-y-3 text-xs">
                       <div>
@@ -1191,72 +1229,95 @@ export default function App() {
                 </div>
               )}
 
-              {/* AMBIENTE 5: COMANDO OPERACIONAL 311 & 911 */}
-              {backstageTab === 'ops_311_911' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  <div className="lg:col-span-7 bg-white border border-slate-200 rounded p-5 space-y-3">
-                    <h3 className="font-serif-authority text-lg font-bold text-[#002046]">
-                      Fila de Demandas Urbanas 311 Enviadas pelos Cidadãos
-                    </h3>
-                    <div className="space-y-2.5 text-xs">
-                      {(opsBackstage?.tickets_311 || []).map((tk: any) => (
-                        <div key={tk.ticket_id} className="p-3.5 rounded bg-[#f8f9fb] border border-slate-200 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono font-bold text-[#002046]">
-                              #{tk.ticket_id} • {tk.category}
-                            </span>
-                            <span
-                              className={`font-mono text-[10px] px-2 py-0.5 rounded font-bold ${
-                                tk.status === 'CONCLUIDO'
-                                  ? 'bg-emerald-100 text-emerald-900'
-                                  : 'bg-amber-100 text-amber-900'
-                              }`}
-                            >
-                              {tk.status}
-                            </span>
-                          </div>
-                          <div className="text-[#191c1e]">{tk.description}</div>
-                          <div className="flex items-center justify-between pt-1 text-[11px] text-slate-600">
-                            <span>
-                              Solicitante: <strong>{tk.citizen_name}</strong> ({tk.citizen_nid}) • {tk.district}
-                            </span>
-                            {tk.status !== 'CONCLUIDO' && (
-                              <button
-                                onClick={() => handleResolve311(tk.ticket_id)}
-                                className="bg-[#002046] text-white px-3 py-1 rounded text-xs font-semibold hover:bg-[#00356e]"
-                              >
-                                Concluir Atendimento 311
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+              {/* AMBIENTE 5: COMANDO DE ZELADORIA URBANA 311 */}
+              {backstageTab === 'ops_311' && (
+                <div className="bg-white border border-slate-200 rounded p-6 space-y-4">
+                  <div className="border-b border-slate-200 pb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-serif-authority text-lg font-bold text-[#002046] flex items-center gap-2">
+                        <Wrench className="w-5 h-5 text-[#002046]" />
+                        Comando de Zeladoria Urbana 311 • Fila de Demandas dos Cidadãos (`ops_311_tickets`)
+                      </h3>
+                      <p className="text-xs text-[#43474f]">
+                        Gerenciamento exclusivo de chamados de manutenção urbana, iluminação IoT, limpeza e drenagem pluvial.
+                      </p>
                     </div>
+                    <span className="font-mono text-xs px-2.5 py-1 rounded bg-[#dae2ff] text-[#001848] font-bold">
+                      {(opsBackstage?.tickets_311 || []).length} Chamados 311
+                    </span>
                   </div>
-
-                  <div className="lg:col-span-5 bg-white border border-slate-200 rounded p-5 space-y-3">
-                    <h3 className="font-serif-authority text-lg font-bold text-red-900">
-                      Despachos de Emergência 911 em Tempo Real
-                    </h3>
-                    <div className="space-y-2.5 text-xs">
-                      {(opsBackstage?.dispatches_911 || []).map((dp: any) => (
-                        <div key={dp.dispatch_id} className="p-3.5 rounded bg-red-50/60 border border-red-200 space-y-1">
-                          <div className="flex justify-between font-mono text-[11px] font-bold text-red-900">
-                            <span>#{dp.dispatch_id} • {dp.emergency_type}</span>
-                            <span>ETA: {dp.eta_minutes} min</span>
-                          </div>
-                          <div className="text-[#191c1e] font-medium">{dp.ai_protocol}</div>
-                          <div className="text-[11px] text-slate-600">
-                            Cidadão: {dp.citizen_name} ({dp.citizen_nid}) • {dp.district}
-                          </div>
+                  <div className="space-y-2.5 text-xs">
+                    {(opsBackstage?.tickets_311 || []).map((tk: any) => (
+                      <div key={tk.ticket_id} className="p-3.5 rounded bg-[#f8f9fb] border border-slate-200 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-[#002046]">
+                            #{tk.ticket_id} • {tk.category}
+                          </span>
+                          <span
+                            className={`font-mono text-[10px] px-2 py-0.5 rounded font-bold ${
+                              tk.status === 'CONCLUIDO'
+                                ? 'bg-emerald-100 text-emerald-900'
+                                : 'bg-amber-100 text-amber-900'
+                            }`}
+                          >
+                            {tk.status}
+                          </span>
                         </div>
-                      ))}
-                    </div>
+                        <div className="text-[#191c1e]">{tk.description}</div>
+                        <div className="flex items-center justify-between pt-1 text-[11px] text-slate-600">
+                          <span>
+                            Solicitante: <strong>{tk.citizen_name}</strong> ({tk.citizen_nid}) • {tk.district}
+                          </span>
+                          {tk.status !== 'CONCLUIDO' && (
+                            <button
+                              onClick={() => handleResolve311(tk.ticket_id)}
+                              className="bg-[#002046] text-white px-3 py-1 rounded text-xs font-semibold hover:bg-[#00356e]"
+                            >
+                              Concluir Atendimento 311
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* AMBIENTE 6: JUSTIÇA, TESOURO & EXPLORADOR DO DATALAKE DE 100.000 CIDADÃOS */}
+              {/* AMBIENTE 6: CENTRAL DE DESPACHO DE EMERGÊNCIA 911 */}
+              {backstageTab === 'ops_911' && (
+                <div className="bg-white border-2 border-red-800 rounded p-6 space-y-4">
+                  <div className="border-b border-red-200 pb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-serif-authority text-lg font-bold text-red-900 flex items-center gap-2">
+                        <Siren className="w-5 h-5 text-red-700" />
+                        Central de Despacho de Emergência 911 • Socorro Tático & UTI Móvel (`ops_911_dispatches`)
+                      </h3>
+                      <p className="text-xs text-[#43474f]">
+                        Monitoramento dedicado em tempo real dos protocolos de emergência médica, defesa civil e guarda costeira.
+                      </p>
+                    </div>
+                    <span className="font-mono text-xs px-2.5 py-1 rounded bg-red-100 text-red-900 font-bold">
+                      {(opsBackstage?.dispatches_911 || []).length} Despachos 911 Ativos
+                    </span>
+                  </div>
+                  <div className="space-y-2.5 text-xs">
+                    {(opsBackstage?.dispatches_911 || []).map((dp: any) => (
+                      <div key={dp.dispatch_id} className="p-3.5 rounded bg-red-50/60 border border-red-200 space-y-1">
+                        <div className="flex justify-between font-mono text-[11px] font-bold text-red-900">
+                          <span>#{dp.dispatch_id} • {dp.emergency_type}</span>
+                          <span>ETA: {dp.eta_minutes} min</span>
+                        </div>
+                        <div className="text-[#191c1e] font-medium">{dp.ai_protocol}</div>
+                        <div className="text-[11px] text-slate-600">
+                          Cidadão: <strong>{dp.citizen_name}</strong> ({dp.citizen_nid}) • {dp.district}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AMBIENTE 7: JUSTIÇA, TESOURO & EXPLORADOR DO DATALAKE DE 100.000 CIDADÃOS */}
               {backstageTab === 'justice_datalake' && (
                 <div className="space-y-6">
                   <div className="bg-white border border-slate-200 rounded p-5 space-y-4">
@@ -1332,7 +1393,8 @@ export default function App() {
             </>
           )
         )}
-        </main>
+          </main>
+        </Box>
       </div>
     </ThemeProvider>
   );

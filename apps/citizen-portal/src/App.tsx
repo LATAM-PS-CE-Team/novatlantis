@@ -51,7 +51,7 @@ import { TopNavUserWidget, SupportedLanguage, resolveInitialLanguage } from './c
 import { novatlantisTheme } from './theme';
 
 type Language = SupportedLanguage;
-type CitizenTab = 'identity' | 'family_address' | 'health' | 'education' | 'urban' | 'treasury';
+type CitizenTab = 'identity' | 'family_address' | 'health' | 'education' | 'urban_311' | 'emergency_911' | 'treasury';
 
 const LANDING_PORTAL_URL = 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app';
 const GOV_BACKSTAGE_URL = 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app';
@@ -114,24 +114,37 @@ const CITIZEN_MENU_ITEMS: {
     }
   },
   {
-    id: 'urban',
+    id: 'urban_311',
     title: {
-      'pt-BR': '5. Zeladoria 311 & Emergência 911',
-      'es-419': '5. Mantenimiento 311 y Emergencia 911',
-      'en-US': '5. 311 Urban Services & 911 Emergency'
+      'pt-BR': '5. Zeladoria Urbana 311',
+      'es-419': '5. Mantenimiento Urbano 311',
+      'en-US': '5. 311 Urban Services'
     },
     subtitle: {
-      'pt-BR': 'Abertura de chamados urbanos e resgate tático',
-      'es-419': 'Apertura de reportes urbanos y rescate táctico',
-      'en-US': 'Open urban service tickets and tactical dispatch'
+      'pt-BR': 'Abertura e protocolo de chamados de manutenção urbana',
+      'es-419': 'Apertura y protocolo de reportes de mantenimiento urbano',
+      'en-US': 'Open and track urban maintenance service tickets'
+    }
+  },
+  {
+    id: 'emergency_911',
+    title: {
+      'pt-BR': '6. Emergência 911 (SOS Tático & Médico)',
+      'es-419': '6. Emergencia 911 (SOS Táctico y Médico)',
+      'en-US': '6. 911 Emergency (Tactical & Medical SOS)'
+    },
+    subtitle: {
+      'pt-BR': 'Despacho imediato de UTI móvel, defesa civil e guarda costeira',
+      'es-419': 'Despacho inmediato de UCI móvil, defensa civil y guardia costera',
+      'en-US': 'Immediate ICU ambulance, civil defense, and coast guard dispatch'
     }
   },
   {
     id: 'treasury',
     title: {
-      'pt-BR': '6. Economia, Empresa 45s & Passaporte ICAO',
-      'es-419': '6. Economía, Empresa 45s y Pasaporte OACI',
-      'en-US': '6. Economy, 45s Company & ICAO Passport'
+      'pt-BR': '7. Economia, Empresa 45s & Passaporte ICAO',
+      'es-419': '7. Economía, Empresa 45s y Pasaporte OACI',
+      'en-US': '7. Economy, 45s Company & ICAO Passport'
     },
     subtitle: {
       'pt-BR': 'Constituição de empresa, UBI e passaporte digital',
@@ -148,19 +161,19 @@ const CITIZEN_PORTAL_I18N: Record<
     backToHome: string;
     govTitle: string;
     portalBadge: string;
-    activeModulePrefix: string;
-    govSubtitleAnon: string;
+    activeModuleLabel: string;
+    defaultSubline: string;
     drawerTitle: string;
-    drawerAnonSub: string;
-    drawerLangTitle: string;
-    drawerModulesHeading: string;
+    drawerUnauthenticated: string;
+    drawerModulesHeader: string;
+    drawerBackHome: string;
     drawerBackHomeSub: string;
-    gateTitle: string;
-    gateBody: string;
-    gateSignInBtn: string;
-    gatePublicChatBtn: string;
+    authRequiredTitle: string;
+    authRequiredDesc: string;
+    loginNowBtn: string;
+    publicChatBtn: string;
     switchModuleBtn: string;
-    authenticatedBadge: string;
+    authenticatedChip: string;
   }
 > = {
   'pt-BR': {
@@ -168,60 +181,60 @@ const CITIZEN_PORTAL_I18N: Record<
     backToHome: 'Voltar à Home Page (Concierge Nacional)',
     govTitle: 'Governo da República de Novatlantis',
     portalBadge: 'Portal do Cidadão',
-    activeModulePrefix: 'Módulo Ativo (☰)',
-    govSubtitleAnon: 'Chancelaria Digital • Autoatendimento Soberano • AlloyDB & GDP (100.000 Cidadãos)',
+    activeModuleLabel: 'Módulo Ativo (☰)',
+    defaultSubline: 'Chancelaria Digital • Autoatendimento Soberano • AlloyDB & GDP (100.000 Cidadãos)',
     drawerTitle: 'Menu do Cidadão (☰)',
-    drawerAnonSub: 'Sessão Não Iniciada',
-    drawerLangTitle: 'IDIOMA DO PORTAL (I18N)',
-    drawerModulesHeading: 'MÓDULOS INTERNOS DO PERFIL & SERVIÇOS',
+    drawerUnauthenticated: 'Sessão Não Iniciada',
+    drawerModulesHeader: 'MÓDULOS INTERNOS DO PERFIL & SERVIÇOS',
+    drawerBackHome: 'Voltar à Home Page (Concierge IA)',
     drawerBackHomeSub: 'Fazer perguntas públicas no portal principal',
-    gateTitle: 'Autenticação Necessária para Serviços Pessoais',
-    gateBody:
-      'Nenhum usuário está logado no momento. Para consultar dúvidas gerais sem precisar de login, utilize o Concierge IA na Home Page. Para acessar sua Carteira NID, Prontuário de Saúde HL7, Boletim Escolar ou solicitar serviços oficiais, entre com seu NID abaixo.',
-    gateSignInBtn: 'Entrar com NID Agora',
-    gatePublicChatBtn: 'Ir ao Chat Público (Sem Login)',
-    switchModuleBtn: 'Alternar Módulo (☰)',
-    authenticatedBadge: 'Cidadão Autenticado'
+    authRequiredTitle: 'Autenticação Necessária para Serviços Pessoais',
+    authRequiredDesc:
+      'Nenhum usuário está logado no momento. Para consultar dúvidas gerais sem precisar de login, utilize o Concierge IA na Home Page. Para acessar sua Carteira NID, Prontuário de Saúde HL7, Boletim Escolar, Zeladoria 311 ou Emergência 911, entre com seu NID abaixo.',
+    loginNowBtn: 'Entrar com NID Agora',
+    publicChatBtn: 'Ir ao Chat Público (Sem Login)',
+    switchModuleBtn: 'Alternar Sidebar (☰)',
+    authenticatedChip: 'Cidadão Autenticado'
   },
   'es-419': {
     officialBanner: 'Un sitio oficial del Gobierno de la República Digital de Novatlantis • Portal del Ciudadano',
     backToHome: 'Volver a la Página Principal (Concierge Nacional)',
     govTitle: 'Gobierno de la República de Novatlantis',
     portalBadge: 'Portal del Ciudadano',
-    activeModulePrefix: 'Módulo Activo (☰)',
-    govSubtitleAnon: 'Cancillería Digital • Autoservicio Soberano • AlloyDB y GDP (100.000 Ciudadanos)',
+    activeModuleLabel: 'Módulo Activo (☰)',
+    defaultSubline: 'Cancillería Digital • Autoservicio Soberano • AlloyDB y GDP (100.000 Ciudadanos)',
     drawerTitle: 'Menú del Ciudadano (☰)',
-    drawerAnonSub: 'Sesión No Iniciada',
-    drawerLangTitle: 'IDIOMA DEL PORTAL (I18N)',
-    drawerModulesHeading: 'MÓDULOS INTERNOS DEL PERFIL Y SERVICIOS',
+    drawerUnauthenticated: 'Sesión No Iniciada',
+    drawerModulesHeader: 'MÓDULOS INTERNOS DEL PERFIL Y SERVICIOS',
+    drawerBackHome: 'Volver a la Página Principal (Concierge IA)',
     drawerBackHomeSub: 'Hacer preguntas públicas en el portal principal',
-    gateTitle: 'Autenticación Requerida para Servicios Personales',
-    gateBody:
-      'Ningún usuario ha iniciado sesión en este momento. Para consultar dudas generales sin iniciar sesión, utilice el Concierge IA en la Página Principal. Para acceder a su Credencial NID, Historia Clínica HL7, Boletín Escolar o solicitar servicios oficiales, ingrese con su NID abajo.',
-    gateSignInBtn: 'Ingresar con NID Ahora',
-    gatePublicChatBtn: 'Ir al Chat Público (Sin Login)',
-    switchModuleBtn: 'Cambiar Módulo (☰)',
-    authenticatedBadge: 'Ciudadano Autenticado'
+    authRequiredTitle: 'Autenticación Requerida para Servicios Personales',
+    authRequiredDesc:
+      'Ningún usuario ha iniciado sesión en este momento. Para consultar dudas generales sin iniciar sesión, utilice el Concierge IA en la Página Principal. Para acceder a su Credencial NID, Historia Clínica HL7, Boletín Escolar, Mantenimiento 311 o Emergencia 911, ingrese con su NID abajo.',
+    loginNowBtn: 'Ingresar con NID Ahora',
+    publicChatBtn: 'Ir al Chat Público (Sin Login)',
+    switchModuleBtn: 'Alternar Barra Lateral (☰)',
+    authenticatedChip: 'Ciudadano Autenticado'
   },
   'en-US': {
     officialBanner: 'An official website of the Government of the Digital Republic of Novatlantis • Citizen Portal',
     backToHome: 'Back to Home Page (National Concierge)',
     govTitle: 'Government of the Republic of Novatlantis',
     portalBadge: 'Citizen Portal',
-    activeModulePrefix: 'Active Module (☰)',
-    govSubtitleAnon: 'Digital Chancellery • Sovereign Self-Service • AlloyDB & GDP (100,000 Citizens)',
+    activeModuleLabel: 'Active Module (☰)',
+    defaultSubline: 'Digital Chancellery • Sovereign Self-Service • AlloyDB & GDP (100,000 Citizens)',
     drawerTitle: 'Citizen Menu (☰)',
-    drawerAnonSub: 'Session Not Started',
-    drawerLangTitle: 'PORTAL LANGUAGE (I18N)',
-    drawerModulesHeading: 'INTERNAL PROFILE & SERVICE MODULES',
+    drawerUnauthenticated: 'Session Not Started',
+    drawerModulesHeader: 'INTERNAL PROFILE & SERVICE MODULES',
+    drawerBackHome: 'Back to Home Page (AI Concierge)',
     drawerBackHomeSub: 'Ask public questions on the main portal',
-    gateTitle: 'Authentication Required for Personal Services',
-    gateBody:
-      'No user is currently signed in. To ask general questions without signing in, use the AI Concierge on the Home Page. To access your NID Wallet, HL7 Health Record, School Report Card, or request official services, sign in with your NID below.',
-    gateSignInBtn: 'Sign in with NID Now',
-    gatePublicChatBtn: 'Go to Public Chat (No Login)',
-    switchModuleBtn: 'Switch Module (☰)',
-    authenticatedBadge: 'Authenticated Citizen'
+    authRequiredTitle: 'Authentication Required for Personal Services',
+    authRequiredDesc:
+      'No user is currently signed in. To ask general questions without signing in, use the AI Concierge on the Home Page. To access your NID Wallet, HL7 Health Record, School Report Card, 311 Urban Services, or 911 Emergency, sign in with your NID below.',
+    loginNowBtn: 'Sign in with NID Now',
+    publicChatBtn: 'Go to Public Chat (No Login)',
+    switchModuleBtn: 'Toggle Sidebar (☰)',
+    authenticatedChip: 'Authenticated Citizen'
   }
 };
 
@@ -229,7 +242,7 @@ export default function App() {
   const [lang, setLang] = useState<Language>(() => resolveInitialLanguage());
   const t = CITIZEN_PORTAL_I18N[lang] || CITIZEN_PORTAL_I18N['pt-BR'];
   const [activeTab, setActiveTab] = useState<CitizenTab>('identity');
-  const [hamburgerOpen, setHamburgerOpen] = useState(false);
+  const [hamburgerOpen, setHamburgerOpen] = useState(true);
   const [loginTriggerCount, setLoginTriggerCount] = useState(0);
   const [ssoToken, setSsoToken] = useState<string | null>(null);
   const [dossier, setDossier] = useState<any>(null);
@@ -293,9 +306,13 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const initialTab = params.get('tab') as CitizenTab | null;
-    if (initialTab && ['identity', 'family_address', 'health', 'education', 'urban', 'treasury'].includes(initialTab)) {
-      setActiveTab(initialTab);
+    const rawTab = params.get('tab');
+    const mappedTab = rawTab === 'urban' ? 'urban_311' : rawTab;
+    if (
+      mappedTab &&
+      ['identity', 'family_address', 'health', 'education', 'urban_311', 'emergency_911', 'treasury'].includes(mappedTab)
+    ) {
+      setActiveTab(mappedTab as CitizenTab);
     }
     // IMPORTANTE: Nenhum usuário é carregado sem sessão autenticada no TopNavUserWidget
   }, []);
@@ -466,16 +483,19 @@ export default function App() {
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <IconButton
-                  onClick={() => setHamburgerOpen(true)}
+                  onClick={() => setHamburgerOpen((prev) => !prev)}
                   sx={{
                     border: '1px solid #d1d5db',
                     borderRadius: 2,
                     p: 1,
-                    color: '#0a2240',
-                    bgcolor: '#ffffff',
-                    '&:hover': { bgcolor: '#f3f4f6', borderColor: '#0a2240' }
+                    color: hamburgerOpen ? '#ffffff' : '#0a2240',
+                    bgcolor: hamburgerOpen ? '#0a2240' : '#ffffff',
+                    '&:hover': {
+                      bgcolor: hamburgerOpen ? '#163a66' : '#f3f4f6',
+                      borderColor: '#0a2240'
+                    }
                   }}
-                  aria-label="Abrir Menu Hambúrguer do Portal do Cidadão"
+                  aria-label="Alternar Navigation Drawer (Sidebar) do Portal do Cidadão"
                 >
                   <MenuIcon />
                 </IconButton>
@@ -561,231 +581,250 @@ export default function App() {
           </Container>
         </AppBar>
 
-        {/* MENU HAMBÚRGUER VERTICAL (☰) PARA NAVEGAR ENTRE AS SEÇÕES INTERNAS DO CIDADÃO */}
-        <Drawer
-          anchor="left"
-          open={hamburgerOpen}
-          onClose={() => setHamburgerOpen(false)}
-          PaperProps={{
-            sx: { width: 340, bgcolor: '#fcfbf9', borderRight: '1px solid #e5e4dc' }
-          }}
-        >
+        {/* LAYOUT GOOGLE MATERIAL DESIGN: PERSISTENT NAVIGATION DRAWER (SIDEBAR AO LADO) + PÁGINA INTEIRA */}
+        <Box sx={{ display: 'flex', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
           <Box
+            component="aside"
             sx={{
-              p: 2.5,
-              bgcolor: '#0a2240',
-              color: '#ffffff',
+              width: hamburgerOpen ? { xs: 290, md: 340 } : 0,
+              flexShrink: 0,
+              overflow: 'hidden',
+              transition: 'width 225ms cubic-bezier(0.4, 0, 0.2, 1)',
+              bgcolor: '#fcfbf9',
+              borderRight: hamburgerOpen ? '1px solid #e5e4dc' : 'none',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
+              flexDirection: 'column'
             }}
           >
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                {t.drawerTitle}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
-                {citizen ? `${citizen.full_name} (${citizen.nid})` : t.drawerUnauthenticated}
-              </Typography>
-            </Box>
-            <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          <List sx={{ py: 1.5 }}>
-            <Box sx={{ px: 2.5, py: 0.75 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
-                {t.drawerModulesHeader}
-              </Typography>
-            </Box>
-
-            {CITIZEN_MENU_ITEMS.map((item) => (
-              <ListItemButton
-                key={item.id}
-                selected={activeTab === item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setHamburgerOpen(false);
-                }}
-                sx={{ py: 1.35 }}
-              >
-                <ListItemText
-                  primary={item.title[lang]}
-                  secondary={item.subtitle[lang]}
-                  primaryTypographyProps={{ fontWeight: activeTab === item.id ? 800 : 600, fontSize: '0.88rem', color: '#0a2240' }}
-                  secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                />
-              </ListItemButton>
-            ))}
-
-            <Divider sx={{ my: 1.5 }} />
-
-            <ListItemButton
-              component="a"
-              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
-            >
-              <ListItemIcon>
-                <ArrowBackIcon sx={{ color: '#0a2240' }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.drawerBackHome}
-                secondary={t.drawerBackHomeSub}
-                primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem' }}
-              />
-            </ListItemButton>
-
-            <Divider sx={{ my: 1.5 }} />
-
-            {/* Seletor de Idiomas Oficial dentro do Menu Hambúrguer */}
-            <Box sx={{ px: 2.5, py: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em', display: 'block', mb: 1 }}>
-                IDIOMA / IDIOMA / LANGUAGE
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                {([
-                  { code: 'pt-BR', label: 'Português' },
-                  { code: 'es-419', label: 'Español' },
-                  { code: 'en-US', label: 'English' }
-                ] as { code: Language; label: string }[]).map((opt) => (
-                  <Button
-                    key={opt.code}
-                    size="small"
-                    variant={lang === opt.code ? 'contained' : 'outlined'}
-                    onClick={() => handleLanguageChange(opt.code)}
-                    sx={{
-                      flex: 1,
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      bgcolor: lang === opt.code ? '#0a2240' : 'transparent',
-                      borderColor: '#0a2240',
-                      color: lang === opt.code ? '#ffffff' : '#0a2240'
-                    }}
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </Box>
-            </Box>
-          </List>
-        </Drawer>
-
-        {/* BANNER DE FEEDBACK */}
-        {statusBanner && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 w-full">
-            <Alert severity="success" onClose={() => setStatusBanner(null)}>
-              {statusBanner}
-            </Alert>
-          </div>
-        )}
-
-      {/* CONTEÚDO PRINCIPAL DO PORTAL DO CIDADÃO */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        {!citizen ? (
-          <Paper
-            elevation={0}
-            sx={{
-              maxWidth: 640,
-              mx: 'auto',
-              mt: 4,
-              p: { xs: 3.5, md: 5 },
-              textAlign: 'center',
-              borderRadius: 4,
-              bgcolor: '#ffffff',
-              border: '1px solid #e5e4dc',
-              boxShadow: '0 16px 40px -12px rgba(10, 34, 64, 0.08)'
-            }}
-          >
-            <ShieldIcon sx={{ fontSize: 48, color: '#0a2240', mb: 2 }} />
-            <Typography
-              variant="h4"
-              sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
-            >
-              {t.authRequiredTitle}
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
-              {t.authRequiredDesc}
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<ShieldIcon />}
-                onClick={() => setLoginTriggerCount((c) => c + 1)}
+            <Box sx={{ width: { xs: 290, md: 340 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Box
                 sx={{
+                  p: 2.5,
                   bgcolor: '#0a2240',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  borderRadius: 999,
-                  px: 3.5,
-                  py: 1.25,
-                  '&:hover': { bgcolor: '#163a66' }
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
                 }}
               >
-                {t.loginNowBtn}
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                href={`${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
-                sx={{
-                  borderColor: '#0a2240',
-                  color: '#0a2240',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  borderRadius: 999,
-                  px: 3
-                }}
-              >
-                {t.publicChatBtn}
-              </Button>
-            </Box>
-          </Paper>
-        ) : (
-          <>
-            {/* Barra de Seção Atual com Atalho para o Menu Hambúrguer (☰) */}
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                mb: 3,
-                borderRadius: 2.5,
-                bgcolor: '#ffffff',
-                border: '1px solid #e5e4dc',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 2
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<MenuIcon />}
-                  onClick={() => setHamburgerOpen(true)}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    borderColor: '#0a2240',
-                    color: '#0a2240',
-                    borderRadius: 2
-                  }}
-                >
-                  {t.switchModuleBtn}
-                </Button>
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
-                    {activeMenuObj.title[lang]}
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                    {t.drawerTitle}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {activeMenuObj.subtitle[lang]}
+                  <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
+                    {citizen ? `${citizen.full_name} (${citizen.nid})` : t.drawerUnauthenticated}
                   </Typography>
                 </Box>
+                <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
+                  <CloseIcon />
+                </IconButton>
               </Box>
-              <Chip
+
+              <List sx={{ py: 1.5, px: 1 }}>
+                <Box sx={{ px: 1.5, py: 0.75 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
+                    {t.drawerModulesHeader}
+                  </Typography>
+                </Box>
+
+                {CITIZEN_MENU_ITEMS.map((item) => (
+                  <ListItemButton
+                    key={item.id}
+                    selected={activeTab === item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    sx={{
+                      py: 1.25,
+                      mb: 0.5,
+                      borderRadius: 2,
+                      '&.Mui-selected': {
+                        bgcolor: '#e0e7ff',
+                        color: '#0a2240',
+                        '&:hover': { bgcolor: '#c7d2fe' }
+                      }
+                    }}
+                  >
+                    <ListItemText
+                      primary={item.title[lang]}
+                      secondary={item.subtitle[lang]}
+                      primaryTypographyProps={{
+                        fontWeight: activeTab === item.id ? 800 : 600,
+                        fontSize: '0.86rem',
+                        color: '#0a2240'
+                      }}
+                      secondaryTypographyProps={{ fontSize: '0.73rem' }}
+                    />
+                  </ListItemButton>
+                ))}
+
+                <Divider sx={{ my: 1.5 }} />
+
+                <ListItemButton
+                  component="a"
+                  href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}&lang=${encodeURIComponent(lang)}` : `${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
+                  sx={{ borderRadius: 2 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <ArrowBackIcon sx={{ color: '#0a2240' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.drawerBackHome}
+                    secondary={t.drawerBackHomeSub}
+                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.86rem' }}
+                  />
+                </ListItemButton>
+
+                <Divider sx={{ my: 1.5 }} />
+
+                {/* Seletor de Idiomas Oficial dentro do Navigation Drawer */}
+                <Box sx={{ px: 1.5, py: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em', display: 'block', mb: 1 }}>
+                    IDIOMA / IDIOMA / LANGUAGE
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {([
+                      { code: 'pt-BR', label: 'Português' },
+                      { code: 'es-419', label: 'Español' },
+                      { code: 'en-US', label: 'English' }
+                    ] as { code: Language; label: string }[]).map((opt) => (
+                      <Button
+                        key={opt.code}
+                        size="small"
+                        variant={lang === opt.code ? 'contained' : 'outlined'}
+                        onClick={() => handleLanguageChange(opt.code)}
+                        sx={{
+                          flex: 1,
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          bgcolor: lang === opt.code ? '#0a2240' : 'transparent',
+                          borderColor: '#0a2240',
+                          color: lang === opt.code ? '#ffffff' : '#0a2240'
+                        }}
+                      >
+                        {opt.label}
+                      </Button>
+                    ))}
+                  </Box>
+                </Box>
+              </List>
+            </Box>
+          </Box>
+
+          {/* CONTEÚDO PRINCIPAL DO PORTAL DO CIDADÃO (AO LADO DO NAVIGATION DRAWER) */}
+          <main className="flex-1 min-w-0 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+            {/* BANNER DE FEEDBACK */}
+            {statusBanner && (
+              <div className="mb-4 w-full">
+                <Alert severity="success" onClose={() => setStatusBanner(null)}>
+                  {statusBanner}
+                </Alert>
+              </div>
+            )}
+
+            {!citizen ? (
+              <Paper
+                elevation={0}
+                sx={{
+                  maxWidth: 640,
+                  mx: 'auto',
+                  mt: 4,
+                  p: { xs: 3.5, md: 5 },
+                  textAlign: 'center',
+                  borderRadius: 4,
+                  bgcolor: '#ffffff',
+                  border: '1px solid #e5e4dc',
+                  boxShadow: '0 16px 40px -12px rgba(10, 34, 64, 0.08)'
+                }}
+              >
+                <ShieldIcon sx={{ fontSize: 48, color: '#0a2240', mb: 2 }} />
+                <Typography
+                  variant="h4"
+                  sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
+                >
+                  {t.authRequiredTitle}
+                </Typography>
+                <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
+                  {t.authRequiredDesc}
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<ShieldIcon />}
+                    onClick={() => setLoginTriggerCount((c) => c + 1)}
+                    sx={{
+                      bgcolor: '#0a2240',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      borderRadius: 999,
+                      px: 3.5,
+                      py: 1.25,
+                      '&:hover': { bgcolor: '#163a66' }
+                    }}
+                  >
+                    {t.loginNowBtn}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    href={`${LANDING_PORTAL_URL}?lang=${encodeURIComponent(lang)}`}
+                    sx={{
+                      borderColor: '#0a2240',
+                      color: '#0a2240',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      borderRadius: 999,
+                      px: 3
+                    }}
+                  >
+                    {t.publicChatBtn}
+                  </Button>
+                </Box>
+              </Paper>
+            ) : (
+              <>
+                {/* Barra de Seção Atual com Atalho para o Navigation Drawer (☰) */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    borderRadius: 2.5,
+                    bgcolor: '#ffffff',
+                    border: '1px solid #e5e4dc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 2
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<MenuIcon />}
+                      onClick={() => setHamburgerOpen((prev) => !prev)}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        borderColor: '#0a2240',
+                        color: '#0a2240',
+                        borderRadius: 2
+                      }}
+                    >
+                      {t.switchModuleBtn}
+                    </Button>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
+                        {activeMenuObj.title[lang]}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {activeMenuObj.subtitle[lang]}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Chip
                 label={`${t.authenticatedChip}: ${citizen.full_name} (${citizen.nid})`}
                 size="small"
                 color="success"
@@ -1190,17 +1229,25 @@ export default function App() {
               </div>
             )}
 
-            {/* ABA 5: ZELADORIA 311 & EMERGÊNCIA 911 */}
-            {activeTab === 'urban' && (
+            {/* ABA 5: MÓDULO DEDICADO DE ZELADORIA URBANA 311 */}
+            {activeTab === 'urban_311' && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-6 bg-white border border-slate-200 rounded p-6 space-y-4">
-                  <h3 className="font-serif-authority text-lg font-bold text-[#002046] flex items-center gap-2">
-                    <Wrench className="w-5 h-5 text-[#002046]" />
-                    Abertura de Chamado Urbano 311 (Com Triagem IA)
-                  </h3>
+                  <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
+                    <h3 className="font-serif-authority text-lg font-bold text-[#002046] flex items-center gap-2">
+                      <Wrench className="w-5 h-5 text-[#002046]" />
+                      Abertura de Chamado Urbano 311 (Com Triagem IA)
+                    </h3>
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#dae2ff] text-[#001848] font-bold">
+                      SLA 311 • IoT & Obras
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#43474f]">
+                    Registre solicitações de zeladoria viária, iluminação inteligente, coleta seletiva ou manutenção de parques para o distrito <strong>{citizen.district}</strong>.
+                  </p>
                   <form onSubmit={handleCreate311} className="space-y-3 text-xs">
                     <div>
-                      <label className="block font-semibold text-[#002046] mb-1">Categoria de Zeladoria</label>
+                      <label className="block font-semibold text-[#002046] mb-1">Categoria de Zeladoria 311</label>
                       <select
                         value={ticketCategory}
                         onChange={(e) => setTicketCategory(e.target.value)}
@@ -1231,24 +1278,70 @@ export default function App() {
                   </form>
                 </div>
 
+                <div className="lg:col-span-6 bg-white border border-slate-200 rounded p-6 space-y-4">
+                  <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
+                    <h3 className="font-serif-authority text-lg font-bold text-[#002046]">
+                      Meus Protocolos de Zeladoria 311 (`ops_311_tickets`)
+                    </h3>
+                    <span className="font-mono text-xs text-slate-500">
+                      {(dashboard?.tickets_311 || []).length} registros
+                    </span>
+                  </div>
+                  <div className="space-y-2.5 max-h-80 overflow-y-auto text-xs">
+                    {(dashboard?.tickets_311 || []).map((tk: any) => (
+                      <div key={tk.ticket_id} className="p-3.5 rounded bg-[#f8f9fb] border border-slate-200 space-y-1">
+                        <div className="flex items-center justify-between font-mono text-[11px]">
+                          <strong className="text-[#002046]">#{tk.ticket_id} • {tk.category}</strong>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              tk.status === 'CONCLUIDO'
+                                ? 'bg-emerald-100 text-emerald-900'
+                                : 'bg-amber-100 text-amber-900'
+                            }`}
+                          >
+                            {tk.status}
+                          </span>
+                        </div>
+                        <div className="text-[#191c1e]">{tk.description}</div>
+                        <div className="text-[11px] text-slate-500 font-mono">
+                          Distrito: {tk.district} • Órgão: {tk.assigned_department}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ABA 6: MÓDULO DEDICADO DE EMERGÊNCIA 911 (SOS TÁTICO & MÉDICO) */}
+            {activeTab === 'emergency_911' && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-6 bg-white border-2 border-red-800 rounded p-6 space-y-4">
-                  <h3 className="font-serif-authority text-lg font-bold text-red-900 flex items-center gap-2">
-                    <Siren className="w-5 h-5 text-red-700" />
-                    Acionamento Rápido de Emergência 911
-                  </h3>
+                  <div className="border-b border-red-200 pb-3 flex items-center justify-between">
+                    <h3 className="font-serif-authority text-lg font-bold text-red-900 flex items-center gap-2">
+                      <Siren className="w-5 h-5 text-red-700" />
+                      Acionamento Rápido de Emergência 911 (SOS)
+                    </h3>
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-red-100 text-red-900 font-bold">
+                      PRIORIDADE MÁXIMA • CAD 911
+                    </span>
+                  </div>
                   <p className="text-xs text-[#43474f]">
-                    Aciona imediatamente o Comando Operacional 911 com coordenadas do seu distrito ({citizen.district}).
+                    Aciona imediatamente a Central de Despacho de Emergência 911 com coordenadas georreferenciadas do seu distrito (<strong>{citizen.district}</strong>) e prontuário HL7 FHIR integrado.
                   </p>
                   <div className="space-y-3 text-xs">
-                    <select
-                      value={sosType}
-                      onChange={(e) => setSosType(e.target.value)}
-                      className="w-full border border-slate-300 rounded px-3 py-2"
-                    >
-                      <option value="Emergência Médica • Unidade Móvel UTI">Emergência Médica • Unidade Móvel UTI</option>
-                      <option value="Patrulha de Segurança Cidadã & Defesa Civil">Patrulha de Segurança Cidadã & Defesa Civil</option>
-                      <option value="Resgate Marítimo & Guarda Costeira">Resgate Marítimo & Guarda Costeira</option>
-                    </select>
+                    <div>
+                      <label className="block font-semibold text-red-900 mb-1">Modalidade de Socorro Tático / Médico</label>
+                      <select
+                        value={sosType}
+                        onChange={(e) => setSosType(e.target.value)}
+                        className="w-full border border-slate-300 rounded px-3 py-2"
+                      >
+                        <option value="Emergência Médica • Unidade Móvel UTI">Emergência Médica • Unidade Móvel UTI</option>
+                        <option value="Patrulha de Segurança Cidadã & Defesa Civil">Patrulha de Segurança Cidadã & Defesa Civil</option>
+                        <option value="Resgate Marítimo & Guarda Costeira">Resgate Marítimo & Guarda Costeira</option>
+                      </select>
+                    </div>
                     <button
                       onClick={handleCreate911}
                       className="w-full bg-red-800 text-white font-bold py-3 rounded hover:bg-red-900 transition"
@@ -1257,10 +1350,35 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+
+                <div className="lg:col-span-6 bg-white border border-slate-200 rounded p-6 space-y-4">
+                  <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
+                    <h3 className="font-serif-authority text-lg font-bold text-red-900">
+                      Despachos de Emergência 911 Ativos (`ops_911_dispatches`)
+                    </h3>
+                    <span className="font-mono text-xs text-red-800 font-bold">
+                      Tempo Real
+                    </span>
+                  </div>
+                  <div className="space-y-2.5 max-h-80 overflow-y-auto text-xs">
+                    {(dashboard?.dispatches_911 || []).map((dp: any) => (
+                      <div key={dp.dispatch_id} className="p-3.5 rounded bg-red-50/60 border border-red-200 space-y-1">
+                        <div className="flex justify-between font-mono text-[11px] font-bold text-red-900">
+                          <span>#{dp.dispatch_id} • {dp.emergency_type}</span>
+                          <span>ETA: {dp.eta_minutes} min</span>
+                        </div>
+                        <div className="text-[#191c1e] font-medium">{dp.ai_protocol}</div>
+                        <div className="text-[11px] text-slate-600 font-mono">
+                          Distrito: {dp.district} • Status: {dp.status || 'EM DESLOCAMENTO'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* ABA 6: ECONOMIA SOBERANA, EMPRESA EM 45S & PASSAPORTE ICAO */}
+            {/* ABA 7: ECONOMIA SOBERANA, EMPRESA EM 45S & PASSAPORTE ICAO */}
             {activeTab === 'treasury' && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-6 bg-white border border-slate-200 rounded p-6 space-y-4">
@@ -1333,8 +1451,9 @@ export default function App() {
             )}
           </>
         )}
-      </main>
-    </div>
+          </main>
+        </Box>
+      </div>
     </ThemeProvider>
   );
 }

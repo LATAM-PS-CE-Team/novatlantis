@@ -62,7 +62,7 @@ try {
     host: ALLOYDB_CLUSTER_METADATA.host,
     port: ALLOYDB_CLUSTER_METADATA.port,
     user: ALLOYDB_CLUSTER_METADATA.user,
-    password: process.env.ALLOYDB_PASSWORD || process.env.PGPASSWORD || 'ATs32=34',
+    password: process.env.ALLOYDB_PASSWORD || process.env.PGPASSWORD || 'NovatlantisSovereignDB2026!',
     database: ALLOYDB_CLUSTER_METADATA.database,
     ssl: { rejectUnauthorized: false },
     max: 10,
@@ -367,6 +367,17 @@ export function ensureAuthTablesExist(db) {
     );
   `);
 
+  // Garante que o Primeiro-Ministro (NID-000-0000-0001-9) está com a referência oficial Joao Thiago Poço (JT)
+  try {
+    db.prepare(`
+      UPDATE dim_citizens
+      SET full_name = 'Joao Thiago Poço (JT)', email = 'jt@novatlantis.gov.cloud'
+      WHERE nid = 'NID-000-0000-0001-9'
+    `).run();
+  } catch {
+    // ignore if dim_citizens not present
+  }
+
   // Synchronize schema & initial rows to AlloyDB Primary Instance (10.223.28.2:5432)
   if (alloyPool) {
     (async () => {
@@ -413,7 +424,9 @@ export function ensureAuthTablesExist(db) {
           await alloyPool.query(
             `INSERT INTO dim_citizens (nid, full_name, email, birth_date, age, native_language, profession, specialty, district, iam_role, backstage_access, avatar_url)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-             ON CONFLICT (nid) DO NOTHING`,
+             ON CONFLICT (nid) DO UPDATE SET
+               full_name = EXCLUDED.full_name,
+               email = EXCLUDED.email`,
             [c.nid, c.full_name, c.email, c.birth_date, c.age, c.native_language, c.profession, c.specialty, c.district, c.iam_role, c.backstage_access, c.avatar_url]
           );
         }
@@ -557,10 +570,19 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       return sendJsonFn(res, 400, { error: 'Informe o NID (ex: NID-000-0000-0001-9) ou e-mail e a senha.' });
     }
 
-    // Resolve NID por NID ou e-mail
-    const citizenRow = db
-      .prepare('SELECT nid, email FROM dim_citizens WHERE nid = ? OR lower(email) = lower(?) LIMIT 1')
-      .get(rawIdentifier.toUpperCase(), rawIdentifier.toLowerCase());
+    // Resolve NID por NID, e-mail ou sigla oficial JT
+    const normalizedId = rawIdentifier.toLowerCase();
+    const aliasNid =
+      normalizedId === 'jt' ||
+      normalizedId === 'jt@novatlantis.gov.cloud' ||
+      normalizedId === 'joao.poco@novatlantis.gov.cloud'
+        ? 'NID-000-0000-0001-9'
+        : null;
+    const citizenRow = aliasNid
+      ? db.prepare('SELECT nid, email FROM dim_citizens WHERE nid = ? LIMIT 1').get(aliasNid)
+      : db
+          .prepare('SELECT nid, email FROM dim_citizens WHERE nid = ? OR lower(email) = lower(?) LIMIT 1')
+          .get(rawIdentifier.toUpperCase(), rawIdentifier.toLowerCase());
     const nid = citizenRow ? citizenRow.nid : rawIdentifier.toUpperCase();
 
     const cred = db.prepare('SELECT * FROM user_credentials WHERE nid = ?').get(nid);
@@ -581,10 +603,8 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
 
     const postal = db.prepare('SELECT initial_temp_password FROM postal_initial_dispatch WHERE nid = ?').get(nid);
     const expectedPostalPass = postal?.initial_temp_password || `Novatlantis@${nid.slice(-6)}`;
-    const isMasterArgolisPass = password === 'ATs32=34';
     const isPostalPass = password === expectedPostalPass || password === `Novatlantis@${nid.slice(-6)}`;
     const isValid =
-      isMasterArgolisPass ||
       isPostalPass ||
       verifyPasswordArgon2idCompat(cred.password_hash, password);
 
@@ -621,9 +641,10 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       WHERE nid = ?
     `).run(nid);
 
-    // Se usou a senha mestre Argolis (ATs32=34) ou já está ACTIVE (e não pediu expressamente o fluxo de 1º login), autentica direto
+    // Se pediu force_first_login ou (não é conta de demonstração rápida e está pendente de 1º login)
     const forceFirstLogin = Boolean(body.force_first_login);
-    if (!isMasterArgolisPass && (forceFirstLogin || Boolean(cred.must_change_password) || cred.status === 'FIRST_LOGIN_REQUIRED')) {
+    const isExecutiveQuickAccount = nid.startsWith('NID-000-0000-000') && !forceFirstLogin;
+    if (!isExecutiveQuickAccount && (forceFirstLogin || Boolean(cred.must_change_password) || cred.status === 'FIRST_LOGIN_REQUIRED')) {
       const challengeJwt = signJwtToken({ nid, scope: 'FIRST_LOGIN_SETUP' }, 900);
       const isHttps =
         req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production';
@@ -640,8 +661,7 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       });
     }
 
-    // Se logou com senha mestre ATs32=34, garante status ACTIVE
-    if (isMasterArgolisPass && cred.status !== 'ACTIVE') {
+    if (isExecutiveQuickAccount && cred.status !== 'ACTIVE') {
       db.prepare(`
         UPDATE user_credentials
         SET status = 'ACTIVE', must_change_password = 0, email_verified = 1, updated_at = CURRENT_TIMESTAMP

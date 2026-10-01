@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
       service: 'identity-nid',
       gdf_tables: ['dim_citizens', 'sec_biometrics_nist', 'rel_family_graph', 'iam_identity_360_roles'],
       citizens_indexed: 100000,
-      root_admin_nid: 'NID-000-0000-0001-9 (jopoco - Primeiro-Ministro)',
+      root_admin_nid: 'NID-000-0000-0001-9 (Joao Thiago Poço (JT) - Primeiro-Ministro)',
       identity_manager_nid: 'NID-000-0000-0003-5 (Helena Albuquerque)',
       timestamp: new Date().toISOString()
     }, null, 2));
@@ -65,7 +65,7 @@ const server = http.createServer((req, res) => {
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="bg-white border border-[#c6c6ce] p-5">
         <span class="text-xs font-mono uppercase text-slate-500">Primeiro-Ministro (Root Admin)</span>
-        <p class="text-lg font-bold text-slate-900 mt-1">Jopoco (NID-000-0000-0001-9)</p>
+        <p class="text-lg font-bold text-slate-900 mt-1">Joao Thiago Poço (JT) (NID-000-0000-0001-9)</p>
         <p class="text-xs text-slate-600 mt-1">Delega acesso ao Gestor de Identidades 360 com apoio do Secretário-Geral.</p>
       </div>
       <div class="bg-white border border-[#c6c6ce] p-5">
