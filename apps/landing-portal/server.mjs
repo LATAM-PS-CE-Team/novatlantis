@@ -362,23 +362,32 @@ function getFullCitizenProfile(nidOrEmail) {
 }
 
 // ============================================================================
-// MOTOR DO AGENTE ORQUESTRADOR SOBERANO (Chat Multi-Agente Conectado ao GDF)
+// MOTOR DO AGENTE ORQUESTRADOR SOBERANO (america.gov AI Concierge)
+// Suporta visitantes anônimos (profile === null) para perguntas abertas e
+// exige login apenas no momento de solicitar/executar um serviço transacional.
 // ============================================================================
 function runSovereignOrchestrator(profile, userMessage) {
   const msg = String(userMessage || '').trim();
   const lower = msg.toLowerCase();
   const now = new Date().toISOString();
+  const isAuthenticated = Boolean(profile && profile.citizen_id);
 
-  let delegatedAgent = 'agent-orchestrator-novatlantis-core (Chancelaria Cívica)';
+  let delegatedAgent = 'agent-orchestrator-novatlantis-core (Chancelaria Digital)';
   let executedAction = null;
   let reply = '';
-  let suggestedLinks = [
-    {
-      label: 'Abrir Meu Portal do Cidadão',
-      url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}`
-    }
-  ];
-  if (profile.backstage_allowed) {
+  let citations = [];
+  let serviceRequestAction = null;
+
+  const suggestedLinks = isAuthenticated
+    ? [
+        {
+          label: 'Abrir Meu Portal do Cidadão',
+          url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}`
+        }
+      ]
+    : [];
+
+  if (isAuthenticated && profile.backstage_allowed) {
     suggestedLinks.push({
       label: `Abrir Backstage Governamental (${profile.effective_role_code})`,
       url: `${GOV_BACKSTAGE_URL}?nid=${encodeURIComponent(profile.citizen_id)}`
@@ -390,13 +399,47 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('empresa') ||
     lower.includes('cnpj') ||
     lower.includes('negócio') ||
+    lower.includes('negocio') ||
     lower.includes('ubi') ||
     lower.includes('imposto') ||
     lower.includes('tributo') ||
-    lower.includes('computação')
+    lower.includes('computação') ||
+    lower.includes('computacao')
   ) {
     delegatedAgent = 'agent-treasury-autonomous-incorporator-v4 (Ministério do Tesouro & Economia)';
-    if (lower.includes('abrir') || lower.includes('criar') || lower.includes('registrar') || lower.includes('empresa')) {
+    citations = [
+      {
+        id: 1,
+        agency: 'Ministério do Tesouro & Economia Soberana',
+        title: 'Código de Incorporação Autônoma em 45 Segundos (Simples Agêntico 3%)',
+        url: `${CITIZEN_PORTAL_URL}?tab=treasury`
+      },
+      {
+        id: 2,
+        agency: 'Fundo Soberano de Computação (UBI)',
+        title: 'Regulamento do Dividendo Universal de Computação (250 TFLOPs iniciais)',
+        url: `${CITIZEN_PORTAL_URL}?tab=treasury`
+      }
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'INCORPORATE_COMPANY_45S',
+      service_title: 'Solicitar Abertura de Empresa Autônoma em 45s',
+      service_description: 'Constitui pessoa jurídica digital no AlloyDB com cota inicial de 250 TFLOPs e Simples Agêntico (3%).',
+      service_prompt: 'Abrir empresa autônoma agora no Ministério do Tesouro',
+      target_portal: 'citizen-portal',
+      target_tab: 'treasury'
+    };
+
+    if (!isAuthenticated) {
+      reply =
+        `**Como abrir uma empresa ou consultar seu Dividendo UBI em Novatlantis [1][2]:**\n\n` +
+        `Na República Digital de Novatlantis, qualquer cidadão com regularidade fiscal ativa pode constituir uma **Empresa Autônoma em 45 segundos** sem burocracia cartorial:\n` +
+        `• **Regime Tributário:** Simples Agêntico (alíquota única de **3%** sobre inferência líquida) [1].\n` +
+        `• **Subsídio Computacional:** Concessão imediata de **250 TFLOPs/mês** de capacidade em nuvem soberana para novas empresas [2].\n` +
+        `• **Renda Básica Universal (UBI):** Cidadãos maiores de 18 anos recebem **N$ 1.250,00/mês** (e dependentes recebem **N$ 450,00/mês**).\n\n` +
+        `Você pode continuar tirando dúvidas livremente aqui no chat. Para **solicitar a abertura da sua empresa agora** ou consultar seu saldo UBI nominal, clique em **"Solicitar Serviço (Requer Login NID)"** abaixo.`;
+    } else if (lower.includes('abrir') || lower.includes('criar') || lower.includes('registrar') || lower.includes('solicitar')) {
       const compId = `CORP-NV-${Math.floor(1000 + Math.random() * 8999)}`;
       const compName = `${profile.full_name.split(' ')[0]} Autonomous Ventures NV`;
       db.prepare(`
@@ -409,24 +452,20 @@ function runSovereignOrchestrator(profile, userMessage) {
         summary: `Empresa "${compName}" aberta com cota inicial de 250 TFLOPs.`
       };
       reply =
-        `✅ **Orquestração Concluída pelo Agente do Tesouro Soberano:**\n\n` +
-        `Verifiquei sua situação fiscal no GDF (**${profile.tax_status}**) e constituí imediatamente sua empresa digital:\n` +
+        `✅ **Serviço Executado pelo Agente do Tesouro Soberano [1][2]:**\n\n` +
+        `Verifiquei sua situação fiscal no AlloyDB (**${profile.tax_status}**) e constituí imediatamente sua empresa digital:\n` +
         `• **Registro Soberano:** \`${compId}\` — *${compName}*\n` +
         `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
         `• **Regime Tributário:** Simples Agêntico (3% sobre inferência líquida)\n` +
         `• **Cota Computacional Alocada:** **250 TFLOPs/mês** + Dividendo UBI ativo de **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mês**.`;
     } else {
       reply =
-        `📊 ** Auditoria Fiscal & Dividendo UBI (${profile.full_name}):**\n\n` +
+        `📊 **Auditoria Fiscal & Dividendo UBI (${profile.full_name}) [1][2]:**\n\n` +
         `• **Status Tributário no GDF:** \`${profile.tax_status}\`\n` +
         `• **Dividendo Universal de Computação (UBI):** **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mês** creditados diretamente na sua carteira soberana.\n` +
         `• **Alíquota Efetiva sobre Operações Automatizadas:** 0.42% (Austeridade Constitucional).\n\n` +
-        `Deseja que eu abra uma **Empresa Autônoma em 45 segundos** vinculada ao seu NID? Basta digitar *"Abrir empresa agora"*.`;
+        `Para abrir sua **Empresa Autônoma em 45 segundos** agora mesmo, clique no botão de solicitação abaixo.`;
     }
-    suggestedLinks.unshift({
-      label: 'Gerenciar Empresas & UBI no Portal do Cidadão',
-      url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&tab=treasury`
-    });
   }
   // 2. Intenção: Passaporte ICAO / Fronteira / Viagem / Justiça
   else if (
@@ -436,45 +475,75 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('visto') ||
     lower.includes('icao') ||
     lower.includes('justiça') ||
-    lower.includes('certidão')
+    lower.includes('justica') ||
+    lower.includes('certidão') ||
+    lower.includes('certidao')
   ) {
     delegatedAgent = 'agent-border-justice-icao-v4 (Suprema Corte Digital & Chancelaria)';
-    const bg = profile.justice?.background_check_status || 'CLEAR';
-    if (bg === 'WARRANT_ACTIVE' || profile.tax_status === 'SUSPENDED') {
-      reply =
-        `⚠️ **Alerta do Cruzamento GDF #1 (Passaporte × Justiça × Fisco):**\n\n` +
-        `Identifiquei uma restrição ativa no seu prontuário (Justiça: \`${bg}\`, Fiscal: \`${profile.tax_status}\`). ` +
-        `A emissão automática via e-Gate foi retida para revisão de um Magistrado no Backstage.`;
-    } else {
-      const passNum = profile.passport?.passport_number || `NV-P${Math.floor(1000000 + Math.random() * 8999999)}`;
-      if (!profile.passport) {
-        db.prepare(`INSERT INTO sec_passports VALUES (?, ?, '2026-10-01', '2036-10-01', 'P<NVT', 'NVT2036', 'ACTIVE')`).run(
-          passNum,
-          profile.citizen_id
-        );
-      } else {
-        db.prepare(`UPDATE sec_passports SET passport_status = 'ACTIVE', expiry_date = '2036-10-01' WHERE nid = ?`).run(
-          profile.citizen_id
-        );
+    citations = [
+      {
+        id: 1,
+        agency: 'Chancelaria Soberana & Controle de Fronteiras',
+        title: 'Padrão ICAO Doc 9303 — Passaporte Diplomático e Civil Biométrico',
+        url: `${CITIZEN_PORTAL_URL}?tab=treasury`
+      },
+      {
+        id: 2,
+        agency: 'Suprema Corte Digital de Novatlantis',
+        title: 'Protocolo de Cruzamento Automático (Passaporte × Justiça × Regularidade Fiscal)',
+        url: `${CITIZEN_PORTAL_URL}?tab=treasury`
       }
-      executedAction = {
-        type: 'PASSPORT_ICAO_VALIDATED',
-        protocol: passNum,
-        summary: `Passaporte Digital ICAO ${passNum} validado com decisão CLEARED_AUTONOMOUS_EGATE.`
-      };
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'ISSUE_ICAO_PASSPORT',
+      service_title: 'Solicitar Emissão / Renovação de Passaporte Digital ICAO',
+      service_description: 'Executa o cruzamento automático entre Registro Civil, Suprema Corte e Receita para liberar o e-Gate.',
+      service_prompt: 'Emitir e validar meu Passaporte Digital ICAO agora',
+      target_portal: 'citizen-portal',
+      target_tab: 'treasury'
+    };
+
+    if (!isAuthenticated) {
       reply =
-        `🛂 **Cruzamento GDF #1 Executado (` +
-        `sec_passports × justice_records × tax_status):**\n\n` +
-        `• **Cidadão:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-        `• **Antecedentes Judiciais:** \`${bg}\` (Nada Consta)\n` +
-        `• **Regularidade Fiscal:** \`${profile.tax_status}\`\n` +
-        `• **Passaporte Digital ICAO:** \`${passNum}\` — Status: **ACTIVE (Validade: 2036-10-01)**\n` +
-        `• **Decisão de Fronteira:** \`CLEARED_AUTONOMOUS_EGATE\` (Isenção de visto ativa em 174 países).`;
+        `**Emissão e Renovação de Passaporte Digital ICAO e Certidão Judicial [1][2]:**\n\n` +
+        `O Passaporte Soberano de Novatlantis segue o padrão **ICAO Doc 9303** com assinatura criptográfica **Ed25519** e garante trânsito rápido (e-Gate) em **174 países** [1]:\n` +
+        `• **Requisitos Automáticos:** Ausência de mandados judiciais ativos na Suprema Corte Digital e situação fiscal regular (\`REGULAR\` ou \`EXEMPT\`) [2].\n` +
+        `• **Prazo de Emissão:** Instantâneo (validação em tempo real na base AlloyDB com validade de 10 anos).\n\n` +
+        `Para **emitir ou renovar seu passaporte** ou baixar sua certidão negativa agora, faça login clicando no botão de solicitação do serviço abaixo.`;
+    } else {
+      const bg = profile.justice?.background_check_status || 'CLEAR';
+      if (bg === 'WARRANT_ACTIVE' || profile.tax_status === 'SUSPENDED') {
+        reply =
+          `⚠️ **Alerta do Cruzamento GDF #1 (Passaporte × Justiça × Fisco) [1][2]:**\n\n` +
+          `Identifiquei uma restrição ativa no seu prontuário (Justiça: \`${bg}\`, Fiscal: \`${profile.tax_status}\`). ` +
+          `A emissão automática via e-Gate foi retida para revisão de um Magistrado no Backstage.`;
+      } else {
+        const passNum = profile.passport?.passport_number || `NV-P${Math.floor(1000000 + Math.random() * 8999999)}`;
+        if (!profile.passport) {
+          db.prepare(`INSERT INTO sec_passports VALUES (?, ?, '2026-10-01', '2036-10-01', 'P<NVT', 'NVT2036', 'ACTIVE')`).run(
+            passNum,
+            profile.citizen_id
+          );
+        } else {
+          db.prepare(`UPDATE sec_passports SET passport_status = 'ACTIVE', expiry_date = '2036-10-01' WHERE nid = ?`).run(
+            profile.citizen_id
+          );
+        }
+        executedAction = {
+          type: 'PASSPORT_ICAO_VALIDATED',
+          protocol: passNum,
+          summary: `Passaporte Digital ICAO ${passNum} validado com decisão CLEARED_AUTONOMOUS_EGATE.`
+        };
+        reply =
+          `🛂 **Serviço Concluído — Passaporte ICAO Validado [1][2]:**\n\n` +
+          `• **Cidadão:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+          `• **Antecedentes Judiciais:** \`${bg}\` (Nada Consta)\n` +
+          `• **Regularidade Fiscal:** \`${profile.tax_status}\`\n` +
+          `• **Passaporte Digital ICAO:** \`${passNum}\` — Status: **ACTIVE (Validade: 2036-10-01)**\n` +
+          `• **Decisão de Fronteira:** \`CLEARED_AUTONOMOUS_EGATE\` (Isenção de visto ativa em 174 países).`;
+      }
     }
-    suggestedLinks.unshift({
-      label: 'Ver Passaporte ICAO no Portal do Cidadão',
-      url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&tab=treasury`
-    });
   }
   // 3. Intenção: Saúde / Telemedicina / Médico / Vacinas / Sangue / Alergia
   else if (
@@ -490,37 +559,66 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('hospital')
   ) {
     delegatedAgent = 'agent-health-hl7-telemed-v4 (Ministério da Saúde & Hospitais)';
-    const sessionId = `TMED-2026-${Math.floor(200 + Math.random() * 799)}`;
-    const sig = `sig_ed25519_nv_${Date.now().toString(16)}`;
-    db.prepare(`
-      INSERT INTO ops_telemed_sessions VALUES (?, ?, ?, 'NID-000-0000-0004-3', 'Dra. Sofia Mendes Costa', ?, ?, ?, ?, ?, 'WAITING_DOCTOR', ?)
-    `).run(
-      sessionId,
-      profile.citizen_id,
-      profile.full_name,
-      profile.health?.assigned_hospital_id || 'HOSP-NV-01',
-      `Triagem via Agente Orquestrador: "${msg}"`,
-      `S: Demanda acolhida pelo Agente Orquestrador. O: Tipo Sanguíneo ${profile.health?.blood_type}, Alergias: ${profile.health?.allergies?.join(', ')}. A: Encaminhado à Dra. Sofia Mendes Costa.`,
-      'Avaliação clínica em andamento na Sala de Telemedicina',
-      sig,
-      now
-    );
-    executedAction = {
-      type: 'TELEMEDICINE_TRIAGE_CREATED',
-      protocol: sessionId,
-      summary: `Sala de Telemedicina ${sessionId} aberta no ${profile.health?.assigned_hospital_id} com Dra. Sofia Mendes Costa.`
+    citations = [
+      {
+        id: 1,
+        agency: 'Ministério da Saúde, Hospitais & Telemedicina',
+        title: 'Rede Nacional de Prontuário Único HL7 FHIR & Telemedicina Agêntica 24/7',
+        url: `${CITIZEN_PORTAL_URL}?tab=health`
+      },
+      {
+        id: 2,
+        agency: 'Conselho Médico Soberano de Novatlantis',
+        title: 'Protocolo de Prescrição Digital Assinada com Chave Ed25519',
+        url: `${CITIZEN_PORTAL_URL}?tab=health`
+      }
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'BOOK_TELEMEDICINE_SESSION',
+      service_title: 'Solicitar Teleconsulta Médica & Prontuário HL7 FHIR',
+      service_description: 'Abre sala de telemedicina com triagem IA (SOAP) e vincula seu hospital de referência.',
+      service_prompt: 'Agendar teleconsulta médica agora com resumo clínico HL7',
+      target_portal: 'citizen-portal',
+      target_tab: 'health'
     };
-    reply =
-      `🏥 **Prontuário HL7 FHIR & Agendamento de Telemedicina:**\n\n` +
-      `Consultei seu registro médico nacional na base de 100.000 cidadãos:\n` +
-      `• **Tipo Sanguíneo:** \`${profile.health?.blood_type}\` | **Alergias:** ${profile.health?.allergies?.join(', ')}\n` +
-      `• **Condições Crônicas:** ${profile.health?.chronic_conditions?.join(', ')}\n` +
-      `• **Hospital de Referência:** \`${profile.health?.assigned_hospital_id}\` | **Status Vacinal:** \`${profile.health?.vaccination_status}\`\n` +
-      `• **Protocolo de Teleconsulta Aberto:** \`${sessionId}\` com **Dra. Sofia Mendes Costa** (\`NID-000-0000-0004-3\`).`;
-    suggestedLinks.unshift({
-      label: 'Entrar na Sala de Telemedicina (Portal do Cidadão)',
-      url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&tab=health`
-    });
+
+    if (!isAuthenticated) {
+      reply =
+        `**Atendimento Médico, Prontuário HL7 FHIR e Telemedicina em Novatlantis [1][2]:**\n\n` +
+        `O Sistema Público de Saúde de Novatlantis opera 5 hospitais de alta complexidade integrados ao **Serviço Nacional de Telemedicina Agêntica 24/7** [1]:\n` +
+        `• **Triagem Clínica Assistida por IA:** Antes de entrar na sala com o médico, o agente consolida automaticamente seu tipo sanguíneo, alergias e histórico vacinal no padrão **HL7 FHIR**.\n` +
+        `• **Receituário Digital Soberano:** Todas as prescrições médicas são assinadas eletronicamente via **Ed25519** com dispensação direta nas farmácias distritais [2].\n\n` +
+        `Para **agendar uma teleconsulta médica agora** ou visualizar seu prontuário HL7 pessoal, autentique-se clicando no botão de solicitação abaixo.`;
+    } else {
+      const sessionId = `TMED-2026-${Math.floor(200 + Math.random() * 799)}`;
+      const sig = `sig_ed25519_nv_${Date.now().toString(16)}`;
+      db.prepare(`
+        INSERT INTO ops_telemed_sessions VALUES (?, ?, ?, 'NID-000-0000-0004-3', 'Dra. Sofia Mendes Costa', ?, ?, ?, ?, ?, 'WAITING_DOCTOR', ?)
+      `).run(
+        sessionId,
+        profile.citizen_id,
+        profile.full_name,
+        profile.health?.assigned_hospital_id || 'HOSP-NV-01',
+        `Triagem via Agente Orquestrador: "${msg}"`,
+        `S: Demanda acolhida pelo Agente Orquestrador. O: Tipo Sanguíneo ${profile.health?.blood_type}, Alergias: ${profile.health?.allergies?.join(', ')}. A: Encaminhado à Dra. Sofia Mendes Costa.`,
+        'Avaliação clínica em andamento na Sala de Telemedicina',
+        sig,
+        now
+      );
+      executedAction = {
+        type: 'TELEMEDICINE_TRIAGE_CREATED',
+        protocol: sessionId,
+        summary: `Sala de Telemedicina ${sessionId} aberta no ${profile.health?.assigned_hospital_id} com Dra. Sofia Mendes Costa.`
+      };
+      reply =
+        `🏥 **Teleconsulta Agendada & Prontuário HL7 FHIR Carregado [1][2]:**\n\n` +
+        `• **Paciente:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+        `• **Tipo Sanguíneo:** \`${profile.health?.blood_type}\` | **Alergias:** ${profile.health?.allergies?.join(', ')}\n` +
+        `• **Condições Crônicas:** ${profile.health?.chronic_conditions?.join(', ')}\n` +
+        `• **Hospital de Referência:** \`${profile.health?.assigned_hospital_id}\` | **Status Vacinal:** \`${profile.health?.vaccination_status}\`\n` +
+        `• **Protocolo de Teleconsulta Aberto:** \`${sessionId}\` com **Dra. Sofia Mendes Costa** (\`NID-000-0000-0004-3\`).`;
+    }
   }
   // 4. Intenção: Educação / Escola / Notas / Boletim / Aluno / Professor
   else if (
@@ -532,43 +630,79 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('prova') ||
     lower.includes('aluno') ||
     lower.includes('estudante') ||
-    lower.includes('filho')
+    lower.includes('filho') ||
+    lower.includes('universidade')
   ) {
     delegatedAgent = 'agent-education-adaptive-tutor-v4 (Ministério da Educação & Escolas)';
-    let targetEdu = profile.education;
-    let studentLabel = `${profile.full_name} (${profile.citizen_id})`;
+    citations = [
+      {
+        id: 1,
+        agency: 'Ministério da Educação, Escolas & Avaliação Nacional',
+        title: 'Currículo Nacional AI-First (Matemática, Ciências, IA & Robótica e Idiomas)',
+        url: `${CITIZEN_PORTAL_URL}?tab=education`
+      },
+      {
+        id: 2,
+        agency: 'Government Data Platform (GDP — Education Data Platform)',
+        title: 'Sistema de Alerta Precoce de Frequência Escolar Integrado ao Grafo Familiar',
+        url: `${CITIZEN_PORTAL_URL}?tab=education`
+      }
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'ACCESS_EDUCATION_RECORDS',
+      service_title: 'Solicitar Boletim Escolar & Tutoria Adaptativa IA',
+      service_description: 'Consulta notas por disciplina, frequência escolar e plano de estudo personalizado para você ou seus filhos.',
+      service_prompt: 'Consultar boletim escolar e frequência no Ministério da Educação',
+      target_portal: 'citizen-portal',
+      target_tab: 'education'
+    };
 
-    // Se o usuário logado for pai/mãe ou adulto sem matrícula ativa, busca filho no grafo familiar
-    if (!targetEdu) {
-      const childLink = profile.family_links?.find(f => f.relative_age <= 22);
-      const fallbackNid = childLink ? childLink.relative_nid : 'NID-000-0000-0010-8';
-      const childProf = getFullCitizenProfile(fallbackNid);
-      if (childProf?.education) {
-        targetEdu = childProf.education;
-        studentLabel = `${childProf.full_name} (${childProf.citizen_id} — Dependente/Estudante)`;
+    if (!isAuthenticated) {
+      reply =
+        `**Rede Pública de Educação e Tutoria Adaptativa por IA em Novatlantis [1][2]:**\n\n` +
+        `O Ministério da Educação administra **6 instituições soberanas** (da Educação Infantil à Universidade Soberana de Novatlantis — USN), atendendo **17.993 estudantes** com currículo bilíngue/trilíngue e foco em **IA & Robótica** [1]:\n` +
+        `• **Tutoria Adaptativa:** Cada estudante recebe trilhas de estudo personalizadas conforme sua idade e desempenho por disciplina.\n` +
+        `• **Acompanhamento Familiar (GDP):** Pais e responsáveis acompanham notas e frequência em tempo real com alertas automáticos se a presença ficar abaixo de 75% [2].\n\n` +
+        `Para **consultar o boletim escolar nominal** (seu ou de seus dependentes) ou solicitar tutoria IA, clique no botão abaixo para fazer login.`;
+    } else {
+      let targetEdu = profile.education;
+      let studentLabel = `${profile.full_name} (${profile.citizen_id})`;
+
+      if (!targetEdu) {
+        const childLink = profile.family_links?.find((f) => f.relative_age <= 22);
+        const fallbackNid = childLink ? childLink.relative_nid : 'NID-000-0000-0010-8';
+        const childProf = getFullCitizenProfile(fallbackNid);
+        if (childProf?.education) {
+          targetEdu = childProf.education;
+          studentLabel = `${childProf.full_name} (${childProf.citizen_id} — Dependente/Estudante)`;
+        }
+      }
+
+      if (targetEdu) {
+        executedAction = {
+          type: 'EDUCATION_TRANSCRIPT_ISSUED',
+          protocol: `EDU-${targetEdu.school_id}-2026`,
+          summary: `Boletim escolar oficial consultado para ${studentLabel}.`
+        };
+        reply =
+          `🎓 **Relatório Escolar GDF & Desempenho por Disciplina [1][2]:**\n\n` +
+          `• **Estudante:** ${studentLabel}\n` +
+          `• **Instituição:** ${targetEdu.institution_name} (\`${targetEdu.school_id}\` — ${targetEdu.grade_level})\n` +
+          `• **Frequência Escolar:** **${targetEdu.attendance_rate}%** ${
+            targetEdu.attendance_rate < 75
+              ? '⚠️ *(Alerta Precoce de Evasão enviado aos pais via Grafo Familiar)*'
+              : '✅ *(Regular)*'
+          }\n` +
+          `• **Notas por Matéria:**\n` +
+          `  - Matemática & Lógica: **${targetEdu.score_mathematics}**\n` +
+          `  - Ciências da Natureza: **${targetEdu.score_sciences}**\n` +
+          `  - IA & Robótica: **${targetEdu.score_ai_robotics}**\n` +
+          `  - Linguagens (PT/ES/EN): **${targetEdu.score_languages}**`;
+      } else {
+        reply = `Consultei a rede nacional de ensino (17.993 alunos matriculados nas 6 instituições soberanas). Você pode acessar o Portal do Cidadão para tutoria adaptativa ou o Backstage Educacional para lançar notas e provas.`;
       }
     }
-
-    if (targetEdu) {
-      reply =
-        `🎓 **Relatório Escolar GDF & Desempenho por Disciplina:**\n\n` +
-        `• **Estudante:** ${studentLabel}\n` +
-        `• **Instituição:** ${targetEdu.institution_name} (\`${targetEdu.school_id}\` — ${targetEdu.grade_level})\n` +
-        `• **Frequência Escolar:** **${targetEdu.attendance_rate}%** ${
-          targetEdu.attendance_rate < 75 ? '⚠️ *(Alerta Precoce de Evasão enviado aos pais via Grafo Familiar)*' : '✅ *(Regular)*'
-        }\n` +
-        `• **Notas por Matéria:**\n` +
-        `  - Matemática & Lógica: **${targetEdu.score_mathematics}**\n` +
-        `  - Ciências da Natureza: **${targetEdu.score_sciences}**\n` +
-        `  - IA & Robótica: **${targetEdu.score_ai_robotics}**\n` +
-        `  - Linguagens (PT/ES/EN): **${targetEdu.score_languages}**`;
-    } else {
-      reply = `Consultei a rede nacional de ensino (17.993 alunos matriculados nas 6 instituições soberanas). Você pode acessar o Portal do Cidadão para tutoria adaptativa ou o Backstage Educacional para lançar notas e provas.`;
-    }
-    suggestedLinks.unshift({
-      label: 'Abrir Painel Educacional no Portal do Cidadão',
-      url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&tab=education`
-    });
   }
   // 5. Intenção: Emergência 911 / Socorro / Ambulância
   else if (
@@ -577,81 +711,133 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('emergencia') ||
     lower.includes('socorro') ||
     lower.includes('ambulância') ||
+    lower.includes('ambulancia') ||
     lower.includes('resgate')
   ) {
     delegatedAgent = 'agent-emergency-911-tactical-dispatch-v4 (Comando Nacional 911)';
-    const dispatchId = `911-NV-2026-${Math.floor(910 + Math.random() * 89)}`;
-    const ecLink = profile.family_links?.[0];
-    db.prepare(`
-      INSERT INTO ops_911_dispatches VALUES (?, ?, ?, ?, 'P1_CRITICAL', ?, ?, ?, ?, ?, ?, ?, ?, 'Unidade UTI Autônoma + Alerta HL7', 3, 'DISPATCHED_EN_ROUTE', ?)
-    `).run(
-      dispatchId,
-      profile.citizen_id,
-      profile.full_name,
-      `Acionamento 911 via Agente Orquestrador: "${msg}"`,
-      profile.residence?.district || 'Distrito Tecnológico',
-      profile.health?.blood_type || 'O+',
-      JSON.stringify(profile.health?.allergies || []),
-      JSON.stringify(profile.health?.chronic_conditions || []),
-      profile.health?.assigned_hospital_id || 'HOSP-NV-01',
-      ecLink?.relative_nid || 'NID-000-0000-0001-9',
-      ecLink?.relative_name || 'Familiar Responsável',
-      ecLink?.relative_phone || '+550 98100-0001',
-      now
-    );
-    executedAction = {
-      type: 'EMERGENCY_911_DISPATCHED',
-      protocol: dispatchId,
-      summary: `Resgate 911 (${dispatchId}) despachado com ETA de 3 min + Cruzamento GDF #3 (HL7 + Família).`
+    citations = [
+      {
+        id: 1,
+        agency: 'Centro Integrado de Comando de Emergência 911',
+        title: 'Protocolo de Despacho Tático com Cruzamento HL7 FHIR e Grafo Familiar (ETA 3 min)',
+        url: `${CITIZEN_PORTAL_URL}?tab=urban`
+      }
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'DISPATCH_911_EMERGENCY',
+      service_title: 'Solicitar Despacho de Emergência 911 com Prontuário HL7',
+      service_description: 'Envia viatura/UTI móvel ao seu endereço registrado com seu tipo sanguíneo, alergias e aviso aos familiares.',
+      service_prompt: 'Acionar emergência 911 com meu prontuário HL7 agora',
+      target_portal: 'citizen-portal',
+      target_tab: 'urban'
     };
-    reply =
-      `🚨 **DESPACHO IMEDIATO 911 ATIVADO — PROTOCOLO \`${dispatchId}\`:**\n\n` +
-      `Executei o **Cruzamento GDF #3 (Emergência × Prontuário HL7 × Grafo Familiar)**:\n` +
-      `• **Localização:** ${profile.residence?.street}, ${profile.residence?.number} (${profile.residence?.district})\n` +
-      `• **Dados Vitais Enviados à Ambulância:** Tipo Sanguíneo **${profile.health?.blood_type}**, Alergias: **${profile.health?.allergies?.join(', ')}**\n` +
-      `• **Hospital Preparado:** \`${profile.health?.assigned_hospital_id}\` (ETA: 3 minutos)\n` +
-      `• **Contato Familiar Notificado Automaticamente:** **${ecLink?.relative_name || 'Familiar GDF'}** (\`${ecLink?.relative_nid || 'NID-000-0000-0001-9'}\` • Tel: ${ecLink?.relative_phone || '+550 98100-0001'}).`;
+
+    if (!isAuthenticated) {
+      reply =
+        `**Como funciona o Despacho Tático de Emergência 911 em Novatlantis [1]:**\n\n` +
+        `O Comando Nacional 911 utiliza o **Cruzamento Soberano GDF #3** para salvar vidas com tempo médio de resposta (ETA) de **3 minutos**:\n` +
+        `• Ao acionar o 911 autenticado, a ambulância recebe instantaneamente seu **endereço georreferenciado**, **tipo sanguíneo**, **alergias medicamentosas** e **condições crônicas**.\n` +
+        `• O hospital distrital mais próximo prepara o leito e seu **contato de emergência familiar** é notificado automaticamente.\n\n` +
+        `Para **solicitar o despacho 911 vinculado ao seu prontuário e endereço**, autentique-se clicando no botão abaixo.`;
+    } else {
+      const dispatchId = `911-NV-2026-${Math.floor(910 + Math.random() * 89)}`;
+      const ecLink = profile.family_links?.[0];
+      db.prepare(`
+        INSERT INTO ops_911_dispatches VALUES (?, ?, ?, ?, 'P1_CRITICAL', ?, ?, ?, ?, ?, ?, ?, ?, 'Unidade UTI Autônoma + Alerta HL7', 3, 'DISPATCHED_EN_ROUTE', ?)
+      `).run(
+        dispatchId,
+        profile.citizen_id,
+        profile.full_name,
+        `Acionamento 911 via Agente Orquestrador: "${msg}"`,
+        profile.residence?.district || 'Distrito Tecnológico',
+        profile.health?.blood_type || 'O+',
+        JSON.stringify(profile.health?.allergies || []),
+        JSON.stringify(profile.health?.chronic_conditions || []),
+        profile.health?.assigned_hospital_id || 'HOSP-NV-01',
+        ecLink?.relative_nid || 'NID-000-0000-0001-9',
+        ecLink?.relative_name || 'Familiar Responsável',
+        ecLink?.relative_phone || '+550 98100-0001',
+        now
+      );
+      executedAction = {
+        type: 'EMERGENCY_911_DISPATCHED',
+        protocol: dispatchId,
+        summary: `Resgate 911 (${dispatchId}) despachado com ETA de 3 min + Cruzamento GDF #3 (HL7 + Família).`
+      };
+      reply =
+        `🚨 **DESPACHO IMEDIATO 911 ATIVADO — PROTOCOLO \`${dispatchId}\` [1]:**\n\n` +
+        `Executei o **Cruzamento GDF #3 (Emergência × Prontuário HL7 × Grafo Familiar)**:\n` +
+        `• **Localização:** ${profile.residence?.street}, ${profile.residence?.number} (${profile.residence?.district})\n` +
+        `• **Dados Vitais Enviados à Ambulância:** Tipo Sanguíneo **${profile.health?.blood_type}**, Alergias: **${profile.health?.allergies?.join(', ')}**\n` +
+        `• **Hospital Preparado:** \`${profile.health?.assigned_hospital_id}\` (ETA: 3 minutos)\n` +
+        `• **Contato Familiar Notificado Automaticamente:** **${ecLink?.relative_name || 'Familiar GDF'}** (\`${ecLink?.relative_nid || 'NID-000-0000-0001-9'}\` • Tel: ${ecLink?.relative_phone || '+550 98100-0001'}).`;
+    }
   }
   // 6. Intenção: Zeladoria Urbana 311 / Iluminação / Vias / Saneamento
   else if (
     lower.includes('311') ||
     lower.includes('zeladoria') ||
     lower.includes('iluminação') ||
+    lower.includes('iluminacao') ||
     lower.includes('buraco') ||
     lower.includes('rua') ||
     lower.includes('água') ||
+    lower.includes('agua') ||
     lower.includes('saneamento') ||
     lower.includes('chamado') ||
     lower.includes('demanda')
   ) {
     delegatedAgent = 'agent-urban-311-dispatcher-v4 (Secretaria de Zeladoria Urbana 311)';
-    const ticketId = `311-NV-2026-${Math.floor(100 + Math.random() * 899)}`;
-    db.prepare(`
-      INSERT INTO ops_311_tickets VALUES (?, ?, ?, 'Zeladoria Urbana & Smart Grid (Via Orquestrador)', ?, ?, ?, 'Secretaria de Infraestrutura & IoT', 6, 'OPEN', NULL, NULL, ?)
-    `).run(
-      ticketId,
-      profile.citizen_id,
-      profile.full_name,
-      profile.residence?.district || 'Distrito Tecnológico',
-      msg,
-      `IA Orquestradora 311: Demanda geolocalizada no imóvel ${profile.residence?.address_id} (${profile.residence?.district}). Encaminhada ao Backstage.`,
-      now
-    );
-    executedAction = {
-      type: 'URBAN_311_TICKET_OPENED',
-      protocol: ticketId,
-      summary: `Chamado urbano ${ticketId} aberto e enviado à fila dos servidores públicos no Backstage.`
+    citations = [
+      {
+        id: 1,
+        agency: 'Secretaria de Infraestrutura, Zeladoria 311 & Smart Grid IoT',
+        title: 'Carta de Serviços Urbanos 311 — SLA Médio de 6 Horas por Distrito',
+        url: `${CITIZEN_PORTAL_URL}?tab=urban`
+      }
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'OPEN_311_URBAN_TICKET',
+      service_title: 'Solicitar Abertura de Chamado Urbano 311',
+      service_description: 'Registra ordem de serviço georreferenciada no seu distrito e envia para a fila do Backstage Governamental.',
+      service_prompt: `Abrir chamado 311 para: ${msg}`,
+      target_portal: 'citizen-portal',
+      target_tab: 'urban'
     };
-    reply =
-      `🏙️ **Ordem de Serviço Urbana 311 Registrada (\`${ticketId}\`):**\n\n` +
-      `• **Solicitante:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-      `• **Imóvel Georreferenciado:** \`${profile.residence?.address_id}\` — ${profile.residence?.district}\n` +
-      `• **SLA Estimado pela IA:** 6 horas\n` +
-      `• **Encaminhamento:** Já disponível na fila do **Backstage Governamental 311** para execução pelos servidores públicos.`;
-    suggestedLinks.unshift({
-      label: 'Acompanhar Chamado 311 no Portal do Cidadão',
-      url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&tab=urban`
-    });
+
+    if (!isAuthenticated) {
+      reply =
+        `**Atendimento de Zeladoria Urbana 311 e Smart Grid em Novatlantis [1]:**\n\n` +
+        `A central **311** recebe solicitações de manutenção de vias, iluminação pública LED/IoT, coleta seletiva e saneamento nos 5 distritos da nação (**Distrito Tecnológico**, **Distrito Oceânico**, **Colina da Justiça**, **Porto Solar** e **Vale das Águas**) [1]:\n` +
+        `• **Triagem por IA:** O Agente 311 classifica a severidade e encaminha diretamente à equipe de engenharia no **Backstage Governamental** com **SLA médio de 6 horas**.\n\n` +
+        `Para **abrir oficialmente este chamado 311** em seu nome e acompanhar o protocolo, clique no botão de solicitação abaixo para fazer login.`;
+    } else {
+      const ticketId = `311-NV-2026-${Math.floor(100 + Math.random() * 899)}`;
+      db.prepare(`
+        INSERT INTO ops_311_tickets VALUES (?, ?, ?, 'Zeladoria Urbana & Smart Grid (Via Orquestrador)', ?, ?, ?, 'Secretaria de Infraestrutura & IoT', 6, 'OPEN', NULL, NULL, ?)
+      `).run(
+        ticketId,
+        profile.citizen_id,
+        profile.full_name,
+        profile.residence?.district || 'Distrito Tecnológico',
+        msg,
+        `IA Orquestradora 311: Demanda geolocalizada no imóvel ${profile.residence?.address_id} (${profile.residence?.district}). Encaminhada ao Backstage.`,
+        now
+      );
+      executedAction = {
+        type: 'URBAN_311_TICKET_OPENED',
+        protocol: ticketId,
+        summary: `Chamado urbano ${ticketId} aberto e enviado à fila dos servidores públicos no Backstage.`
+      };
+      reply =
+        `🏙️ **Ordem de Serviço Urbana 311 Registrada (\`${ticketId}\`) [1]:**\n\n` +
+        `• **Solicitante:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+        `• **Imóvel Georreferenciado:** \`${profile.residence?.address_id}\` — ${profile.residence?.district}\n` +
+        `• **SLA Estimado pela IA:** 6 horas\n` +
+        `• **Encaminhamento:** Já disponível na fila do **Backstage Governamental 311** para execução pelos servidores públicos.`;
+    }
   }
   // 7. Intenção: Identidade 360 / NID / Biometria / Família / Permissões Backstage
   else if (
@@ -661,58 +847,133 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('família') ||
     lower.includes('familia') ||
     lower.includes('permissão') ||
+    lower.includes('permissao') ||
     lower.includes('backstage') ||
-    lower.includes('360')
+    lower.includes('360') ||
+    lower.includes('perfil')
   ) {
     delegatedAgent = 'agent-identity-360-governor-v4 (Autoridade Nacional de Identidade 360)';
-    const famList =
-      profile.family_links?.map(f => `${f.relationship_type}: ${f.relative_name} (${f.relative_nid})`).join(' • ') ||
-      'Sem vínculos diretos';
-    reply =
-      `🪪 **Credencial Soberana NID & Governança Identidade 360:**\n\n` +
-      `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-      `• **Credencial Profissional:** \`${profile.professional_credential}\` (${profile.profession_label})\n` +
-      `• **Papel Ativo na Identidade 360:** \`${profile.effective_role_code}\` (${profile.role_title})\n` +
-      `• **Acesso ao Backstage Governamental:** **${profile.backstage_allowed ? 'AUTORIZADO (ATIVO)' : 'BLOQUEADO (CIDADÃO COMUM)'}**\n` +
-      `• **Grafo Familiar (\`rel_family_graph\`):** ${famList}`;
-    suggestedLinks.unshift({
-      label: 'Abrir Carteira NID & Família no Portal do Cidadão',
-      url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&tab=identity`
-    });
+    citations = [
+      {
+        id: 1,
+        agency: 'Autoridade Nacional de Identidade Soberana (NID & NIST Biometrics)',
+        title: 'Padrão ANSI/NIST-ITL 1-2011 / ISO/IEC 19794-5 & Chave Pública Ed25519',
+        url: `${CITIZEN_PORTAL_URL}?tab=identity`
+      },
+      {
+        id: 2,
+        agency: 'Governança de Acesso Identidade 360 (RBAC Governamental)',
+        title: 'Regulamento de Concessão e Revogação de Acesso ao Backstage Governamental',
+        url: `${GOV_BACKSTAGE_URL}`
+      }
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'ACCESS_IDENTITY_360_WALLET',
+      service_title: 'Acessar Carteira Digital NID, Biometria NIST & Árvore Familiar',
+      service_description: 'Exibe sua credencial soberana NID, chave pública Ed25519, vínculos familiares e permissões Identidade 360.',
+      service_prompt: 'Consultar minha Carteira Digital NID e vínculos familiares',
+      target_portal: 'citizen-portal',
+      target_tab: 'identity'
+    };
+
+    if (!isAuthenticated) {
+      reply =
+        `**Identidade Nacional Soberana (NID), Biometria NIST e Governança 360 [1][2]:**\n\n` +
+        `Todo cidadão de Novatlantis possui um **NID (Novatlantis Identity ID)** no padrão \`NID-XXX-XXXX-XXXX\` com dígito verificador Módulo 11, biometria facial/digital **ISO/IEC 19794** e par de chaves **Ed25519** [1]:\n` +
+        `• **Acesso Único (SSO):** O mesmo NID/e-mail autentica o cidadão nos serviços públicos e, caso possua nomeação ativa na **Identidade 360** (como Médico, Professor, Gestor 311/911 ou Primeiro-Ministro), libera automaticamente os módulos correspondentes no **Backstage Governamental** [2].\n\n` +
+        `Para **acessar sua Carteira NID, atualizar sua foto/perfil ou consultar sua Árvore Familiar**, clique no botão abaixo para entrar com seu NID.`;
+    } else {
+      const famList =
+        profile.family_links?.map((f) => `${f.relationship_type}: ${f.relative_name} (${f.relative_nid})`).join(' • ') ||
+        'Sem vínculos diretos';
+      executedAction = {
+        type: 'IDENTITY_360_VERIFIED',
+        protocol: profile.citizen_id,
+        summary: `Credencial NID ${profile.citizen_id} e grafo familiar verificados no AlloyDB.`
+      };
+      reply =
+        `🪪 **Credencial Soberana NID & Governança Identidade 360 [1][2]:**\n\n` +
+        `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+        `• **Credencial Profissional:** \`${profile.professional_credential}\` (${profile.profession_label})\n` +
+        `• **Papel Ativo na Identidade 360:** \`${profile.effective_role_code}\` (${profile.role_title})\n` +
+        `• **Acesso ao Backstage Governamental:** **${profile.backstage_allowed ? 'AUTORIZADO (ATIVO)' : 'BLOQUEADO (CIDADÃO COMUM)'}**\n` +
+        `• **Grafo Familiar (\`rel_family_graph\`):** ${famList}`;
+    }
   }
   // 8. Resposta Geral Orquestrada para qualquer outra consulta
   else {
-    delegatedAgent = 'agent-orchestrator-novatlantis-core (Orquestrador Central de Estado)';
-    reply =
-      `🏛️ **Agente Orquestrador de Estado de Novatlantis:**\n\n` +
-      `Olá, **${profile.full_name}** (\`${profile.citizen_id}\`). Autentiquei seu contexto completo na base GDF de **100.000 cidadãos** (Distrito: *${profile.residence?.district}*, Perfil 360: \`${profile.effective_role_code}\`).\n\n` +
-      `A partir deste chat eu orquestro diretamente todos os serviços do Estado para você:\n` +
-      `1. **Identidade & Família:** *"Consultar meu NID, biometria NIST e grafo familiar"*\n` +
-      `2. **Saúde & Telemedicina:** *"Agendar teleconsulta médica e ver meu tipo sanguíneo/alergias HL7"*\n` +
-      `3. **Educação & Notas:** *"Consultar boletim escolar e frequência por matéria"*\n` +
-      `4. **Tesouro & Empresas em 45s:** *"Abrir empresa autônoma agora"* ou *"Ver meu dividendo UBI"*\n` +
-      `5. **Justiça & Passaporte ICAO:** *"Emitir ou renovar meu passaporte digital ICAO"*\n` +
-      `6. **Zeladoria 311 & Emergência 911:** *"Abrir chamado 311 de iluminação"* ou *"Acionar emergência 911"*\n\n` +
-      `Digite sua solicitação abaixo ou clique em um dos atalhos para executar a transação em tempo real.`;
+    delegatedAgent = 'agent-orchestrator-novatlantis-core (Concierge Digital da Nação)';
+    citations = [
+      {
+        id: 1,
+        agency: 'Chancelaria Digital da República de Novatlantis',
+        title: 'Guia Oficial de Serviços Públicos Digitais & Estado AI-First',
+        url: `${CITIZEN_PORTAL_URL}`
+      },
+      {
+        id: 2,
+        agency: 'Government Data Platform (AlloyDB + BigQuery Lakehouse)',
+        title: 'Arquitetura Soberana de Dados Cívicos (100.000 Cidadãos)',
+        url: `${GOV_BACKSTAGE_URL}`
+      }
+    ];
+    serviceRequestAction = {
+      requires_auth: !isAuthenticated,
+      service_id: 'OPEN_CITIZEN_PORTAL_SERVICES',
+      service_title: 'Solicitar Serviço Público no Portal do Cidadão',
+      service_description: 'Acesse todos os serviços digitais (NID, Saúde, Educação, Empresas em 45s, Passaporte ICAO e Zeladoria 311).',
+      service_prompt: 'Consultar meu prontuário completo e serviços disponíveis no GDF',
+      target_portal: 'citizen-portal',
+      target_tab: 'identity'
+    };
+
+    if (!isAuthenticated) {
+      reply =
+        `**Bem-vindo ao Concierge Digital da República de Novatlantis [1][2]:**\n\n` +
+        `Você pode fazer qualquer pergunta sobre leis, documentos, saúde, educação, impostos ou serviços urbanos **sem precisar estar logado**.\n\n` +
+        `Principais áreas de atendimento imediato:\n` +
+        `1. **Identidade Soberana (NID) & Família:** Emissão de credencial, biometria padrão NIST e consulta ao núcleo familiar.\n` +
+        `2. **Saúde & Telemedicina 24/7:** Prontuário único HL7 FHIR, histórico vacinal e teleconsultas médicas.\n` +
+        `3. **Educação & Tutoria IA:** Boletim por matéria, frequência escolar e trilhas adaptativas.\n` +
+        `4. **Economia & Tesouro:** Abertura de empresa autônoma em 45 segundos e Dividendo UBI.\n` +
+        `5. **Passaporte Digital ICAO & Justiça:** Validação automática de fronteira (e-Gate em 174 países).\n` +
+        `6. **Zeladoria 311 & Emergência 911:** Abertura de chamados urbanos e resgate tático.\n\n` +
+        `Faça sua pergunta acima ou, se desejar **solicitar um serviço oficial agora**, clique no botão abaixo para autenticar seu NID.`;
+    } else {
+      reply =
+        `🏛️ **Concierge Digital da República de Novatlantis [1][2]:**\n\n` +
+        `Olá, **${profile.full_name}** (\`${profile.citizen_id}\`). Sua sessão está autenticada no AlloyDB (Distrito: *${profile.residence?.district}*, Papel 360: \`${profile.effective_role_code}\`).\n\n` +
+        `Escolha ou digite o serviço que deseja executar agora:\n` +
+        `• *"Abrir empresa autônoma agora"* (Tesouro & UBI)\n` +
+        `• *"Emitir ou renovar meu passaporte digital ICAO"* (Chancelaria & Fronteiras)\n` +
+        `• *"Agendar teleconsulta médica"* (Saúde HL7 FHIR)\n` +
+        `• *"Consultar boletim escolar"* (Educação)\n` +
+        `• *"Abrir chamado 311 de iluminação"* (Zeladoria Urbana)`;
+    }
   }
 
   const orchestrationTrace = [
     {
       step: 1,
-      node: 'Autenticação Zero-Trust & Contexto GDF 100k',
-      detail: `Cidadão ${profile.citizen_id} (${profile.full_name}) • Role 360: ${profile.effective_role_code}`
+      node: 'Contexto de Sessão (Zero-Trust)',
+      detail: isAuthenticated
+        ? `Cidadão Autenticado: ${profile.citizen_id} (${profile.full_name}) • Role 360: ${profile.effective_role_code}`
+        : 'Visitante Anônimo (Consulta Pública Habilitada • Login exigido apenas na solicitação de serviço)'
     },
     {
       step: 2,
-      node: 'Roteamento Semântico pelo Agente Orquestrador',
-      detail: `Sub-agente acionado: ${delegatedAgent}`
+      node: 'Roteamento Semântico pelo Concierge Nacional',
+      detail: `Agente Especialista: ${delegatedAgent}`
     },
     {
       step: 3,
-      node: 'Execução Transacional no Estado Digital',
+      node: 'Execução / Orientação Oficial',
       detail: executedAction
         ? `${executedAction.type} -> Protocolo ${executedAction.protocol}`
-        : 'Consulta analítica em tempo real concluída no GDF SQLite/Lakehouse'
+        : isAuthenticated
+        ? 'Consulta nominal concluída no AlloyDB'
+        : 'Orientação pública com citações oficiais entregue; aguardando autenticação para transação'
     }
   ];
 
@@ -720,8 +981,8 @@ function runSovereignOrchestrator(profile, userMessage) {
     INSERT INTO ops_orchestrator_logs (citizen_id, citizen_name, user_message, delegated_agent, action_executed, agent_reply, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(
-    profile.citizen_id,
-    profile.full_name,
+    isAuthenticated ? profile.citizen_id : 'ANONYMOUS_VISITOR',
+    isAuthenticated ? profile.full_name : 'Visitante Não Autenticado',
     msg,
     delegatedAgent,
     executedAction ? JSON.stringify(executedAction) : null,
@@ -730,10 +991,10 @@ function runSovereignOrchestrator(profile, userMessage) {
   );
 
   const orchestrationSteps = orchestrationTrace.map((t, idx) => ({
-    agent: idx === 0 ? 'IAM-360-ZeroTrust' : idx === 1 ? delegatedAgent.split(' ')[0] : 'GDF-SQLite-Engine',
+    agent: idx === 0 ? 'IAM-360-Session' : idx === 1 ? delegatedAgent.split(' ')[0] : 'AlloyDB-Gov-Engine',
     step: `${t.node}: ${t.detail}`,
     status: 'OK',
-    latency_ms: 14 + idx * 19
+    latency_ms: 11 + idx * 14
   }));
 
   const actionCard = executedAction
@@ -741,9 +1002,11 @@ function runSovereignOrchestrator(profile, userMessage) {
         type: executedAction.type,
         title: executedAction.summary,
         reference_id: executedAction.protocol,
-        status: 'EXECUTADO NO GDF',
+        status: 'EXECUTADO NO ALLOYDB',
         target_portal: 'citizen-portal',
-        target_url: suggestedLinks[0]?.url || `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}`,
+        target_url:
+          suggestedLinks[0]?.url ||
+          `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&tab=${serviceRequestAction?.target_tab || 'identity'}`,
         details: {
           Titular: `${profile.full_name} (${profile.citizen_id})`,
           Agente: delegatedAgent,
@@ -756,22 +1019,25 @@ function runSovereignOrchestrator(profile, userMessage) {
   return {
     message_id: `MSG-NOV-${Date.now()}`,
     intent: executedAction ? executedAction.type : 'STATE_ORCHESTRATION',
-    citizen_id: profile.citizen_id,
-    citizen_name: profile.full_name,
+    authenticated: isAuthenticated,
+    citizen_id: isAuthenticated ? profile.citizen_id : null,
+    citizen_name: isAuthenticated ? profile.full_name : null,
     delegated_agent: delegatedAgent,
     executed_action: executedAction,
     action_card: actionCard,
+    service_request_action: serviceRequestAction,
+    citations,
     orchestration_trace: orchestrationTrace,
     orchestration_steps: orchestrationSteps,
     reply,
     suggested_links: suggestedLinks,
     suggested_prompts: [
-      'Consultar meu prontuário completo e família no GDF',
-      'Emitir ou validar meu Passaporte Digital ICAO',
-      'Abrir uma empresa em 45 segundos no Distrito Tecnológico',
-      'Agendar teleconsulta médica com resumo clínico IA',
-      'Verificar notas escolares e desempenho em IA & Robótica',
-      'Abrir chamado 311 para reparo de iluminação pública'
+      'Como emitir ou renovar meu Passaporte Digital ICAO?',
+      'Como abrir uma empresa autônoma em 45 segundos?',
+      'Como agendar uma teleconsulta médica 24/7?',
+      'Como consultar o boletim escolar e frequência dos meus filhos?',
+      'Como abrir um chamado urbano 311 no meu distrito?',
+      'Como funciona a Identidade Soberana NID e o acesso ao Backstage?'
     ],
     timestamp: now
   };
@@ -897,7 +1163,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/auth/login' && req.method === 'POST') {
       const body = await readBody(req);
-      const profile = getFullCitizenProfile(body.identifier || 'NID-000-0000-0001-9');
+      const identifier = String(body.identifier || '').trim();
+      if (!identifier) {
+        return sendJson(res, 400, { error: 'Informe um NID ou e-mail válido.' });
+      }
+      const profile = getFullCitizenProfile(identifier);
       if (!profile) {
         return sendJson(res, 404, {
           error: 'Cidadão não encontrado na base GDF de 100.000 registros. Verifique o NID ou e-mail.'
@@ -907,16 +1177,20 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Endpoint Principal do Agente Orquestrador de Estado (Chat Interativo)
+    // Suporta perguntas anônimas (nid = null) e execução autenticada (nid = NID válido)
     if (pathname === '/api/orchestrator/chat' && req.method === 'POST') {
       const body = await readBody(req);
-      const targetNid = body.nid || body.citizen_id || 'NID-000-0000-0001-9';
-      const profile = getFullCitizenProfile(targetNid) || getFullCitizenProfile('NID-000-0000-0001-9');
+      const targetNid = String(body.nid || body.citizen_id || '').trim();
+      const profile = targetNid ? getFullCitizenProfile(targetNid) : null;
       const result = runSovereignOrchestrator(profile, body.message || '');
       return sendJson(res, 200, result);
     }
 
     if (pathname === '/api/orchestrator/history' && req.method === 'GET') {
-      const cid = url.searchParams.get('citizen_id') || 'NID-000-0000-0001-9';
+      const cid = String(url.searchParams.get('citizen_id') || '').trim();
+      if (!cid) {
+        return sendJson(res, 200, { logs: [] });
+      }
       const logs = db
         .prepare('SELECT * FROM ops_orchestrator_logs WHERE citizen_id = ? ORDER BY log_id DESC LIMIT 15')
         .all(cid);

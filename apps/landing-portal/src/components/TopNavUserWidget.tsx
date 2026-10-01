@@ -7,13 +7,13 @@ import {
   CircularProgress,
   Dialog,
   DialogContent,
-  DialogTitle,
   Divider,
+  Drawer,
   IconButton,
+  List,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
-  Menu,
-  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -38,8 +38,9 @@ import {
   Refresh as RefreshIcon,
   Close as CloseIcon,
   Visibility as VisibilityIcon,
-  ExpandMore as ExpandMoreIcon,
-  Storage as StorageIcon
+  Menu as MenuIcon,
+  Launch as LaunchIcon,
+  AdminPanelSettings as AdminIcon
 } from '@mui/icons-material';
 
 export interface AuthUserProfile {
@@ -74,28 +75,38 @@ interface FamilyMemberRecord {
 }
 
 interface TopNavUserWidgetProps {
-  onUserAuthenticated?: (nid: string, user: AuthUserProfile) => void;
+  onUserAuthenticated?: (nid: string, user: AuthUserProfile, ssoToken?: string) => void;
   onUserLoggedOut?: () => void;
   currentNid?: string;
+  openLoginTrigger?: number;
+  loginReasonMessage?: string | null;
+  citizenPortalUrl?: string;
+  govBackstageUrl?: string;
 }
+
+type ProfileSection = 'PERSONAL_DATA' | 'FAMILY_READONLY' | 'SECURITY_ACCESS';
 
 export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   onUserAuthenticated,
   onUserLoggedOut,
-  currentNid
+  openLoginTrigger = 0,
+  loginReasonMessage = null,
+  citizenPortalUrl = 'https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app',
+  govBackstageUrl = 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app'
 }) => {
   const [user, setUser] = useState<AuthUserProfile | null>(null);
+  const [ssoToken, setSsoToken] = useState<string | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
-  // Modals state
+  // Modals & Internal Hamburger Drawer State
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [familyModalOpen, setFamilyModalOpen] = useState(false);
+  const [profileHamburgerOpen, setProfileHamburgerOpen] = useState(false);
+  const [activeProfileSection, setActiveProfileSection] = useState<ProfileSection>('PERSONAL_DATA');
 
   // Auth flow steps: 'LOGIN' | 'FIRST_LOGIN_SETUP' | 'VERIFY_EMAIL_OTP'
   const [authStep, setAuthStep] = useState<'LOGIN' | 'FIRST_LOGIN_SETUP' | 'VERIFY_EMAIL_OTP'>('LOGIN');
-  const [nidInput, setNidInput] = useState('NID-000-0000-0001-9');
+  const [nidInput, setNidInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
@@ -118,10 +129,19 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberRecord[]>([]);
   const [loadingFamily, setLoadingFamily] = useState(false);
 
-  const fetchProfileSession = async (overrideNid?: string) => {
+  const fetchProfileSession = async () => {
     try {
-      const qs = overrideNid ? `?nid=${encodeURIComponent(overrideNid)}` : '';
+      const params = new URLSearchParams(window.location.search);
+      const urlSsoToken = params.get('sso_token');
+      const qs = urlSsoToken ? `?sso_token=${encodeURIComponent(urlSsoToken)}` : '';
+
       const res = await fetch(`/api/v1/profile/me${qs}`, { credentials: 'include' });
+      if (urlSsoToken) {
+        params.delete('sso_token');
+        const cleanSearch = params.toString();
+        window.history.replaceState({}, '', `${window.location.pathname}${cleanSearch ? `?${cleanSearch}` : ''}`);
+      }
+
       if (!res.ok) {
         setUser(null);
         return;
@@ -129,37 +149,69 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       const data = await res.json();
       if (data.authenticated && data.user) {
         setUser(data.user);
+        setSsoToken(data.sso_token || null);
         setEditSocialName(data.user.social_name || data.user.full_name || '');
         setEditPhone(data.user.phone_number || '');
         setEditBio(data.user.bio || '');
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user);
+          onUserAuthenticated(data.user.nid, data.user, data.sso_token);
         }
       } else {
         setUser(null);
+        setSsoToken(null);
       }
     } catch {
       setUser(null);
+      setSsoToken(null);
     } finally {
       setLoadingSession(false);
     }
   };
 
   useEffect(() => {
-    fetchProfileSession(currentNid);
-  }, [currentNid]);
+    fetchProfileSession();
+  }, []);
+
+  useEffect(() => {
+    if (openLoginTrigger > 0 && !user) {
+      setAuthStep('LOGIN');
+      setAuthError(null);
+      setAuthNotice(loginReasonMessage || 'Para solicitar este serviço oficial, identifique-se com seu NID e senha.');
+      setLoginModalOpen(true);
+    }
+  }, [openLoginTrigger, loginReasonMessage, user]);
+
+  const loadFamilyData = async (targetNid: string) => {
+    setLoadingFamily(true);
+    try {
+      const res = await fetch(`/api/v1/profile/family?nid=${encodeURIComponent(targetNid)}`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFamilyMembers(data.family_members || []);
+      }
+    } finally {
+      setLoadingFamily(false);
+    }
+  };
 
   const lookupPostalInitialPassword = async (targetNid: string) => {
+    const cleanTarget = targetNid.trim();
+    if (!cleanTarget) {
+      setAuthError('Digite um NID ou selecione um perfil abaixo antes de consultar a senha inicial.');
+      return;
+    }
     setAuthError(null);
     try {
-      const res = await fetch(`/api/v1/auth/postal-dispatch?nid=${encodeURIComponent(targetNid.trim())}`);
+      const res = await fetch(`/api/v1/auth/postal-dispatch?nid=${encodeURIComponent(cleanTarget)}`);
       const data = await res.json();
       if (res.ok && data.initial_password) {
         setPostalHintPassword(data.initial_password);
         setPasswordInput(data.initial_password);
         setEmailInput(data.citizen?.email || '');
         setAuthNotice(
-          `Carta-Senha Inicial localizada no lote AlloyDB para ${data.citizen?.full_name || targetNid}: ${data.initial_password}`
+          `Credencial localizada no AlloyDB para ${data.citizen?.full_name || cleanTarget}: senha inicial ${data.initial_password}`
         );
       } else {
         setAuthError(data.error || 'NID não encontrado no lote de 100.000 cidadãos.');
@@ -170,12 +222,17 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   };
 
   const resetCitizenToFirstLogin = async (targetNid: string) => {
+    const cleanTarget = targetNid.trim();
+    if (!cleanTarget) {
+      setAuthError('Informe o NID para simular o fluxo de 1º acesso.');
+      return;
+    }
     setAuthError(null);
     try {
       const res = await fetch('/api/v1/auth/reset-first-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nid: targetNid.trim() })
+        body: JSON.stringify({ nid: cleanTarget })
       });
       const data = await res.json();
       if (res.ok) {
@@ -183,7 +240,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
         setPostalHintPassword(data.initial_password || null);
         setAuthStep('LOGIN');
         setAuthNotice(
-          `Status de ${targetNid} redefinido para FIRST_LOGIN_REQUIRED no AlloyDB. Senha inicial preenchida (${data.initial_password}).`
+          `Status de ${cleanTarget} redefinido para FIRST_LOGIN_REQUIRED. Senha inicial preenchida (${data.initial_password}).`
         );
       }
     } catch {
@@ -222,12 +279,13 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
 
       if (data.authenticated && data.user) {
         setUser(data.user);
+        setSsoToken(data.sso_token || null);
         setEditSocialName(data.user.social_name || data.user.full_name);
         setEditPhone(data.user.phone_number || '');
         setEditBio(data.user.bio || '');
         setLoginModalOpen(false);
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user);
+          onUserAuthenticated(data.user.nid, data.user, data.sso_token);
         }
       }
     } catch {
@@ -301,13 +359,14 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
 
       if (data.verified && data.user) {
         setUser(data.user);
+        setSsoToken(data.sso_token || null);
         setEditSocialName(data.user.social_name || data.user.full_name);
         setEditPhone(data.user.phone_number || '');
         setEditBio(data.user.bio || '');
         setLoginModalOpen(false);
         setAuthStep('LOGIN');
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user);
+          onUserAuthenticated(data.user.nid, data.user, data.sso_token);
         }
       }
     } catch {
@@ -364,7 +423,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       setUser(data.user);
       setProfileStatusMsg('Dados cadastrais atualizados com sucesso no AlloyDB.');
       if (onUserAuthenticated) {
-        onUserAuthenticated(data.user.nid, data.user);
+        onUserAuthenticated(data.user.nid, data.user, ssoToken || undefined);
       }
     }
   };
@@ -397,7 +456,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
         setUser(data.user);
         setProfileStatusMsg('Foto de perfil oficial validada e atualizada com sucesso!');
         if (onUserAuthenticated) {
-          onUserAuthenticated(data.user.nid, data.user);
+          onUserAuthenticated(data.user.nid, data.user, ssoToken || undefined);
         }
       } else {
         setProfileStatusMsg(data.error || 'Erro ao enviar foto de perfil.');
@@ -406,51 +465,51 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const openReadOnlyFamilyModal = async () => {
-    setMenuAnchorEl(null);
-    setFamilyModalOpen(true);
-    if (!user) return;
-    setLoadingFamily(true);
-    try {
-      const res = await fetch(`/api/v1/profile/family?nid=${encodeURIComponent(user.nid)}`, {
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setFamilyMembers(data.family_members || []);
-      }
-    } finally {
-      setLoadingFamily(false);
-    }
-  };
-
   const handleLogout = async () => {
-    setMenuAnchorEl(null);
+    setProfileHamburgerOpen(false);
+    setProfileModalOpen(false);
     await fetch('/api/v1/auth/logout', {
       method: 'POST',
       credentials: 'include'
     });
     setUser(null);
+    setSsoToken(null);
+    setPasswordInput('');
     if (onUserLoggedOut) {
       onUserLoggedOut();
     }
   };
 
+  const openProfileWithSection = (section: ProfileSection) => {
+    setActiveProfileSection(section);
+    setProfileStatusMsg(null);
+    setProfileHamburgerOpen(false);
+    setProfileModalOpen(true);
+    if (section === 'FAMILY_READONLY' && user) {
+      loadFamilyData(user.nid);
+    }
+  };
+
+  const buildPortalUrlWithSso = (baseUrl: string) => {
+    if (!ssoToken) return baseUrl;
+    const sep = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${sep}sso_token=${encodeURIComponent(ssoToken)}`;
+  };
+
   return (
     <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
       {loadingSession ? (
-        <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CircularProgress size={16} color="primary" />
-          <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
-            Validando Sessão...
+        <Box sx={{ px: 2, py: 0.75, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CircularProgress size={15} sx={{ color: '#0a2240' }} />
+          <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500 }}>
+            Verificando...
           </Typography>
         </Box>
       ) : !user ? (
         <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          startIcon={<ShieldIcon />}
+          variant="outlined"
+          size="medium"
+          startIcon={<ShieldIcon sx={{ fontSize: 18 }} />}
           onClick={() => {
             setAuthStep('LOGIN');
             setAuthError(null);
@@ -458,237 +517,132 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
             setLoginModalOpen(true);
           }}
           sx={{
-            px: 3,
-            py: 1.25,
+            px: 2.25,
+            py: 0.85,
             fontWeight: 700,
-            fontSize: '0.95rem',
-            borderRadius: 2,
-            bgcolor: '#002046',
-            '&:hover': { bgcolor: '#00356e' }
+            fontSize: '0.88rem',
+            borderRadius: 999,
+            textTransform: 'none',
+            color: '#0a2240',
+            borderColor: '#cbd5e1',
+            bgcolor: '#ffffff',
+            '&:hover': {
+              borderColor: '#0a2240',
+              bgcolor: '#f8fafc'
+            }
           }}
         >
           Entrar com NID
         </Button>
       ) : (
-        <>
-          <Paper
-            variant="outlined"
-            onClick={(e) => setMenuAnchorEl(e.currentTarget)}
+        <Paper
+          variant="outlined"
+          onClick={() => openProfileWithSection('PERSONAL_DATA')}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.25,
+            pl: 1,
+            pr: 1.75,
+            py: 0.6,
+            borderRadius: 999,
+            cursor: 'pointer',
+            borderColor: '#cbd5e1',
+            bgcolor: '#ffffff',
+            transition: 'all 0.15s ease',
+            '&:hover': {
+              borderColor: '#0a2240',
+              bgcolor: '#f8fafc'
+            }
+          }}
+        >
+          <Avatar
+            src={user.avatarUrl || '/assets/pm_portrait.jpg'}
+            alt={user.name}
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              px: 2,
-              py: 0.9,
-              borderRadius: 999,
-              cursor: 'pointer',
-              borderColor: '#cbd5e1',
-              transition: 'all 0.15s ease',
-              '&:hover': {
-                borderColor: '#002046',
-                bgcolor: '#f8fafc',
-                boxShadow: '0 2px 8px rgba(0,32,70,0.08)'
-              }
+              width: 34,
+              height: 34,
+              border: '1.5px solid #0a2240',
+              bgcolor: '#0a2240',
+              fontSize: '0.85rem',
+              fontWeight: 700
             }}
           >
-            <Avatar
-              src={user.avatarUrl || '/assets/pm_portrait.jpg'}
-              alt="Avatar do Cidadão"
+            {user.name.charAt(0)}
+          </Avatar>
+          <Box sx={{ textAlign: 'left' }}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.15, fontSize: '0.84rem' }}
+            >
+              {user.name}
+            </Typography>
+            <Typography
+              variant="caption"
               sx={{
-                width: 42,
-                height: 42,
-                border: '2px solid #002046',
-                bgcolor: '#002046',
-                fontWeight: 700
+                fontFamily: 'monospace',
+                color: '#64748b',
+                display: 'block',
+                fontSize: '0.7rem'
               }}
             >
-              {user.name.charAt(0)}
-            </Avatar>
-            <Box sx={{ textAlign: 'left', pr: 0.5 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: 800, color: '#0f172a', lineHeight: 1.2, fontSize: '0.95rem' }}
-              >
-                {user.name}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontFamily: 'monospace',
-                  color: '#475569',
-                  display: 'block',
-                  fontSize: '0.78rem',
-                  letterSpacing: '0.02em'
-                }}
-              >
-                {user.nid}
-              </Typography>
-            </Box>
-            <ExpandMoreIcon sx={{ color: '#475569', fontSize: 20 }} />
-          </Paper>
-
-          <Menu
-            anchorEl={menuAnchorEl}
-            open={Boolean(menuAnchorEl)}
-            onClose={() => setMenuAnchorEl(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            PaperProps={{
-              elevation: 4,
-              sx: { width: 310, mt: 1, borderRadius: 2, border: '1px solid #e2e8f0' }
-            }}
-          >
-            <Box sx={{ px: 2, py: 1.5, bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                <Chip
-                  size="small"
-                  icon={<CheckCircleIcon sx={{ fontSize: '14px !important' }} />}
-                  label="SESSÃO ATIVA • ALLOYDB"
-                  color="success"
-                  variant="outlined"
-                  sx={{ fontFamily: 'monospace', fontSize: '0.68rem', fontWeight: 700, height: 22 }}
-                />
-                <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
-                  {user.role}
-                </Typography>
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', noWrap: true }}>
-                {user.email}
-              </Typography>
-            </Box>
-
-            <MenuItem
-              onClick={() => {
-                setMenuAnchorEl(null);
-                setProfileStatusMsg(null);
-                setProfileModalOpen(true);
-              }}
-              sx={{ py: 1.25 }}
-            >
-              <ListItemIcon>
-                <PersonIcon fontSize="small" sx={{ color: '#002046' }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="Meu Perfil e Foto"
-                secondary="Atualizar avatar, nome social e telefone"
-                primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 600 }}
-                secondaryTypographyProps={{ fontSize: '0.74rem' }}
-              />
-            </MenuItem>
-
-            <MenuItem onClick={openReadOnlyFamilyModal} sx={{ py: 1.25 }}>
-              <ListItemIcon>
-                <GroupIcon fontSize="small" sx={{ color: '#002046' }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="Núcleo Familiar (Visualização)"
-                secondary="Vínculos civis somente leitura"
-                primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 600 }}
-                secondaryTypographyProps={{ fontSize: '0.74rem' }}
-              />
-            </MenuItem>
-
-            <MenuItem
-              onClick={() => {
-                setMenuAnchorEl(null);
-                setNidInput(user.nid);
-                setPasswordInput('');
-                setAuthStep('LOGIN');
-                setAuthError(null);
-                setAuthNotice(null);
-                setLoginModalOpen(true);
-              }}
-              sx={{ py: 1.25 }}
-            >
-              <ListItemIcon>
-                <KeyIcon fontSize="small" sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="Alternar Cidadão (Login NID)"
-                primaryTypographyProps={{ fontSize: '0.86rem', fontWeight: 500 }}
-              />
-            </MenuItem>
-
-            <Divider />
-
-            <MenuItem onClick={handleLogout} sx={{ py: 1.25, color: '#b91c1c' }}>
-              <ListItemIcon>
-                <LogoutIcon fontSize="small" sx={{ color: '#b91c1c' }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="Encerrar Sessão"
-                primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 700 }}
-              />
-            </MenuItem>
-          </Menu>
-        </>
+              {user.nid}
+            </Typography>
+          </Box>
+          <MenuIcon sx={{ color: '#0a2240', fontSize: 20, ml: 0.5 }} />
+        </Paper>
       )}
 
-      {/* MODAL 1: AUTENTICAÇÃO SOBERANA & FLUXO DE PRIMEIRO ACESSO COM OTP DE 6 DÍGITOS */}
+      {/* MODAL 1: AUTENTICAÇÃO SOBERANA (NID / SENHA / 1º ACESSO OTP) */}
       <Dialog
         open={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 2.5, overflow: 'hidden' } }}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 20px 50px rgba(10, 34, 64, 0.14)'
+          }
+        }}
       >
-        <DialogTitle
+        <Box
           sx={{
-            bgcolor: '#002046',
-            color: '#fff',
+            px: 3,
+            py: 2.25,
+            bgcolor: '#0a2240',
+            color: '#ffffff',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            py: 2
+            justifyContent: 'space-between'
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <ShieldIcon sx={{ color: '#b4c5ff' }} />
+            <ShieldIcon sx={{ color: '#93c5fd' }} />
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                Autenticação Soberana • Identidade Nacional (NID)
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                Identidade Digital Soberana (NID)
               </Typography>
-              <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#b4c5ff' }}>
-                AlloyDB for PostgreSQL 15 • Argon2id • 2FA E-mail OTP
+              <Typography variant="caption" sx={{ color: '#cbd5e1', display: 'block' }}>
+                República de Novatlantis • Autenticação Unificada AlloyDB
               </Typography>
             </Box>
           </Box>
           <IconButton onClick={() => setLoginModalOpen(false)} sx={{ color: '#cbd5e1' }} size="small">
             <CloseIcon />
           </IconButton>
-        </DialogTitle>
+        </Box>
 
-        <DialogContent sx={{ pt: 3, pb: 3 }}>
-          {/* Stepper Indicator */}
-          <Box sx={{ display: 'flex', gap: 1, mb: 2.5, mt: 1 }}>
-            <Chip
-              label="1. Credenciais NID"
-              size="small"
-              color={authStep === 'LOGIN' ? 'primary' : 'default'}
-              sx={{ flex: 1, fontFamily: 'monospace', fontWeight: 700 }}
-            />
-            <Chip
-              label="2. Troca de Senha + E-mail"
-              size="small"
-              color={authStep === 'FIRST_LOGIN_SETUP' ? 'primary' : 'default'}
-              sx={{ flex: 1, fontFamily: 'monospace', fontWeight: 700 }}
-            />
-            <Chip
-              label="3. Código OTP (6 Dígitos)"
-              size="small"
-              color={authStep === 'VERIFY_EMAIL_OTP' ? 'primary' : 'default'}
-              sx={{ flex: 1, fontFamily: 'monospace', fontWeight: 700 }}
-            />
-          </Box>
-
+        <DialogContent sx={{ p: 3 }}>
           {authError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
               {authError}
             </Alert>
           )}
 
           {authNotice && (
-            <Alert severity="info" sx={{ mb: 2 }}>
+            <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
               {authNotice}
             </Alert>
           )}
@@ -699,20 +653,33 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                 label="Identificador Nacional (NID) ou E-mail"
                 value={nidInput}
                 onChange={(e) => setNidInput(e.target.value)}
-                placeholder="Ex: NID-000-0000-0001-9"
+                placeholder="Ex: NID-000-0000-0001-9 ou admin@jopoco.altostrat.com"
                 fullWidth
                 required
-                size="small"
+                size="medium"
                 InputProps={{ sx: { fontFamily: 'monospace' } }}
               />
+
+              <TextField
+                label="Senha de Acesso"
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Digite sua senha (ex: ATs32=34 ou senha postal)"
+                fullWidth
+                required
+                size="medium"
+              />
+
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
                   size="small"
                   variant="outlined"
                   startIcon={<KeyIcon />}
                   onClick={() => lookupPostalInitialPassword(nidInput)}
+                  sx={{ textTransform: 'none' }}
                 >
-                  Consultar Senha Inicial (Lote 100k)
+                  Preencher Senha Inicial do NID
                 </Button>
                 <Button
                   size="small"
@@ -720,37 +687,21 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   color="warning"
                   startIcon={<RefreshIcon />}
                   onClick={() => resetCitizenToFirstLogin(nidInput)}
+                  sx={{ textTransform: 'none' }}
                 >
-                  Simular 1º Acesso
+                  Simular 1º Acesso (OTP)
                 </Button>
               </Box>
 
-              <TextField
-                label="Senha de Acesso"
-                type="password"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Digite sua senha inicial ou definitiva"
-                fullWidth
-                required
-                size="small"
-              />
-              {postalHintPassword && (
-                <Typography variant="caption" color="text.secondary">
-                  Senha inicial localizada: <code>{postalHintPassword}</code> (Primeiro-Ministro também aceita{' '}
-                  <code>ATs32=34</code>).
+              <Paper variant="outlined" sx={{ p: 1.75, bgcolor: '#f8fafc', borderRadius: 2 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 1 }}>
+                  CREDENCIAIS RÁPIDAS PARA TESTE (CLIQUE PARA PREENCHER):
                 </Typography>
-              )}
-
-              <Paper variant="outlined" sx={{ p: 1.5, bgcolor: '#f8fafc' }}>
-                <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700, display: 'block', mb: 1 }}>
-                  CONTAS SOBERANAS PARA TESTE RÁPIDO (ALLOYDB 100K):
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
                   {[
                     { nid: 'NID-000-0000-0001-9', label: 'Primeiro-Ministro (jopoco)' },
                     { nid: 'NID-000-0000-0002-7', label: 'Secretária-Geral (Helena)' },
-                    { nid: 'NID-000-0000-0004-3', label: 'Médica Telemed (Dra. Sofia)' },
+                    { nid: 'NID-000-0000-0004-3', label: 'Médica (Dra. Sofia)' },
                     { nid: 'NID-000-0000-0010-8', label: 'Cidadão/Estudante (Lucas)' }
                   ].map((preset) => (
                     <Chip
@@ -761,14 +712,28 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                         setNidInput(preset.nid);
                         lookupPostalInitialPassword(preset.nid);
                       }}
-                      sx={{ cursor: 'pointer' }}
+                      sx={{ cursor: 'pointer', fontWeight: 600 }}
                     />
                   ))}
                 </Box>
               </Paper>
 
-              <Button type="submit" variant="contained" color="primary" size="large" disabled={submitting} fullWidth>
-                {submitting ? 'Verificando Hash Argon2id no AlloyDB...' : 'Autenticar com NID'}
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={submitting}
+                fullWidth
+                sx={{
+                  py: 1.35,
+                  bgcolor: '#0a2240',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  '&:hover': { bgcolor: '#163a66' }
+                }}
+              >
+                {submitting ? 'Autenticando no AlloyDB...' : 'Entrar e Continuar'}
               </Button>
             </Box>
           )}
@@ -780,8 +745,8 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
               sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
             >
               <Alert severity="warning">
-                <strong>Primeiro Acesso Detectado ({nidInput}):</strong> Defina sua senha definitiva (mínimo 8
-                caracteres, letras e números) e vincule seu e-mail pessoal para receber o código OTP de 6 dígitos.
+                <strong>Primeiro Acesso ({nidInput}):</strong> Defina sua senha definitiva (mínimo 8 caracteres, letras
+                e números) e informe seu e-mail para receber o código OTP de 6 dígitos.
               </Alert>
 
               <TextField
@@ -816,11 +781,17 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
               />
 
               <Box sx={{ display: 'flex', gap: 1.5 }}>
-                <Button variant="outlined" onClick={() => setAuthStep('LOGIN')}>
+                <Button variant="outlined" onClick={() => setAuthStep('LOGIN')} sx={{ textTransform: 'none' }}>
                   Voltar
                 </Button>
-                <Button type="submit" variant="contained" color="primary" fullWidth disabled={submitting}>
-                  {submitting ? 'Gerando Código Criptográfico...' : 'Salvar Nova Senha e Enviar Código de 6 Dígitos'}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  disabled={submitting}
+                  sx={{ bgcolor: '#0a2240', textTransform: 'none', fontWeight: 700 }}
+                >
+                  {submitting ? 'Gerando Código...' : 'Salvar Senha e Enviar Código OTP'}
                 </Button>
               </Box>
             </Box>
@@ -833,12 +804,11 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
               sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
             >
               <Alert severity="success" icon={<EmailIcon />}>
-                Enviamos um código numérico de 6 dígitos para <strong>{emailInput}</strong> (expira em 10 minutos • máx.
-                3 tentativas).
+                Código numérico de 6 dígitos enviado para <strong>{emailInput}</strong>.
                 {dispatchedOtpPreview && (
                   <Box sx={{ mt: 1, p: 1, bgcolor: '#fff', borderRadius: 1, border: '1px solid #86efac' }}>
                     <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                      CÓDIGO OTP DISPARADO:{' '}
+                      CÓDIGO OTP:{' '}
                       <span style={{ fontSize: '1.1rem', letterSpacing: '0.18em' }}>{dispatchedOtpPreview}</span>
                     </Typography>
                   </Box>
@@ -859,7 +829,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
               />
 
               <Box sx={{ display: 'flex', gap: 1.5 }}>
-                <Button variant="outlined" onClick={handleResendOtp}>
+                <Button variant="outlined" onClick={handleResendOtp} sx={{ textTransform: 'none' }}>
                   Reenviar Código
                 </Button>
                 <Button
@@ -868,8 +838,9 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                   color="success"
                   fullWidth
                   disabled={submitting || otpInput.length !== 6}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
                 >
-                  {submitting ? 'Validando OTP...' : 'Confirmar Código e Ativar Conta'}
+                  {submitting ? 'Validando...' : 'Confirmar Código e Ativar Conta'}
                 </Button>
               </Box>
             </Box>
@@ -877,182 +848,407 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* MODAL 2: MEU PERFIL E FOTO */}
-      <Dialog open={profileModalOpen} onClose={() => setProfileModalOpen(false)} maxWidth="sm" fullWidth>
+      {/* MODAL 2: ÁREA INTERNA DO PERFIL DO CIDADÃO — NAVEGAÇÃO VIA MENU HAMBÚRGUER (☰) */}
+      <Dialog
+        open={profileModalOpen}
+        onClose={() => {
+          setProfileHamburgerOpen(false);
+          setProfileModalOpen(false);
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: 'hidden',
+            minHeight: 500,
+            position: 'relative',
+            border: '1px solid #e2e8f0'
+          }
+        }}
+      >
         {user && (
           <>
-            <DialogTitle
+            {/* Top Bar da Área Interna do Perfil com Botão Hambúrguer (☰) */}
+            <Box
               sx={{
-                bgcolor: '#002046',
-                color: '#fff',
+                px: 2.5,
+                py: 1.75,
+                bgcolor: '#0a2240',
+                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PersonIcon sx={{ color: '#b4c5ff' }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                  Meu Perfil Cidadão & Foto Oficial
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <IconButton
+                  onClick={() => setProfileHamburgerOpen(true)}
+                  sx={{
+                    color: '#ffffff',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    borderRadius: 1.5
+                  }}
+                  aria-label="Abrir Menu do Perfil"
+                >
+                  <MenuIcon />
+                </IconButton>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                    Perfil Soberano do Cidadão •{' '}
+                    {activeProfileSection === 'PERSONAL_DATA'
+                      ? 'Dados Cadastrais & Foto'
+                      : activeProfileSection === 'FAMILY_READONLY'
+                      ? 'Núcleo Familiar (Somente Leitura)'
+                      : 'Credenciais & Acesso Identidade 360'}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#cbd5e1' }}>
+                    {user.full_name} ({user.nid}) • Clique em ☰ para alternar seções do perfil
+                  </Typography>
+                </Box>
               </Box>
               <IconButton onClick={() => setProfileModalOpen(false)} sx={{ color: '#cbd5e1' }} size="small">
                 <CloseIcon />
               </IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ pt: 3 }}>
+            </Box>
+
+            {/* Menu Hambúrguer Deslizante Interno do Perfil (Sem opções empilhadas lado a lado) */}
+            <Drawer
+              anchor="left"
+              open={profileHamburgerOpen}
+              onClose={() => setProfileHamburgerOpen(false)}
+              PaperProps={{
+                sx: {
+                  width: 300,
+                  bgcolor: '#ffffff',
+                  borderRight: '1px solid #e2e8f0'
+                }
+              }}
+            >
+              <Box sx={{ p: 2.5, bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240', letterSpacing: '0.03em' }}>
+                    MENU DO PERFIL (NID)
+                  </Typography>
+                  <IconButton size="small" onClick={() => setProfileHamburgerOpen(false)}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar
+                    src={user.avatarUrl || '/assets/pm_portrait.jpg'}
+                    sx={{ width: 44, height: 44, border: '2px solid #0a2240' }}
+                  />
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                      {user.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#475569' }}>
+                      {user.nid}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              <List sx={{ py: 1 }}>
+                <ListItemButton
+                  selected={activeProfileSection === 'PERSONAL_DATA'}
+                  onClick={() => openProfileWithSection('PERSONAL_DATA')}
+                >
+                  <ListItemIcon>
+                    <PersonIcon sx={{ color: '#0a2240' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Dados Cadastrais & Foto"
+                    secondary="Nome social, foto ICAO e telefone"
+                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
+                  />
+                </ListItemButton>
+
+                <ListItemButton
+                  selected={activeProfileSection === 'FAMILY_READONLY'}
+                  onClick={() => openProfileWithSection('FAMILY_READONLY')}
+                >
+                  <ListItemIcon>
+                    <GroupIcon sx={{ color: '#0a2240' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Núcleo Familiar"
+                    secondary="Vínculos civis (Somente Leitura)"
+                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
+                  />
+                </ListItemButton>
+
+                <ListItemButton
+                  selected={activeProfileSection === 'SECURITY_ACCESS'}
+                  onClick={() => openProfileWithSection('SECURITY_ACCESS')}
+                >
+                  <ListItemIcon>
+                    <ShieldIcon sx={{ color: '#0a2240' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Segurança & Identidade 360"
+                    secondary="Papel RBAC, sessão e troca de conta"
+                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
+                  />
+                </ListItemButton>
+
+                <Divider sx={{ my: 1.5 }} />
+
+                <ListItemButton
+                  component="a"
+                  href={buildPortalUrlWithSso(citizenPortalUrl)}
+                  onClick={() => setProfileHamburgerOpen(false)}
+                >
+                  <ListItemIcon>
+                    <LaunchIcon sx={{ color: '#0369a1' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Abrir Portal do Cidadão"
+                    secondary="Serviços digitais e prontuários"
+                    primaryTypographyProps={{ fontWeight: 600, fontSize: '0.88rem' }}
+                  />
+                </ListItemButton>
+
+                {user.role !== 'CITIZEN_COMMON' && (
+                  <ListItemButton
+                    component="a"
+                    href={buildPortalUrlWithSso(govBackstageUrl)}
+                    onClick={() => setProfileHamburgerOpen(false)}
+                  >
+                    <ListItemIcon>
+                      <AdminIcon sx={{ color: '#0f766e' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Backstage Governamental"
+                      secondary={`Acesso: ${user.role}`}
+                      primaryTypographyProps={{ fontWeight: 600, fontSize: '0.88rem' }}
+                    />
+                  </ListItemButton>
+                )}
+
+                <Divider sx={{ my: 1.5 }} />
+
+                <ListItemButton onClick={handleLogout} sx={{ color: '#b91c1c' }}>
+                  <ListItemIcon>
+                    <LogoutIcon sx={{ color: '#b91c1c' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Encerrar Sessão (Logout)"
+                    secondary="Sair e limpar cookie de sessão"
+                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.9rem' }}
+                  />
+                </ListItemButton>
+              </List>
+            </Drawer>
+
+            <DialogContent sx={{ p: 3.5, bgcolor: '#fcfcfc' }}>
               {profileStatusMsg && (
-                <Alert severity="info" sx={{ mb: 2, mt: 1 }}>
+                <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2 }}>
                   {profileStatusMsg}
                 </Alert>
               )}
 
-              <Paper variant="outlined" sx={{ p: 2, mb: 2.5, mt: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar
-                  src={user.avatarUrl || '/assets/pm_portrait.jpg'}
-                  alt={user.name}
-                  sx={{ width: 68, height: 68, border: '2px solid #002046' }}
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                    {user.full_name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block', mb: 1 }}>
-                    {user.nid} • {user.email}
-                  </Typography>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/webp,image/png,image/jpeg"
-                    onChange={handleAvatarFileChange}
-                    style={{ display: 'none' }}
-                  />
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={<PhotoCameraIcon />}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Enviar Nova Foto (WEBP/PNG/JPG)
-                  </Button>
-                </Box>
-              </Paper>
-
-              <Box component="form" onSubmit={handleSaveProfile} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  label="Nome de Exibição / Nome Social"
-                  value={editSocialName}
-                  onChange={(e) => setEditSocialName(e.target.value)}
-                  fullWidth
-                  size="small"
-                />
-                <TextField
-                  label="Telefone Soberano"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  fullWidth
-                  size="small"
-                />
-                <TextField
-                  label="Nota Cadastral"
-                  value={editBio}
-                  onChange={(e) => setEditBio(e.target.value)}
-                  multiline
-                  rows={2}
-                  fullWidth
-                  size="small"
-                />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                  <Button onClick={() => setProfileModalOpen(false)}>Fechar</Button>
-                  <Button type="submit" variant="contained" color="primary">
-                    Salvar Alterações
-                  </Button>
-                </Box>
-              </Box>
-            </DialogContent>
-          </>
-        )}
-      </Dialog>
-
-      {/* MODAL 3: NÚCLEO FAMILIAR (ESTRITAMENTE SOMENTE LEITURA / READ-ONLY) */}
-      <Dialog open={familyModalOpen} onClose={() => setFamilyModalOpen(false)} maxWidth="md" fullWidth>
-        {user && (
-          <>
-            <DialogTitle
-              sx={{
-                bgcolor: '#002046',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <GroupIcon sx={{ color: '#b4c5ff' }} />
+              {/* SEÇÃO 1: DADOS CADASTRAIS & FOTO */}
+              {activeProfileSection === 'PERSONAL_DATA' && (
                 <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                    Núcleo Familiar Soberano (Modo Somente Leitura)
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#b4c5ff' }}>
-                    Titular: {user.full_name} ({user.nid})
-                  </Typography>
-                </Box>
-              </Box>
-              <IconButton onClick={() => setFamilyModalOpen(false)} sx={{ color: '#cbd5e1' }} size="small">
-                <CloseIcon />
-              </IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ pt: 2.5 }}>
-              <Alert severity="warning" icon={<VisibilityIcon />} sx={{ mb: 2, mt: 1 }}>
-                <strong>REGRA DE GOVERNANÇA CIVIL (SOMENTE LEITURA):</strong> Os dados de parentesco e dependência são
-                mantidos unicamente pelo Registro Civil Central no AlloyDB. Endpoints <code>POST/PUT/PATCH/DELETE</code>{' '}
-                em <code>/api/v1/profile/family</code> retornam <code>403 Forbidden</code>.
-              </Alert>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2.5,
+                      mb: 3,
+                      borderRadius: 2.5,
+                      bgcolor: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2.5,
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    <Avatar
+                      src={user.avatarUrl || '/assets/pm_portrait.jpg'}
+                      alt={user.name}
+                      sx={{ width: 76, height: 76, border: '2px solid #0a2240' }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                        {user.full_name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', color: '#475569', mb: 1.25 }}>
+                        {user.nid} • {user.email} • Distrito: {user.district}
+                      </Typography>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/webp,image/png,image/jpeg"
+                        onChange={handleAvatarFileChange}
+                        style={{ display: 'none' }}
+                      />
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<PhotoCameraIcon />}
+                        onClick={() => fileInputRef.current?.click()}
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Atualizar Foto Oficial (WEBP / PNG / JPG)
+                      </Button>
+                    </Box>
+                  </Paper>
 
-              {loadingFamily ? (
-                <Box sx={{ py: 4, textAlign: 'center' }}>
-                  <CircularProgress size={28} />
+                  <Box
+                    component="form"
+                    onSubmit={handleSaveProfile}
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 2.25 }}
+                  >
+                    <TextField
+                      label="Nome de Exibição / Nome Social"
+                      value={editSocialName}
+                      onChange={(e) => setEditSocialName(e.target.value)}
+                      fullWidth
+                      size="medium"
+                    />
+                    <TextField
+                      label="Telefone Soberano de Contato"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      fullWidth
+                      size="medium"
+                    />
+                    <TextField
+                      label="Observações Cadastrais"
+                      value={editBio}
+                      onChange={(e) => setEditBio(e.target.value)}
+                      multiline
+                      rows={2}
+                      fullWidth
+                      size="medium"
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1 }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<MenuIcon />}
+                        onClick={() => setProfileHamburgerOpen(true)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Mais Opções do Perfil
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        sx={{ bgcolor: '#0a2240', textTransform: 'none', fontWeight: 700, px: 3 }}
+                      >
+                        Salvar Dados no AlloyDB
+                      </Button>
+                    </Box>
+                  </Box>
                 </Box>
-              ) : familyMembers.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-                  Nenhum vínculo familiar direto registrado para este NID.
-                </Typography>
-              ) : (
-                <TableContainer component={Paper} variant="outlined">
-                  <Table size="small">
-                    <TableHead sx={{ bgcolor: '#f1f5f9' }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>NID Familiar</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Nome Completo</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Parentesco</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Idade</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Status Civil</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {familyMembers.map((fm) => (
-                        <TableRow key={fm.relation_id} hover>
-                          <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700, color: '#002046' }}>
-                            {fm.relative_nid}
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>{fm.relative_name}</TableCell>
-                          <TableCell>
-                            <Chip label={fm.relation_type} size="small" color="primary" variant="outlined" />
-                          </TableCell>
-                          <TableCell>{fm.relative_age} anos</TableCell>
-                          <TableCell>
-                            <Chip
-                              icon={<LockIcon sx={{ fontSize: '12px !important' }} />}
-                              label="Registro Imutável"
-                              size="small"
-                              sx={{ fontSize: '0.7rem' }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+              )}
+
+              {/* SEÇÃO 2: NÚCLEO FAMILIAR (SOMENTE LEITURA) */}
+              {activeProfileSection === 'FAMILY_READONLY' && (
+                <Box>
+                  <Alert severity="info" icon={<VisibilityIcon />} sx={{ mb: 2.5, borderRadius: 2 }}>
+                    <strong>Registro Civil Soberano (Somente Leitura):</strong> Os vínculos familiares são mantidos pelo
+                    AlloyDB Central e protegidos contra edição direta pelo usuário (HTTP 403 em mutações).
+                  </Alert>
+
+                  {loadingFamily ? (
+                    <Box sx={{ py: 5, textAlign: 'center' }}>
+                      <CircularProgress size={28} />
+                    </Box>
+                  ) : familyMembers.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                      Nenhum vínculo familiar direto registrado para este NID.
+                    </Typography>
+                  ) : (
+                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                      <Table size="small">
+                        <TableHead sx={{ bgcolor: '#f8fafc' }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700 }}>NID Familiar</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Nome Completo</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Parentesco</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Idade</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Governança</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {familyMembers.map((fm) => (
+                            <TableRow key={fm.relation_id} hover>
+                              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700, color: '#0a2240' }}>
+                                {fm.relative_nid}
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>{fm.relative_name}</TableCell>
+                              <TableCell>
+                                <Chip label={fm.relation_type} size="small" variant="outlined" />
+                              </TableCell>
+                              <TableCell>{fm.relative_age} anos</TableCell>
+                              <TableCell>
+                                <Chip
+                                  icon={<LockIcon sx={{ fontSize: '12px !important' }} />}
+                                  label="Somente Leitura"
+                                  size="small"
+                                  sx={{ fontSize: '0.7rem' }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
+                </Box>
+              )}
+
+              {/* SEÇÃO 3: SEGURANÇA, PAPEL IDENTIDADE 360 & SESSÃO */}
+              {activeProfileSection === 'SECURITY_ACCESS' && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, bgcolor: '#ffffff' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240', mb: 1 }}>
+                      CREDENCIAL & PAPEL ATIVO NA IDENTIDADE 360
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.75 }}>
+                      • <strong>NID Soberano:</strong> <code>{user.nid}</code>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.75 }}>
+                      • <strong>Papel RBAC Governamental:</strong> <code>{user.role}</code>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.75 }}>
+                      • <strong>Profissão / Especialidade:</strong> {user.profession}
+                    </Typography>
+                    <Typography variant="body2">
+                      • <strong>Status da Conta no AlloyDB:</strong>{' '}
+                      <Chip size="small" color="success" label={user.status} icon={<CheckCircleIcon />} />
+                    </Typography>
+                  </Paper>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<KeyIcon />}
+                      onClick={() => {
+                        setProfileModalOpen(false);
+                        setNidInput('');
+                        setPasswordInput('');
+                        setAuthStep('LOGIN');
+                        setLoginModalOpen(true);
+                      }}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Alternar para Outro Cidadão (NID)
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      startIcon={<LogoutIcon />}
+                      onClick={handleLogout}
+                      sx={{ textTransform: 'none', fontWeight: 700 }}
+                    >
+                      Encerrar Sessão Agora
+                    </Button>
+                  </Box>
+                </Box>
               )}
             </DialogContent>
           </>

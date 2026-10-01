@@ -31,11 +31,22 @@ import {
   Paper,
   Typography,
   Chip,
-  Tabs,
-  Tab,
   Alert,
-  Button
+  Button,
+  Drawer,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material';
+import {
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  Shield as ShieldIcon,
+  ArrowBack as ArrowBackIcon
+} from '@mui/icons-material';
 import { TopNavUserWidget } from './components/TopNavUserWidget';
 import { novatlantisTheme } from './theme';
 
@@ -45,21 +56,45 @@ type CitizenTab = 'identity' | 'family_address' | 'health' | 'education' | 'urba
 const LANDING_PORTAL_URL = 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app';
 const GOV_BACKSTAGE_URL = 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app';
 
-const QUICK_USERS = [
-  { nid: 'NID-000-0000-0001-9', label: 'Jopoco (Primeiro-Ministro / Cidadão #1)' },
-  { nid: 'NID-000-0000-0010-8', label: 'Pedro Albuquerque Viana (Estudante 11 anos)' },
-  { nid: 'NID-000-0000-0011-6', label: 'Alice Albuquerque Viana (Estudante 6 anos)' },
-  { nid: 'NID-000-0000-0003-5', label: 'Helena Viana Oliveira (Mãe / Gestora IAM)' },
-  { nid: 'NID-000-0000-0006-0', label: 'Prof. Lucas Albuquerque Silva (Pai / Professor)' },
-  { nid: 'NID-000-0000-0004-3', label: 'Dra. Sofia Mendes Costa (Médica Pediatra)' }
+const CITIZEN_MENU_ITEMS: { id: CitizenTab; title: string; subtitle: string }[] = [
+  {
+    id: 'identity',
+    title: '1. Carteira Soberana NID & Biometria NIST',
+    subtitle: 'Credencial Mod-11, chave Ed25519 e auditoria'
+  },
+  {
+    id: 'family_address',
+    title: '2. Grafo Familiar & Endereço Soberano',
+    subtitle: 'Vínculos civis e atualização de domicílio'
+  },
+  {
+    id: 'health',
+    title: '3. Saúde HL7 & Telemedicina 24/7',
+    subtitle: 'Prontuário clínico, alergias e teleconsulta IA'
+  },
+  {
+    id: 'education',
+    title: '4. Educação & Notas Escolares (GDP)',
+    subtitle: 'Boletim por matéria, frequência e tutoria IA'
+  },
+  {
+    id: 'urban',
+    title: '5. Zeladoria 311 & Emergência 911',
+    subtitle: 'Abertura de chamados urbanos e resgate tático'
+  },
+  {
+    id: 'treasury',
+    title: '6. Economia, Empresa 45s & Passaporte ICAO',
+    subtitle: 'Constituição de empresa, UBI e passaporte digital'
+  }
 ];
 
 export default function App() {
   const [lang, setLang] = useState<Language>('pt-BR');
   const [activeTab, setActiveTab] = useState<CitizenTab>('identity');
-  const [loginInput, setLoginInput] = useState('NID-000-0000-0001-9');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [hamburgerOpen, setHamburgerOpen] = useState(false);
+  const [loginTriggerCount, setLoginTriggerCount] = useState(0);
+  const [ssoToken, setSsoToken] = useState<string | null>(null);
   const [dossier, setDossier] = useState<any>(null);
   const [dashboard, setDashboard] = useState<any>(null);
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
@@ -76,6 +111,7 @@ export default function App() {
   const [companySector, setCompanySector] = useState('Inteligência Artificial Soberana & Robótica');
 
   const loadCitizen = async (identifier: string) => {
+    if (!identifier) return;
     try {
       const res = await fetch('/api/users/login', {
         method: 'POST',
@@ -85,7 +121,6 @@ export default function App() {
       if (!res.ok) return;
       const data = await res.json();
       setDossier(data);
-      setLoginInput(data.citizen.nid);
       setNewAddressId(data.citizen.address_id || 'ADDR-NOV-2026-101');
       setNewDistrict(data.citizen.district || 'Distrito Tecnológico');
       if (data.citizen.native_language && ['pt-BR', 'es-419', 'en-US'].includes(data.citizen.native_language)) {
@@ -109,24 +144,12 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const initialNid = params.get('nid') || 'NID-000-0000-0001-9';
     const initialTab = params.get('tab') as CitizenTab | null;
     if (initialTab && ['identity', 'family_address', 'health', 'education', 'urban', 'treasury'].includes(initialTab)) {
       setActiveTab(initialTab);
     }
-    loadCitizen(initialNid);
+    // IMPORTANTE: Nenhum usuário é carregado sem sessão autenticada no TopNavUserWidget
   }, []);
-
-  const handleSearch = async (q: string) => {
-    setSearchQuery(q);
-    if (q.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}&limit=8`);
-    const data = await res.json();
-    setSearchResults(data.results || []);
-  };
 
   const handleUpdateAddress = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,76 +265,91 @@ export default function App() {
   };
 
   const citizen = dossier?.citizen;
+  const activeMenuObj = CITIZEN_MENU_ITEMS.find((m) => m.id === activeTab) || CITIZEN_MENU_ITEMS[0];
 
   return (
     <ThemeProvider theme={novatlantisTheme}>
       <CssBaseline />
-      <div className="min-h-screen bg-[#f8f9fb] text-[#191c1e] flex flex-col">
-        {/* TOP BAR SOBERANA */}
-        <div className="bg-[#001530] text-white text-xs border-b border-[#002046]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <img src="/assets/flag.jpg" alt="Bandeira de Novatlantis" className="h-4 w-6 object-cover border border-white/30" />
-              <span className="font-mono uppercase tracking-wider font-semibold text-[#b4c5ff]">
-                REPÚBLICA DIGITAL DE NOVATLANTIS • PORTAL DO CIDADÃO • ALLOYDB + GOVERNMENT DATA PLATFORM
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
+      <div className="min-h-screen bg-[#fcfbf9] text-[#111827] flex flex-col">
+        {/* 1. FAIXA OFICIAL SUPERIOR (Estilo america.gov) */}
+        <Box sx={{ bgcolor: '#f1f0ec', borderBottom: '1px solid #e2e0d8', py: 0.65, px: 2 }}>
+          <Container maxWidth="xl" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <img src="/assets/flag.jpg" alt="Bandeira de Novatlantis" className="h-3.5 w-5 object-cover border border-slate-300 rounded-sm" />
+              <Typography variant="caption" sx={{ color: '#1f2937', fontWeight: 600, fontSize: '0.76rem' }}>
+                Um site oficial do Governo da República Digital de Novatlantis • Portal do Cidadão
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <a
-                href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(citizen?.nid || 'NID-000-0000-0001-9')}`}
-                className="text-[#b4c5ff] hover:underline flex items-center gap-1"
+                href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+                className="text-[#0a2240] hover:underline flex items-center gap-1 text-xs font-semibold"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Portal Principal da Nação
+                <ArrowLeft className="w-3.5 h-3.5" /> Voltar à Home Page (Concierge Nacional)
               </a>
-              <div className="flex items-center gap-1 bg-[#002046] px-2 py-0.5 rounded border border-white/15">
-                <Globe className="w-3.5 h-3.5 text-[#b4c5ff]" />
-                {(['pt-BR', 'es-419', 'en-US'] as Language[]).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
-                      lang === l ? 'bg-[#b4c5ff] text-[#002046] font-bold' : 'text-slate-300'
-                    }`}
-                  >
-                    {l.split('-')[0].toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Container>
+        </Box>
 
-        {/* CABEÇALHO MATERIAL UI DO PORTAL DO CIDADÃO COM FONTE AMPLIADA E APENAS STATUS DO USUÁRIO */}
-        <AppBar position="sticky" color="inherit" elevation={0} sx={{ bgcolor: '#ffffff', borderBottom: '3px solid #002046', zIndex: 30 }}>
+        {/* 2. CABEÇALHO ESTILO AMERICA.GOV COM BOTÃO HAMBÚRGUER (☰) E APENAS WIDGET DO USUÁRIO À DIREITA */}
+        <AppBar
+          position="sticky"
+          color="inherit"
+          elevation={0}
+          sx={{
+            bgcolor: 'rgba(252, 251, 249, 0.95)',
+            backdropFilter: 'blur(10px)',
+            borderBottom: '1px solid #e5e4dc',
+            zIndex: 30
+          }}
+        >
           <Container maxWidth="xl">
             <Toolbar
               disableGutters
               sx={{
-                py: { xs: 2, md: 2.5 },
+                py: 1.5,
                 display: 'flex',
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: 3
+                gap: 2
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-                <Paper variant="outlined" sx={{ p: 0.75, borderRadius: 2, borderColor: '#cbd5e1', bgcolor: '#fff' }}>
-                  <Box
-                    component="img"
-                    src="/assets/coat_of_arms.jpg"
-                    alt="Brasão Oficial"
-                    sx={{ height: { xs: 50, md: 64 }, width: { xs: 50, md: 64 }, objectFit: 'contain' }}
-                  />
-                </Paper>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <IconButton
+                  onClick={() => setHamburgerOpen(true)}
+                  sx={{
+                    border: '1px solid #d1d5db',
+                    borderRadius: 2,
+                    p: 1,
+                    color: '#0a2240',
+                    bgcolor: '#ffffff',
+                    '&:hover': { bgcolor: '#f3f4f6', borderColor: '#0a2240' }
+                  }}
+                  aria-label="Abrir Menu Hambúrguer do Portal do Cidadão"
+                >
+                  <MenuIcon />
+                </IconButton>
+
+                <Box
+                  component="img"
+                  src="/assets/coat_of_arms.jpg"
+                  alt="Brasão Oficial"
+                  sx={{
+                    height: { xs: 44, md: 54 },
+                    width: { xs: 44, md: 54 },
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                    border: '1.5px solid #0a2240'
+                  }}
+                />
                 <Box>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.25 }}>
                     <Typography
-                      variant="h1"
                       sx={{
-                        fontSize: { xs: '1.6rem', sm: '2.05rem', md: '2.4rem' },
-                        fontWeight: 800,
-                        color: '#002046',
+                        fontSize: { xs: '1.15rem', sm: '1.45rem', md: '1.75rem' },
+                        fontWeight: 900,
+                        color: '#0a2240',
                         letterSpacing: '-0.02em',
                         lineHeight: 1.15
                       }}
@@ -319,64 +357,129 @@ export default function App() {
                       Governo da República de Novatlantis
                     </Typography>
                     <Chip
-                      label="Portal do Cidadão • 360°"
+                      label="Portal do Cidadão"
+                      size="small"
                       sx={{
-                        bgcolor: '#dae2ff',
-                        color: '#001848',
-                        fontFamily: 'monospace',
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        fontSize: { xs: '0.8rem', md: '0.92rem' },
-                        height: { xs: 30, md: 34 },
-                        px: 1
+                        bgcolor: '#0a2240',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.76rem',
+                        height: 25
                       }}
                     />
                   </Box>
                   <Typography
-                    variant="subtitle1"
                     sx={{
-                      fontSize: { xs: '0.95rem', sm: '1.12rem', md: '1.22rem' },
-                      fontWeight: 500,
-                      color: '#43474f',
-                      mt: 0.5
+                      fontSize: { xs: '0.78rem', sm: '0.92rem', md: '1.02rem' },
+                      fontWeight: 600,
+                      color: '#374151',
+                      mt: 0.3
                     }}
                   >
-                    Chancelaria Digital • Autoatendimento Soberano • Módulo de Usuários AlloyDB & GDP (100.000 Cidadãos)
+                    {citizen
+                      ? `Módulo Ativo (☰): ${activeMenuObj.title}`
+                      : 'Chancelaria Digital • Autoatendimento Soberano • AlloyDB & GDP (100.000 Cidadãos)'}
                   </Typography>
                 </Box>
               </Box>
 
-              {/* APENAS O STATUS DO USUÁRIO COM A FOTO */}
+              {/* APENAS O STATUS DO USUÁRIO COM A FOTO / LOGIN NID */}
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <TopNavUserWidget
                   currentNid={citizen?.nid}
-                  onUserAuthenticated={(nid) => loadCitizen(nid)}
+                  openLoginTrigger={loginTriggerCount}
+                  citizenPortalUrl={ window.location.origin }
+                  govBackstageUrl={GOV_BACKSTAGE_URL}
+                  onUserAuthenticated={(nid, _user, token) => {
+                    if (token) setSsoToken(token);
+                    loadCitizen(nid);
+                  }}
+                  onUserLoggedOut={() => {
+                    setDossier(null);
+                    setDashboard(null);
+                    setSsoToken(null);
+                  }}
                 />
               </Box>
             </Toolbar>
           </Container>
-
-          {/* BARRA DE ABAS MATERIAL UI DO PORTAL DO CIDADÃO */}
-          <Box sx={{ bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-            <Container maxWidth="xl">
-              <Tabs
-                value={activeTab}
-                onChange={(_, val) => setActiveTab(val as CitizenTab)}
-                variant="scrollable"
-                scrollButtons="auto"
-                textColor="primary"
-                indicatorColor="primary"
-              >
-                <Tab value="identity" label="1. Carteira Soberana NID & Biometria NIST" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
-                <Tab value="family_address" label="2. Grafo Familiar & Endereço Soberano" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
-                <Tab value="health" label="3. Saúde HL7 & Telemedicina" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
-                <Tab value="education" label="4. Educação & Notas Escolares (GDP)" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
-                <Tab value="urban" label="5. Zeladoria 311 & Emergência 911" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
-                <Tab value="treasury" label="6. Economia, Empresa 45s & Passaporte ICAO" sx={{ fontWeight: 700, fontSize: '0.82rem' }} />
-              </Tabs>
-            </Container>
-          </Box>
         </AppBar>
+
+        {/* MENU HAMBÚRGUER VERTICAL (☰) PARA NAVEGAR ENTRE AS SEÇÕES INTERNAS DO CIDADÃO */}
+        <Drawer
+          anchor="left"
+          open={hamburgerOpen}
+          onClose={() => setHamburgerOpen(false)}
+          PaperProps={{
+            sx: { width: 340, bgcolor: '#fcfbf9', borderRight: '1px solid #e5e4dc' }
+          }}
+        >
+          <Box
+            sx={{
+              p: 2.5,
+              bgcolor: '#0a2240',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                Menu do Cidadão (☰)
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
+                {citizen ? `${citizen.full_name} (${citizen.nid})` : 'Sessão Não Iniciada'}
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <List sx={{ py: 1.5 }}>
+            <Box sx={{ px: 2.5, py: 0.75 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
+                MÓDULOS INTERNOS DO PERFIL & SERVIÇOS
+              </Typography>
+            </Box>
+
+            {CITIZEN_MENU_ITEMS.map((item) => (
+              <ListItemButton
+                key={item.id}
+                selected={activeTab === item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setHamburgerOpen(false);
+                }}
+                sx={{ py: 1.35 }}
+              >
+                <ListItemText
+                  primary={item.title}
+                  secondary={item.subtitle}
+                  primaryTypographyProps={{ fontWeight: activeTab === item.id ? 800 : 600, fontSize: '0.88rem', color: '#0a2240' }}
+                  secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                />
+              </ListItemButton>
+            ))}
+
+            <Divider sx={{ my: 1.5 }} />
+
+            <ListItemButton
+              component="a"
+              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+            >
+              <ListItemIcon>
+                <ArrowBackIcon sx={{ color: '#0a2240' }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Voltar à Home Page (Concierge IA)"
+                secondary="Fazer perguntas públicas no portal principal"
+                primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem' }}
+              />
+            </ListItemButton>
+          </List>
+        </Drawer>
 
         {/* BANNER DE FEEDBACK */}
         {statusBanner && (
@@ -388,9 +491,121 @@ export default function App() {
         )}
 
       {/* CONTEÚDO PRINCIPAL DO PORTAL DO CIDADÃO */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
-        {citizen && (
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+        {!citizen ? (
+          <Paper
+            elevation={0}
+            sx={{
+              maxWidth: 640,
+              mx: 'auto',
+              mt: 4,
+              p: { xs: 3.5, md: 5 },
+              textAlign: 'center',
+              borderRadius: 4,
+              bgcolor: '#ffffff',
+              border: '1px solid #e5e4dc',
+              boxShadow: '0 16px 40px -12px rgba(10, 34, 64, 0.08)'
+            }}
+          >
+            <ShieldIcon sx={{ fontSize: 48, color: '#0a2240', mb: 2 }} />
+            <Typography
+              variant="h4"
+              sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
+            >
+              Autenticação Necessária para Serviços Pessoais
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
+              Nenhum usuário está logado no momento. Para consultar dúvidas gerais sem precisar de login, utilize o{' '}
+              <strong>Concierge IA na Home Page</strong>. Para acessar sua Carteira NID, Prontuário de Saúde HL7,
+              Boletim Escolar ou solicitar serviços oficiais, entre com seu NID abaixo.
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<ShieldIcon />}
+                onClick={() => setLoginTriggerCount((c) => c + 1)}
+                sx={{
+                  bgcolor: '#0a2240',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 999,
+                  px: 3.5,
+                  py: 1.25,
+                  '&:hover': { bgcolor: '#163a66' }
+                }}
+              >
+                Entrar com NID Agora
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                href={LANDING_PORTAL_URL}
+                sx={{
+                  borderColor: '#0a2240',
+                  color: '#0a2240',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 999,
+                  px: 3
+                }}
+              >
+                Ir ao Chat Público (Sem Login)
+              </Button>
+            </Box>
+          </Paper>
+        ) : (
           <>
+            {/* Barra de Seção Atual com Atalho para o Menu Hambúrguer (☰) */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                mb: 3,
+                borderRadius: 2.5,
+                bgcolor: '#ffffff',
+                border: '1px solid #e5e4dc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 2
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<MenuIcon />}
+                  onClick={() => setHamburgerOpen(true)}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderColor: '#0a2240',
+                    color: '#0a2240',
+                    borderRadius: 2
+                  }}
+                >
+                  Alternar Módulo (☰)
+                </Button>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
+                    {activeMenuObj.title}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {activeMenuObj.subtitle}
+                  </Typography>
+                </Box>
+              </Box>
+              <Chip
+                label={`Cidadão Autenticado: ${citizen.full_name} (${citizen.nid})`}
+                size="small"
+                color="success"
+                variant="outlined"
+                sx={{ fontFamily: 'monospace', fontWeight: 700 }}
+              />
+            </Paper>
+
             {/* ABA 1: CARTEIRA SOBERANA NID & BIOMETRIA NIST */}
             {activeTab === 'identity' && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

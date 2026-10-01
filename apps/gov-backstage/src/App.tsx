@@ -9,10 +9,23 @@ import {
   Typography,
   Chip,
   Stack,
-  Tabs,
-  Tab,
-  Alert
+  Alert,
+  Paper,
+  Button,
+  Drawer,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material';
+import {
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  Shield as ShieldIcon,
+  ArrowBack as ArrowBackIcon
+} from '@mui/icons-material';
 import {
   Shield,
   Globe,
@@ -43,21 +56,45 @@ type BackstageTab = 'pm_cabinet' | 'iam360' | 'health_mgmt' | 'edu_mgmt' | 'ops_
 const LANDING_PORTAL_URL = 'https://novatlantis-landing-portal-wpahcxvhuq-uc.a.run.app';
 const CITIZEN_PORTAL_URL = 'https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app';
 
-const QUICK_PROFILES = [
-  { nid: 'NID-000-0000-0001-9', label: 'Jopoco (Primeiro-Ministro / Root Admin)', roleBadge: 'PRIME_MINISTER_ROOT' },
-  { nid: 'NID-000-0000-0002-7', label: 'Dr. Aurelius Valerius (Secretário-Geral)', roleBadge: 'SECRETARY_GENERAL' },
-  { nid: 'NID-000-0000-0003-5', label: 'Helena Viana (Gestora de Identidades 360)', roleBadge: 'IDENTITY_MANAGER_360' },
-  { nid: 'NID-000-0000-0004-3', label: 'Dra. Sofia Mendes (Gestora Saúde & Médica)', roleBadge: 'DOCTOR_AND_HEALTH_MANAGER' },
-  { nid: 'NID-000-0000-0006-0', label: 'Prof. Lucas Albuquerque (Gestor Educação)', roleBadge: 'TEACHER_AND_EDU_MANAGER' },
-  { nid: 'NID-000-0000-0008-6', label: 'Comandante Rafael Santos (Comando 311/911)', roleBadge: 'OPERATIONS_311_911_MANAGER' },
-  { nid: 'NID-000-0000-0009-4', label: 'Magistrada Clara Sterling (Justiça & Tesouro)', roleBadge: 'JUSTICE_AND_TREASURY_MANAGER' },
-  { nid: 'NID-000-0000-0010-8', label: 'Pedro Albuquerque (Cidadão Comum / Sem Acesso)', roleBadge: 'CITIZEN_COMMON' }
+const BACKSTAGE_MENU_ITEMS: { id: BackstageTab; title: string; subtitle: string }[] = [
+  {
+    id: 'pm_cabinet',
+    title: '1. Gabinete Primeiro-Ministro & Secretário-Geral',
+    subtitle: 'Comando executivo da nação e KPIs soberanos'
+  },
+  {
+    id: 'iam360',
+    title: '2. Identidade 360 (Gestão RBAC/ABAC)',
+    subtitle: 'Concessão e revogação de acesso administrativo'
+  },
+  {
+    id: 'health_mgmt',
+    title: '3. Gestão da Saúde (Hospitais & Médicos)',
+    subtitle: 'Rede hospitalar HL7 FHIR e fila de telemedicina'
+  },
+  {
+    id: 'edu_mgmt',
+    title: '4. Gestão da Educação (Escolas, Provas & Notas)',
+    subtitle: 'Lançamento de notas, frequência e avaliações'
+  },
+  {
+    id: 'ops_311_911',
+    title: '5. Comando 311 & 911 (Demandas do Cidadão)',
+    subtitle: 'Resolução de chamados urbanos e despacho tático'
+  },
+  {
+    id: 'justice_datalake',
+    title: '6. Justiça, Tesouro, AlloyDB & GDP 100k',
+    subtitle: 'Explorador de 100.000 cidadãos e auditoria fiscal'
+  }
 ];
 
 export default function App() {
   const [lang, setLang] = useState<Language>('pt-BR');
   const [backstageTab, setBackstageTab] = useState<BackstageTab>('pm_cabinet');
-  const [loginInput, setLoginInput] = useState('NID-000-0000-0001-9');
+  const [hamburgerOpen, setHamburgerOpen] = useState(false);
+  const [loginTriggerCount, setLoginTriggerCount] = useState(0);
+  const [ssoToken, setSsoToken] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -86,6 +123,7 @@ export default function App() {
   const [gradeLang, setGradeLang] = useState(91);
 
   const loadUserSession = async (identifier: string) => {
+    if (!identifier) return;
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -95,7 +133,6 @@ export default function App() {
       if (!res.ok) return;
       const data = await res.json();
       setCurrentUser(data.citizen);
-      setLoginInput(data.citizen.nid);
     } catch (e) {
       console.error(e);
     }
@@ -126,9 +163,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const initialNid = params.get('nid') || 'NID-000-0000-0001-9';
-    loadUserSession(initialNid);
+    // IMPORTANTE: Nenhum usuário inicia logado sem cookie/token válido no TopNavUserWidget
     loadAllBackstageData();
   }, []);
 
@@ -262,87 +297,87 @@ export default function App() {
     setDatalakeExplorerResults(data.results || []);
   };
 
+  const activeMenuObj = BACKSTAGE_MENU_ITEMS.find((m) => m.id === backstageTab) || BACKSTAGE_MENU_ITEMS[0];
+
   return (
     <ThemeProvider theme={novatlantisTheme}>
       <CssBaseline />
-      <div className="min-h-screen bg-[#f8f9fb] text-[#191c1e] flex flex-col">
-        {/* TOP BAR SOBERANA */}
-        <Box sx={{ bgcolor: '#001530', color: 'white', borderBottom: '1px solid #002046', py: 0.75 }}>
+      <div className="min-h-screen bg-[#fcfbf9] text-[#111827] flex flex-col">
+        {/* 1. FAIXA OFICIAL SUPERIOR (Estilo america.gov) */}
+        <Box sx={{ bgcolor: '#f1f0ec', borderBottom: '1px solid #e2e0d8', py: 0.65, px: 2 }}>
           <Container maxWidth="xl" sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <img src="/assets/flag.jpg" alt="Bandeira" className="h-4 w-6 object-cover border border-white/30" />
-              <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.73rem', fontWeight: 700, letterSpacing: '0.06em', color: '#b4c5ff' }}>
-                REPÚBLICA DIGITAL DE NOVATLANTIS • BACKSTAGE GOVERNAMENTAL • ALLOYDB & GOVERNMENT DATA PLATFORM
+              <img src="/assets/flag.jpg" alt="Bandeira" className="h-3.5 w-5 object-cover border border-slate-300 rounded-sm" />
+              <Typography variant="caption" sx={{ color: '#1f2937', fontWeight: 600, fontSize: '0.76rem' }}>
+                Um site oficial do Governo da República Digital de Novatlantis • Backstage Governamental
               </Typography>
             </Stack>
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={2.5} alignItems="center">
               <a
-                href={`${LANDING_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
-                className="text-[#b4c5ff] hover:underline flex items-center gap-1 text-xs font-mono"
+                href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+                className="text-[#0a2240] hover:underline flex items-center gap-1 text-xs font-semibold"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Portal Principal da Nação
+                <ArrowLeft className="w-3.5 h-3.5" /> Home Page (Concierge IA)
               </a>
               <a
-                href={`${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(currentUser?.nid || 'NID-000-0000-0001-9')}`}
-                className="text-[#b4c5ff] hover:underline flex items-center gap-1 text-xs font-mono"
+                href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : CITIZEN_PORTAL_URL}
+                className="text-[#0a2240] hover:underline flex items-center gap-1 text-xs font-semibold"
               >
                 <UserCheck className="w-3.5 h-3.5" /> Portal do Cidadão
               </a>
-              <div className="flex items-center gap-1 bg-[#002046] px-2 py-0.5 rounded border border-white/15">
-                <Globe className="w-3.5 h-3.5 text-[#b4c5ff]" />
-                {(['pt-BR', 'es-419', 'en-US'] as Language[]).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
-                      lang === l ? 'bg-[#b4c5ff] text-[#002046] font-bold' : 'text-slate-300'
-                    }`}
-                  >
-                    {l.split('-')[0].toUpperCase()}
-                  </button>
-                ))}
-              </div>
             </Stack>
           </Container>
         </Box>
 
-        {/* CABEÇALHO DO BACKSTAGE GOVERNAMENTAL (MATERIAL UI - TEXTO AMPLIADO, APENAS WIDGET DO USUÁRIO À DIREITA) */}
+        {/* 2. CABEÇALHO DO BACKSTAGE GOVERNAMENTAL (Design System america.gov + Botão Hambúrguer ☰) */}
         <AppBar
           position="sticky"
           elevation={0}
           sx={{
-            bgcolor: '#ffffff',
-            color: '#002046',
-            borderBottom: '3px solid #002046',
+            bgcolor: 'rgba(252, 251, 249, 0.95)',
+            backdropFilter: 'blur(10px)',
+            color: '#0a2240',
+            borderBottom: '1px solid #e5e4dc',
             zIndex: 30
           }}
         >
           <Container maxWidth="xl">
-            <Toolbar disableGutters sx={{ py: 1.75, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-              <Stack direction="row" spacing={2.25} alignItems="center">
+            <Toolbar disableGutters sx={{ py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <IconButton
+                  onClick={() => setHamburgerOpen(true)}
+                  sx={{
+                    border: '1px solid #d1d5db',
+                    borderRadius: 2,
+                    p: 1,
+                    color: '#0a2240',
+                    bgcolor: '#ffffff',
+                    '&:hover': { bgcolor: '#f3f4f6', borderColor: '#0a2240' }
+                  }}
+                  aria-label="Abrir Menu Hambúrguer do Backstage Governamental"
+                >
+                  <MenuIcon />
+                </IconButton>
+
                 <Box
                   component="img"
                   src="/assets/coat_of_arms.jpg"
                   alt="Brasão"
                   sx={{
-                    height: { xs: 52, md: 64 },
-                    width: { xs: 52, md: 64 },
-                    objectFit: 'contain',
-                    borderRadius: 1.5,
-                    border: '1px solid #cbd5e1',
-                    p: 0.5,
-                    bgcolor: '#fff'
+                    height: { xs: 44, md: 54 },
+                    width: { xs: 44, md: 54 },
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                    border: '1.5px solid #0a2240'
                   }}
                 />
                 <Box>
-                  <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                  <Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap">
                     <Typography
-                      variant="h1"
                       sx={{
-                        fontFamily: '"Libre Baskerville", Georgia, serif',
-                        fontSize: { xs: '1.35rem', sm: '1.65rem', md: '2.05rem' },
-                        fontWeight: 700,
-                        color: '#002046',
+                        fontSize: { xs: '1.15rem', sm: '1.45rem', md: '1.75rem' },
+                        fontWeight: 900,
+                        color: '#0a2240',
                         letterSpacing: '-0.02em',
                         lineHeight: 1.15
                       }}
@@ -351,28 +386,27 @@ export default function App() {
                     </Typography>
                     <Chip
                       label="Backstage Governamental & Identidade 360"
+                      size="small"
                       sx={{
-                        bgcolor: '#002046',
-                        color: '#b4c5ff',
-                        fontFamily: '"JetBrains Mono", monospace',
+                        bgcolor: '#0a2240',
+                        color: '#ffffff',
                         fontWeight: 700,
-                        fontSize: { xs: '0.75rem', md: '0.85rem' },
-                        height: 30,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em'
+                        fontSize: '0.75rem',
+                        height: 25
                       }}
                     />
                   </Stack>
                   <Typography
                     sx={{
-                      mt: 0.5,
-                      fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                      mt: 0.35,
+                      fontSize: { xs: '0.78rem', sm: '0.92rem', md: '1.02rem' },
                       fontWeight: 600,
-                      color: '#334155',
-                      letterSpacing: '-0.005em'
+                      color: '#374151'
                     }}
                   >
-                    Chancelaria Digital • Agente Orquestrador de Estado • Módulo de Usuários GDF (100.000 Cidadãos • AlloyDB & GDP)
+                    {currentUser?.backstage_allowed
+                      ? `Ambiente Ativo (☰): ${activeMenuObj.title}`
+                      : 'Chancelaria Digital • Agente Orquestrador de Estado • Módulo de Usuários GDF (100.000 Cidadãos)'}
                   </Typography>
                 </Box>
               </Stack>
@@ -380,50 +414,102 @@ export default function App() {
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <TopNavUserWidget
                   currentNid={currentUser?.nid}
-                  onUserAuthenticated={(nid) => loadUserSession(nid)}
+                  openLoginTrigger={loginTriggerCount}
+                  citizenPortalUrl={CITIZEN_PORTAL_URL}
+                  govBackstageUrl={window.location.origin}
+                  onUserAuthenticated={(nid, _user, token) => {
+                    if (token) setSsoToken(token);
+                    loadUserSession(nid);
+                  }}
+                  onUserLoggedOut={() => {
+                    setCurrentUser(null);
+                    setSsoToken(null);
+                  }}
                 />
               </Box>
             </Toolbar>
           </Container>
-
-          {/* BARRA DE AMBIENTES ADMINISTRATIVOS DO BACKSTAGE (MUI TABS) */}
-          {currentUser?.backstage_allowed && (
-            <Box sx={{ bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-              <Container maxWidth="xl">
-                <Tabs
-                  value={backstageTab}
-                  onChange={(_, v) => setBackstageTab(v as BackstageTab)}
-                  variant="scrollable"
-                  scrollButtons="auto"
-                  sx={{
-                    minHeight: 44,
-                    '& .MuiTab-root': {
-                      minHeight: 44,
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      fontSize: '0.78rem',
-                      color: '#43474f'
-                    },
-                    '& .Mui-selected': {
-                      color: '#002046 !important'
-                    },
-                    '& .MuiTabs-indicator': {
-                      backgroundColor: '#002046',
-                      height: 3
-                    }
-                  }}
-                >
-                  <Tab value="pm_cabinet" icon={<Award className="w-4 h-4" />} iconPosition="start" label="1. Gabinete Primeiro-Ministro & Secretário-Geral" />
-                  <Tab value="iam360" icon={<Lock className="w-4 h-4" />} iconPosition="start" label="2. Identidade 360 (Gestão RBAC/ABAC)" />
-                  <Tab value="health_mgmt" icon={<Stethoscope className="w-4 h-4" />} iconPosition="start" label="3. Gestão da Saúde (Hospitais & Médicos)" />
-                  <Tab value="edu_mgmt" icon={<GraduationCap className="w-4 h-4" />} iconPosition="start" label="4. Gestão da Educação (Escolas, Provas & Notas)" />
-                  <Tab value="ops_311_911" icon={<Siren className="w-4 h-4" />} iconPosition="start" label="5. Comando 311 & 911 (Demandas do Cidadão)" />
-                  <Tab value="justice_datalake" icon={<Database className="w-4 h-4" />} iconPosition="start" label="6. Justiça, Tesouro, AlloyDB & GDP 100k" />
-                </Tabs>
-              </Container>
-            </Box>
-          )}
         </AppBar>
+
+        {/* MENU HAMBÚRGUER VERTICAL (☰) PARA NAVEGAR ENTRE OS AMBIENTES DO BACKSTAGE */}
+        <Drawer
+          anchor="left"
+          open={hamburgerOpen}
+          onClose={() => setHamburgerOpen(false)}
+          PaperProps={{
+            sx: { width: 350, bgcolor: '#fcfbf9', borderRight: '1px solid #e5e4dc' }
+          }}
+        >
+          <Box
+            sx={{
+              p: 2.5,
+              bgcolor: '#0a2240',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                Menu do Backstage (☰)
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
+                {currentUser ? `${currentUser.full_name} (${currentUser.effective_role_code})` : 'Autenticação Necessária'}
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setHamburgerOpen(false)} sx={{ color: '#ffffff' }} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <List sx={{ py: 1.5 }}>
+            <Box sx={{ px: 2.5, py: 0.75 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: '#6b7280', letterSpacing: '0.06em' }}>
+                AMBIENTES ADMINISTRATIVOS DO ESTADO
+              </Typography>
+            </Box>
+
+            {BACKSTAGE_MENU_ITEMS.map((item) => (
+              <ListItemButton
+                key={item.id}
+                selected={backstageTab === item.id}
+                onClick={() => {
+                  setBackstageTab(item.id);
+                  setHamburgerOpen(false);
+                }}
+                sx={{ py: 1.35 }}
+              >
+                <ListItemText
+                  primary={item.title}
+                  secondary={item.subtitle}
+                  primaryTypographyProps={{
+                    fontWeight: backstageTab === item.id ? 800 : 600,
+                    fontSize: '0.88rem',
+                    color: '#0a2240'
+                  }}
+                  secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                />
+              </ListItemButton>
+            ))}
+
+            <Divider sx={{ my: 1.5 }} />
+
+            <ListItemButton
+              component="a"
+              href={ssoToken ? `${LANDING_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : LANDING_PORTAL_URL}
+            >
+              <ListItemIcon>
+                <ArrowBackIcon sx={{ color: '#0a2240' }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Voltar à Home Page (Concierge IA)"
+                secondary="Portal Principal da Nação"
+                primaryTypographyProps={{ fontWeight: 700, fontSize: '0.88rem' }}
+              />
+            </ListItemButton>
+          </List>
+        </Drawer>
 
         {/* BANNER DE STATUS OPERACIONAL */}
         {statusMessage && (
@@ -439,9 +525,70 @@ export default function App() {
         )}
 
         {/* CONTEÚDO PRINCIPAL DO BACKSTAGE */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
-        {/* BLOQUEIO RBAC/ABAC QUANDO O USUÁRIO É CIDADÃO COMUM OU TEVE PERMISSÃO REVOGADA */}
-        {currentUser && !currentUser.backstage_allowed ? (
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+        {!currentUser ? (
+          <Paper
+            elevation={0}
+            sx={{
+              maxWidth: 650,
+              mx: 'auto',
+              mt: 4,
+              p: { xs: 3.5, md: 5 },
+              textAlign: 'center',
+              borderRadius: 4,
+              bgcolor: '#ffffff',
+              border: '1px solid #e5e4dc',
+              boxShadow: '0 16px 40px -12px rgba(10, 34, 64, 0.08)'
+            }}
+          >
+            <ShieldIcon sx={{ fontSize: 48, color: '#0a2240', mb: 2 }} />
+            <Typography
+              variant="h4"
+              sx={{ fontFamily: '"Merriweather", Georgia, serif', fontWeight: 700, color: '#0a2240', mb: 1.5 }}
+            >
+              Backstage Governamental • Identidade 360
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#4b5563', mb: 3.5, lineHeight: 1.6 }}>
+              Nenhum servidor público está logado no momento. O acesso ao Backstage Governamental exige autenticação
+              com um NID que possua nomeação ativa na aplicação <strong>Identidade 360</strong> (Primeiro-Ministro,
+              Secretário-Geral, Gestor IAM 360, Médico, Professor ou Comando 311/911).
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<ShieldIcon />}
+                onClick={() => setLoginTriggerCount((c) => c + 1)}
+                sx={{
+                  bgcolor: '#0a2240',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 999,
+                  px: 3.5,
+                  py: 1.25,
+                  '&:hover': { bgcolor: '#163a66' }
+                }}
+              >
+                Entrar com NID (Servidor Público)
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                href={LANDING_PORTAL_URL}
+                sx={{
+                  borderColor: '#0a2240',
+                  color: '#0a2240',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 999,
+                  px: 3
+                }}
+              >
+                Voltar à Home Page
+              </Button>
+            </Box>
+          </Paper>
+        ) : !currentUser.backstage_allowed ? (
           <div className="bg-white border-2 border-red-800 rounded p-8 max-w-3xl mx-auto my-8 space-y-5 shadow-sm">
             <div className="flex items-center gap-3 text-red-900">
               <AlertTriangle className="w-8 h-8 text-red-700 shrink-0" />
@@ -464,29 +611,73 @@ export default function App() {
 
             <div className="flex flex-wrap gap-3 pt-2">
               <a
-                href={`${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(currentUser.nid)}`}
+                href={ssoToken ? `${CITIZEN_PORTAL_URL}?sso_token=${encodeURIComponent(ssoToken)}` : CITIZEN_PORTAL_URL}
                 className="bg-[#002046] text-white px-5 py-2.5 rounded text-xs font-bold hover:bg-[#00356e] transition flex items-center gap-2"
               >
                 Ir para o Portal do Cidadão ({currentUser.full_name})
                 <ExternalLink className="w-4 h-4" />
               </a>
               <button
-                onClick={() => loadUserSession('NID-000-0000-0001-9')}
+                onClick={() => setLoginTriggerCount((c) => c + 1)}
                 className="bg-[#dae2ff] text-[#001848] px-4 py-2.5 rounded text-xs font-bold hover:bg-[#b4c5ff] transition"
               >
-                Autenticar como Primeiro-Ministro Jopoco (Root Admin)
-              </button>
-              <button
-                onClick={() => loadUserSession('NID-000-0000-0003-5')}
-                className="bg-[#f2f4f6] text-[#002046] border border-slate-300 px-4 py-2.5 rounded text-xs font-bold hover:bg-slate-200 transition"
-              >
-                Autenticar como Gestora de Identidades 360 (Helena Viana)
+                Alternar para Conta de Servidor Público (Login NID)
               </button>
             </div>
           </div>
         ) : (
           currentUser && (
             <>
+              {/* Barra de Ambiente Atual com Atalho para o Menu Hambúrguer (☰) */}
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  mb: 3,
+                  borderRadius: 2.5,
+                  bgcolor: '#ffffff',
+                  border: '1px solid #e5e4dc',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 2
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<MenuIcon />}
+                    onClick={() => setHamburgerOpen(true)}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      borderColor: '#0a2240',
+                      color: '#0a2240',
+                      borderRadius: 2
+                    }}
+                  >
+                    Alternar Ambiente (☰)
+                  </Button>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
+                      {activeMenuObj.title}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {activeMenuObj.subtitle}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Chip
+                  label={`Servidor Autenticado: ${currentUser.full_name} (${currentUser.effective_role_code})`}
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  sx={{ fontFamily: 'monospace', fontWeight: 700 }}
+                />
+              </Paper>
+
               {/* AMBIENTE 1: GABINETE DO PRIMEIRO-MINISTRO (JOPOCO) & SECRETÁRIO-GERAL */}
               {backstageTab === 'pm_cabinet' && (
                 <div className="space-y-6">
