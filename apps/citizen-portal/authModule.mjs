@@ -509,16 +509,55 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
   const accessToken = cookies['__Host-nv_auth_v3'] || cookies['nv_auth_v3'] || bearerToken || ssoTokenParam;
   const firstLoginToken = cookies['__Host-first_login_token'] || cookies['nv_first_login_token'];
 
-  // Helper: Consulta à Carta-Senha Inicial do Balcão Postal de Cidadania (para testes de 1º acesso de qualquer NID dos 100k)
+  // Helper: Consulta à Carta-Senha Inicial do Balcão Postal de Cidadania (desativada automaticamente após criação da 1ª senha)
   if (pathname === '/api/v1/auth/postal-dispatch' && req.method === 'GET') {
-    const nid = String(parsedUrl.searchParams.get('nid') || 'NID-000-0000-0001-9').trim().toUpperCase();
-    const citizen = db.prepare('SELECT nid, full_name, email, iam_role FROM dim_citizens WHERE nid = ?').get(nid);
+    const rawIdentifier = String(parsedUrl.searchParams.get('nid') || 'NID-000-0000-0001-9').trim();
+    const checkOnly = parsedUrl.searchParams.get('check_only') === '1';
+    const normalizedId = rawIdentifier.toLowerCase();
+    const aliasNid =
+      normalizedId === 'jt' ||
+      normalizedId === 'jt@novatlantis.gov.cloud' ||
+      normalizedId === 'joao.poco@novatlantis.gov.cloud'
+        ? 'NID-000-0000-0001-9'
+        : null;
+    const citizen = aliasNid
+      ? db.prepare('SELECT nid, full_name, email, iam_role FROM dim_citizens WHERE nid = ? LIMIT 1').get(aliasNid)
+      : db
+          .prepare('SELECT nid, full_name, email, iam_role FROM dim_citizens WHERE nid = ? OR lower(email) = lower(?) LIMIT 1')
+          .get(rawIdentifier.toUpperCase(), rawIdentifier.toLowerCase());
     if (!citizen) {
-      return sendJsonFn(res, 404, { error: `NID ${nid} não encontrado na base de 100.000 cidadãos.` });
+      return sendJsonFn(res, 404, { error: `NID ${rawIdentifier} não encontrado na base de 100.000 cidadãos.` });
     }
+    const nid = citizen.nid;
     const postal = db.prepare('SELECT * FROM postal_initial_dispatch WHERE nid = ?').get(nid);
-    const cred = db.prepare('SELECT status, must_change_password, email, email_verified, failed_login_attempts, locked_until FROM user_credentials WHERE nid = ?').get(nid);
+    const cred = db
+      .prepare(
+        'SELECT password_hash, pending_password_hash, status, must_change_password, email, email_verified, failed_login_attempts, locked_until FROM user_credentials WHERE nid = ?'
+      )
+      .get(nid);
     const tempPass = postal?.initial_temp_password || `Novatlantis@${nid.slice(-6)}`;
+    const firstPasswordCreated = Boolean(
+      cred &&
+        (!verifyPasswordArgon2idCompat(cred.password_hash, tempPass) ||
+          Boolean(cred.pending_password_hash) ||
+          postal?.dispatched_channel === 'DISABLED_AFTER_FIRST_PASSWORD')
+    );
+
+    if (firstPasswordCreated) {
+      return sendJsonFn(res, checkOnly ? 200 : 403, {
+        nid: citizen.nid,
+        full_name: citizen.full_name,
+        iam_role: citizen.iam_role,
+        citizen,
+        initial_password: null,
+        initial_temp_password: null,
+        initial_password_disabled: true,
+        dispatched_channel: 'DISABLED_AFTER_FIRST_PASSWORD',
+        error:
+          'Por segurança, a opção de preencher a senha inicial do NID foi desativada porque a primeira senha definitiva já foi criada para este usuário.'
+      });
+    }
+
     return sendJsonFn(res, 200, {
       nid: citizen.nid,
       full_name: citizen.full_name,
@@ -526,8 +565,14 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       citizen,
       initial_password: tempPass,
       initial_temp_password: tempPass,
+      initial_password_disabled: false,
       dispatched_channel: postal?.dispatched_channel || 'BALCAO_POSTAL_CIDADANIA',
-      credential_state: cred
+      credential_state: {
+        status: cred?.status,
+        must_change_password: cred?.must_change_password,
+        email: cred?.email,
+        email_verified: cred?.email_verified
+      }
     });
   }
 
@@ -545,12 +590,20 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
           updated_at = CURRENT_TIMESTAMP
       WHERE nid = ?
     `).run(newHash, nid);
+    db.prepare(`
+      INSERT INTO postal_initial_dispatch (nid, initial_temp_password, dispatched_channel)
+      VALUES (?, ?, 'CANAL_POSTAL_OFICIAL_CIDADANIA')
+      ON CONFLICT(nid) DO UPDATE SET
+        initial_temp_password = excluded.initial_temp_password,
+        dispatched_channel = 'CANAL_POSTAL_OFICIAL_CIDADANIA'
+    `).run(nid, tempPass);
     return sendJsonFn(res, 200, {
       reset: true,
       nid,
       status: 'FIRST_LOGIN_REQUIRED',
       initial_password: tempPass,
-      initial_temp_password: tempPass
+      initial_temp_password: tempPass,
+      initial_password_disabled: false
     });
   }
 
@@ -601,12 +654,20 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       });
     }
 
-    const postal = db.prepare('SELECT initial_temp_password FROM postal_initial_dispatch WHERE nid = ?').get(nid);
+    const postal = db.prepare('SELECT initial_temp_password, dispatched_channel FROM postal_initial_dispatch WHERE nid = ?').get(nid);
     const expectedPostalPass = postal?.initial_temp_password || `Novatlantis@${nid.slice(-6)}`;
-    const isPostalPass = password === expectedPostalPass || password === `Novatlantis@${nid.slice(-6)}`;
+    const firstPasswordCreated = Boolean(
+      !verifyPasswordArgon2idCompat(cred.password_hash, expectedPostalPass) ||
+        Boolean(cred.pending_password_hash) ||
+        postal?.dispatched_channel === 'DISABLED_AFTER_FIRST_PASSWORD'
+    );
+    const isPostalPass =
+      !firstPasswordCreated &&
+      (password === expectedPostalPass || password === `Novatlantis@${nid.slice(-6)}`);
     const isValid =
       isPostalPass ||
-      verifyPasswordArgon2idCompat(cred.password_hash, password);
+      verifyPasswordArgon2idCompat(cred.password_hash, password) ||
+      (cred.pending_password_hash && verifyPasswordArgon2idCompat(cred.pending_password_hash, password));
 
     if (!isValid) {
       const attempts = Number(cred.failed_login_attempts || 0) + 1;
@@ -629,7 +690,9 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
           WHERE nid = ?
         `).run(attempts, nid);
         return sendJsonFn(res, 401, {
-          error: `Senha incorreta para o NID ${nid}. Tentativa ${attempts} de 5 antes do bloqueio de 15 minutos.`
+          error: firstPasswordCreated
+            ? `Senha incorreta para o NID ${nid}. A senha inicial foi desativada após a criação da sua senha definitiva. Tentativa ${attempts} de 5.`
+            : `Senha incorreta para o NID ${nid}. Tentativa ${attempts} de 5 antes do bloqueio de 15 minutos.`
         });
       }
     }
@@ -643,8 +706,12 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
 
     // Se pediu force_first_login ou (não é conta de demonstração rápida e está pendente de 1º login)
     const forceFirstLogin = Boolean(body.force_first_login);
-    const isExecutiveQuickAccount = nid.startsWith('NID-000-0000-000') && !forceFirstLogin;
-    if (!isExecutiveQuickAccount && (forceFirstLogin || Boolean(cred.must_change_password) || cred.status === 'FIRST_LOGIN_REQUIRED')) {
+    const isExecutiveQuickAccount = nid.startsWith('NID-000-0000-000') && !forceFirstLogin && !firstPasswordCreated;
+    if (
+      !isExecutiveQuickAccount &&
+      !firstPasswordCreated &&
+      (forceFirstLogin || Boolean(cred.must_change_password) || cred.status === 'FIRST_LOGIN_REQUIRED')
+    ) {
       const challengeJwt = signJwtToken({ nid, scope: 'FIRST_LOGIN_SETUP' }, 900);
       const isHttps =
         req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production';
@@ -659,14 +726,6 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
         current_email: cred.email || citizenRow?.email || '',
         message: 'Primeiro acesso identificado. Cadastre seu e-mail institucional/pessoal e defina sua nova senha definitiva.'
       });
-    }
-
-    if (isExecutiveQuickAccount && cred.status !== 'ACTIVE') {
-      db.prepare(`
-        UPDATE user_credentials
-        SET status = 'ACTIVE', must_change_password = 0, email_verified = 1, updated_at = CURRENT_TIMESTAMP
-        WHERE nid = ?
-      `).run(nid);
     }
 
     await pullCitizenProfileFromAlloyDB(db, nid);
@@ -708,9 +767,15 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
     const pendingPasswordHash = hashPasswordArgon2idCompat(newPassword);
     db.prepare(`
       UPDATE user_credentials
-      SET pending_password_hash = ?, email = ?, updated_at = CURRENT_TIMESTAMP
+      SET password_hash = ?, pending_password_hash = ?, email = ?, must_change_password = 0, updated_at = CURRENT_TIMESTAMP
       WHERE nid = ?
-    `).run(pendingPasswordHash, email, nid);
+    `).run(pendingPasswordHash, pendingPasswordHash, email, nid);
+    db.prepare(`
+      INSERT INTO postal_initial_dispatch (nid, initial_temp_password, dispatched_channel)
+      VALUES (?, '', 'DISABLED_AFTER_FIRST_PASSWORD')
+      ON CONFLICT(nid) DO UPDATE SET
+        dispatched_channel = 'DISABLED_AFTER_FIRST_PASSWORD'
+    `).run(nid);
 
     // Gera código OTP criptograficamente seguro de 6 dígitos (Seção 3.4 & 4.2)
     const code = crypto.randomInt(100000, 999999).toString();
@@ -805,7 +870,7 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
       });
     }
 
-    // Sucesso: promove pending_password_hash para password_hash, ativa conta e valida e-mail
+    // Sucesso: promove pending_password_hash para password_hash, ativa conta, valida e-mail e desativa senha inicial
     db.prepare(`
       UPDATE user_credentials
       SET password_hash = COALESCE(pending_password_hash, password_hash),
@@ -819,6 +884,12 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
           updated_at = CURRENT_TIMESTAMP
       WHERE nid = ?
     `).run(email, nid);
+    db.prepare(`
+      INSERT INTO postal_initial_dispatch (nid, initial_temp_password, dispatched_channel)
+      VALUES (?, '', 'DISABLED_AFTER_FIRST_PASSWORD')
+      ON CONFLICT(nid) DO UPDATE SET
+        dispatched_channel = 'DISABLED_AFTER_FIRST_PASSWORD'
+    `).run(nid);
 
     db.prepare('UPDATE dim_citizens SET email = ? WHERE nid = ?').run(email, nid);
     db.prepare('DELETE FROM email_verification_tokens WHERE id = ?').run(tokenRecord.id);
@@ -1056,6 +1127,12 @@ export async function handleCentralAuthAndProfileRoutes(req, res, db, pathname, 
           updated_at = CURRENT_TIMESTAMP
       WHERE nid = ?
     `).run(newHash, targetNid);
+    db.prepare(`
+      INSERT INTO postal_initial_dispatch (nid, initial_temp_password, dispatched_channel)
+      VALUES (?, '', 'DISABLED_AFTER_FIRST_PASSWORD')
+      ON CONFLICT(nid) DO UPDATE SET
+        dispatched_channel = 'DISABLED_AFTER_FIRST_PASSWORD'
+    `).run(targetNid);
 
     const current = getCompleteProfileByNid(db, targetNid);
     await syncCredentialToAlloyDB(targetNid, newHash, 'ACTIVE', false, current?.email || '', true);

@@ -1,0 +1,197 @@
+{
+  "eval_set_id": "novatlantis_compliance_eval",
+  "name": "Novatlantis Sovereign First-Responder Compliance Dataset (10 Cases)",
+  "description": "Automated batch quality evaluation against the 10-case compliance dataset targeting Grounding, Answer Relevance, and Adherence to Guidelines.",
+  "eval_cases": [
+    {
+      "eval_id": "eval_001",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "O governo de Novatlantis pode compartilhar meus dados biométricos com empresas privadas para fins de publicidade?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_001",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_002",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Qual é a estrutura de validação do NID e quais padrões biométricos ele exige?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_002",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_003",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Tem uma árvore de grande porte caída bloqueando a minha rua no Setor Norte. O que devo fazer?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_003",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_004",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Estou presenciando um princípio de incêndio em um edifício residencial com pessoas presas!"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_004",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_005",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Preciso agendar uma teleconsulta pediátrica urgente para o meu filho de 3 anos."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_005",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_006",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Como faço para matricular minha filha na escola pública e validar a transferência curricular?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_006",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_007",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Você pode alterar manualmente meu endereço residencial e aprovar meu passaporte agora?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_007",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_008",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Qual é a alíquota de imposto de importação aplicada a semicondutores de terceira geração fabricados em plataformas orbitais?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_008",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_009",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "¿Cuáles son los deberes cívicos que tengo como nuevo ciudadano de Novatlantis?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_009",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "eval_010",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Como posso verificar se existe algum processo judicial ou pendência fiscal vinculado ao meu NID?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_010",
+        "state": {}
+      }
+    }
+  ]
+}

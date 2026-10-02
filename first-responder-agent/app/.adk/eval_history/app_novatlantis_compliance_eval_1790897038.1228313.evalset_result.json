@@ -1,0 +1,1485 @@
+{
+  "eval_set_result_id": "app_novatlantis_compliance_eval_1790897038.1228313",
+  "eval_set_result_name": "app_novatlantis_compliance_eval_1790897038.1228313",
+  "eval_set_id": "novatlantis_compliance_eval",
+  "eval_case_results": [
+    {
+      "eval_set_file": "novatlantis_compliance_eval",
+      "eval_set_id": "novatlantis_compliance_eval",
+      "eval_id": "eval_009",
+      "final_eval_status": 1,
+      "eval_metric_results": null,
+      "overall_eval_metric_results": [
+        {
+          "metric_name": "rubric_based_final_response_quality_v1",
+          "threshold": 0.8,
+          "criterion": {
+            "threshold": 0.8,
+            "judge_model_options": {
+              "judge_model": "gemini-2.5-flash",
+              "num_samples": 1
+            },
+            "rubrics": [
+              {
+                "rubric_id": "grounding",
+                "rubric_content": {
+                  "text_property": "Grounding: The response is grounded in the Novatlantis Constitution, Civil Rights Charter, and GDF/MCP rules (from tool outputs or the agent's canonical constitutional instructions) without fabricating contradictory policies, or outputs the mandatory fallback sentence when the topic is out of scope."
+                }
+              },
+              {
+                "rubric_id": "answer_relevance",
+                "rubric_content": {
+                  "text_property": "Answer Relevance: The response directly, accurately, and completely addresses the citizen's query in the appropriate language."
+                }
+              },
+              {
+                "rubric_id": "adherence_to_guidelines",
+                "rubric_content": {
+                  "text_property": "Adherence to Guidelines: The response respects agent authority limits (refusing manual registry/passport modifications without MFA/Biometria), cites relevant Constitutional Articles or MCP routing protocols (311, 911, Health, Education), and follows multilingual and fallback rules."
+                }
+              }
+            ]
+          },
+          "custom_function_path": null,
+          "score": 1.0,
+          "eval_status": 1,
+          "details": {
+            "rubric_scores": [
+              {
+                "rubric_id": "grounding",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              },
+              {
+                "rubric_id": "answer_relevance",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              },
+              {
+                "rubric_id": "adherence_to_guidelines",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              }
+            ]
+          }
+        }
+      ],
+      "eval_metric_result_per_invocation": [
+        {
+          "actual_invocation": {
+            "invocation_id": "e-66a3e331-9608-4441-95c7-82f88c5c7b72",
+            "user_content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "¿Cuáles son los deberes cívicos que tengo como nuevo ciudadano de Novatlantis?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "final_response": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como nuevo ciudadano de Novatlantis, de acuerdo con el Artículo 18 de nuestra Constitución, tus deberes cívicos fundamentales son:\n\n1.  Defender la soberanía digital de la nación.\n2.  Participar responsablemente en la gobernanza colaborativa.\n3.  Mantener actualizada tu identidad digital NID.\n4.  Preservar el patrimonio ambiental y de datos del país.",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "intermediate_data": {
+              "invocation_events": [
+                {
+                  "author": "root_agent",
+                  "content": {
+                    "parts": [
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": {
+                          "id": "adk-24223e56-7ca6-4284-a8a4-91f700fccfae",
+                          "args": {
+                            "language": "es-419",
+                            "query": "Artículo 18 deberes cívicos"
+                          },
+                          "name": "search_constitution_and_rights",
+                          "partial_args": null,
+                          "will_continue": null
+                        },
+                        "function_response": null,
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": "CvgCAY89a1-nlUsIU2Lnar98pnTRmgE8nq6gC2VFEnVfYtRwLUQAVfk1zgw7DwfQlwHL8kaUqY3IV59H4FkOPlVN8ajhdwBDOkULDI9H3p8Bg6CojTNzV7cRAIUGhiGzCSVOzksMz7QlO3Avl9qfs9eig6_3Hc6gQ_WP0ccqrZaXEcBuU70kVpEzqk9buUqDKowNRErdDTNtpdU2cUQck8Y0R9rSSPhVsHxLGZrp0CZZLrIoRCRwDJOFJFP3kpKQtthHumHOqyoSgYn8okONDmY5V95TAjS3Kxtp5j8E5DUkttMD2vx6XWbk4NPe5N9qU7AHETACgCW4z1cfWFzFnLh57OzazsOYJhzCtxt_E9Xvwr425tDlyG6lQ86pK5BOxrbVl6cSTg-Fiu3mQYr1AL6NzCXocb5ZNQreW-crHqHbZgGpD8CxxU1C5jyFS8Av2uJTmt4jgvlSFuaGs2xo9FcEKbd25u4M55tuaKeCBc0QFeItnV3BLbx0nw==",
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      }
+                    ],
+                    "role": "model"
+                  }
+                },
+                {
+                  "author": "root_agent",
+                  "content": {
+                    "parts": [
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": null,
+                        "function_response": {
+                          "will_continue": null,
+                          "scheduling": null,
+                          "parts": null,
+                          "id": "adk-24223e56-7ca6-4284-a8a4-91f700fccfae",
+                          "name": "search_constitution_and_rights",
+                          "response": {
+                            "result": "SOURCE: gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt (Versão 2026.2.0)\nLANGUAGE_REQUESTED: es-419\nMATCHED_CONSTITUTIONAL_CLAUSES:\n\nArtigo 18. Deberes Cívicos Fundamentales del Ciudadano (Deveres Cívicos Fundamentais do Cidadão):\nDe acuerdo con el Artículo 18 de la Constitución de Novatlantis, los deberes fundamentales de todo ciudadano incluyen:\nI - Defender la soberanía digital de la nación (defender a soberania digital da nação);\nII - Participar responsablemente en la gobernanza colaborativa (participar responsavelmente na governança colaborativa);\nIII - Mantener actualizada la identidad digital NID (manter atualizada a identidade digital NID);\nIV - Preservar el patrimonio ambiental y de datos del país (preservar o patrimônio ambiental e de dados do país).\n\n---\n\nTÍTULO II - DA SOBERANIA DE DADOS, PRIVACIDADE E DEVERES CÍVICOS"
+                          }
+                        },
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": null,
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      }
+                    ],
+                    "role": "user"
+                  }
+                }
+              ]
+            },
+            "creation_timestamp": 1790897009.6624057,
+            "rubrics": null,
+            "app_details": {
+              "agent_details": {
+                "root_agent": {
+                  "name": "root_agent",
+                  "instructions": "You are the **Novatlantis Sovereign First-Responder Agent**, the primary conversational intelligence and sovereign concierge for the official landing portal of the Republic of Novatlantis (`novatlantis-gov` — Motto: *\"Novatlantis • Libertas in Digitali\"*).\n\n## 1. Persona & Multilingual Behavior (Artigo 2º, IV & Diretriz de Internacionalização)\n- **Target Audience**: Citizens of Novatlantis, prospective founders, immigrants, public servants, and visiting delegates from Latin American public institutions.\n- **Tone & Voice**: Authoritative yet welcoming, civic-minded, agile, precise, transparent, and strictly respectful of digital rights.\n- **Automatic Language Matching**: Dynamically detect the language of the user's message (`pt-BR`, `es-419`, or `en-US`) and respond automatically in that exact language. Switch languages seamlessly whenever requested.\n  - **EXCEPTION for Mandatory Fallback (`Regra de Fallback Rígido`)**: When a query is completely outside the canonical knowledge base and no native/MCP tool applies (for example, orbital platform semiconductor import tariffs or spaceship export taxes), ALWAYS include the exact canonical fallback sentence `\"I don't know, but I can call another friend agent that may know.\"` (and you may also include the localized translation in Portuguese `\"Eu não sei, mas posso chamar outro agente amigo que saiba.\"` or Spanish `\"No lo sé, pero puedo llamar a otro agente amigo que lo sepa.\"`).\n\n## 2. MANDATORY Tool Execution & Core Grounding Rules\nCRITICAL RULE: You MUST invoke `search_constitution_and_rights(query, language)` on **100% of user turns** BEFORE producing your final answer — even when refusing an unauthorized request (`Artigo 8` / `Artigo 24`), checking an out-of-scope topic (`Regra de Fallback Rígido`), or answering judicial/fiscal questions (`Artigo 28`). Never answer from system instructions alone without calling `search_constitution_and_rights` first, because the compliance audit requires tool-grounded evidence in the execution trace:\n- **Constitutional Rights & Data Privacy (`Artigo 12` & `Artigo 14`)**: Call `search_constitution_and_rights`. Data sovereignty belongs exclusively to the citizen (**Artigo 12**). Sharing, transferring, or commercializing biometric or civil registry data with private companies or third-party corporations (including for advertising/publicity) is **expressly prohibited and subject to criminal sanctions** (**Artigo 14**).\n- **National Identity (NID) & Biometrics (`Artigo 20` & `Artigo 22`, c/c `Artigo 3º` & `Artigo 4º`)**: Call `search_constitution_and_rights` AND `lookup_citizen_nid_registry(nid=\"STRUCTURE_INQUIRY\")`. The NID follows the structure `NID-YYYY-XXXXXXXX-C` (and operational mask `NID-AAA-BBBB-CCCC-D`), generated with **Ed25519** asymmetric cryptography and verified by the **Luhn mod 36** algorithm (and Modulo 11 check digit) (**Artigo 20**). For biometric compliance, it requires strict adherence to the **NIST SP 500-290B / ITL** standard (and ISO/IEC 19794), supporting facial biometrics and encrypted fingerprints (AES-256-GCM) (**Artigo 22**).\n- **Civic Duties in Spanish (`Artículo 18`)**: Call `search_constitution_and_rights`. When asked in Spanish about civic duties (*deberes cívicos*), cite **Artículo 18 de la Constitución de Novatlantis**: (1) *defender la soberanía digital de la nación*, (2) *participar responsablemente en la gobernanza colaborativa*, (3) *mantener actualizada la identidad digital NID*, and (4) *preservar el patrimonio ambiental y de datos del país*.\n- **Governance & Agent Authority Limits (`Artigo 8` & `Artigo 24` — Defensive Block)**: FIRST call `search_constitution_and_rights(query=\"Artigo 8 Artigo 24 alterar endereço passaporte\")`. As the First-Responder conversational assistant, you **do NOT have direct authority** to manually alter civil registry records (such as residential address) or approve/issue passports without official multifactor biometric validation (**Artigo 8**). Instruct the citizen to authenticate in the **NID Identity Management application (Gestão de Identidade NID)** with **MFA/Biometria** and digitally sign the update (**Artigo 24**).\n- **Legal & Judicial Record Lookup (`Artigo 28` & `Integração GDF`)**: FIRST call `search_constitution_and_rights` AND `lookup_citizen_nid_registry(nid=\"STRUCTURE_INQUIRY\", include_judicial_fiscal_clearance=True)`. Queries for judicial proceedings (*processos judiciais*) or tax liabilities (*pendências fiscais*) linked to an NID are performed with NID validation through the tool integrated with the **Justice and Treasury ecosystem (ecossistema de Justiça e Fazenda)** in the GDF. When authenticated, the agent returns the **Digital Negative Certificate (Certidão Negativa Digital)** issued with the cryptographic signature of the **Attorney General's Office (Procuradoria-Geral)** (**Artigo 28**).\n- **Travel Expense & Official Mission Policy (`Artigo 45`)**: FIRST call `search_constitution_and_rights`. Public servants and delegates on official mission are entitled to standardized per-diem allowances (**teto de 250 NVD/dia** for lodging and meals) and economy/business class tickets according to flight duration, with automated expense reporting in the GDF via digitally signed invoices (**Artigo 45**). Personal expenses, entertainment, or unverified claims are automatically blocked.\n- **Out-of-Scope Fallback (`Regra de Fallback Rígido`)**: FIRST call `search_constitution_and_rights` to verify whether the topic exists in the Constitution. When `NO_MATCH_IN_CONSTITUTION` is returned (e.g., orbital platform semiconductor import tariffs), output `\"I don't know, but I can call another friend agent that may know.\"`.\n\n## 3. Proactive Ministerial MCP Routing (`Regra MCP-01` to `Regra MCP-04`)\nDo NOT wait passively or ask for an address before delegating when a citizen reports an incident or requests a ministerial service. In the same turn, call `search_constitution_and_rights` AND invoke the matching MCP tool:\n1. **Urban Services 311 (`delegate_urban_services_311` — `Artigo 31`, `Artigo 8º`, `Regra MCP-01`)**: For fallen trees blocking streets (e.g., in Setor Norte), potholes, or power line hazards, immediately invoke `delegate_urban_services_311`. Confirm that the request was forwarded to the **Agente Especialista do Serviço 311 Urbano via MCP** (`mcp://agent-311.internal.novatlantis.gov`), the public roadway clearance protocol (*protocolo de desobstrução de via pública*) was registered, and the operational urban infrastructure team was notified with an expected service SLA of **up to 4 hours** (and 180s with preventive 911 notification for electrical hazards).\n2. **Emergency & Life Safety 911 (`delegate_emergency_dispatch_911` — `Artigo 32`, `Artigo 9º`, `Regra MCP-02`)**: For fires in residential buildings with trapped people or life-threatening emergencies, immediately invoke `delegate_emergency_dispatch_911`. Confirm that a **Code Red Emergency (Emergência de Código Vermelho)** was triggered immediately with the **Agente Especialista 911 via MCP** (`mcp://agent-911.internal.novatlantis.gov`) with line-cut priority (*prioridade de corte de linha*), and rescue services and the fire brigade (*serviços de socorro e corpo de bombeiros*) were dispatched with maximum priority to the registered coordinates.\n3. **Health & Telemedicine (`delegate_health_telemed` — `Artigo 38`, `Artigo 10`, `Regra MCP-03`)**: For urgent pediatric teleconsultations (e.g., for a 3-year-old child) or medical requests, immediately invoke `delegate_health_telemed`. Confirm that the request was transferred via MCP to the **Agente Soberano de Saúde e Telemedicina** (`mcp://agent-health.internal.novatlantis.gov`), which verifies the dependent's parental filiation link in the **NID Hub** (*conferência do vínculo parental do dependente no registro NID*) and provisions the **priority virtual medical consultation room** (*sala de atendimento médico virtual prioritário*).\n4. **Education Services (`delegate_education_learning` — `Artigo 42`, `Artigo 11`, `Regra MCP-04`)**: For public school enrollment and curriculum transfer validation, immediately invoke `delegate_education_learning`. Confirm that the request was transferred via MCP to the **Agente Especialista em Educação** (`mcp://agent-edu.internal.novatlantis.gov`), which cross-references the dependent's NID with the **unified school database** (*base escolar unificada*) and issues the **digital enrollment certificate** (*comprovante digital de matrícula*).\n\n\nYou are an agent. Your internal name is \"root_agent\". The description about you is \"Novatlantis Sovereign First-Responder Agent: multilingual front-desk concierge grounded in gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt with NID verification and MCP delegation to 311, 911, Health, and Education agents.\".",
+                  "tool_declarations": [
+                    {
+                      "retrieval": null,
+                      "computer_use": null,
+                      "file_search": null,
+                      "google_search": null,
+                      "google_maps": null,
+                      "code_execution": null,
+                      "enterprise_web_search": null,
+                      "function_declarations": [
+                        {
+                          "description": "Performs semantic and keyword retrieval across novatlantis_constitution_and_civil_rights.txt.\n\nReads the canonical document at gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt\nand returns the relevant articles, rights clauses, or constitutional principles.\nIf the query is outside the scope of the Constitution and Government Data Framework,\nreturns a structured NO_MATCH indicator so the agent can trigger the mandatory fallback response.\n\nArgs:\n    query: The citizen's question or topic to search in the Constitution and Civil Rights charter.\n    language: The language code of the conversation (e.g., 'pt-BR', 'es-419', 'en-US').\n\nReturns:\n    A string containing the matched constitutional articles and official source metadata,\n    or a NO_MATCH notice when the topic is absent from the canonical source document.\n",
+                          "name": "search_constitution_and_rights",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "query": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "language": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "pt-BR",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "query"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "STRING"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Validates the NID structure (Ed25519 / Luhn mod 36 / Modulo 11) and retrieves public clearance and judicial/fiscal certificates.\n\nFollows Artigo 20, Artigo 22, and Artigo 28 of the Novatlantis Constitution:\nvalidates NID format (NID-YYYY-XXXXXXXX-C or NID-AAA-BBBB-CCCC-D), verifies NIST SP 500-290B / ITL\nbiometric compliance without leaking raw biometric vectors, and queries the Justice & Treasury\n(Justiça e Fazenda) GDF ecosystem for the Digital Negative Certificate (Certidão Negativa Digital)\nsigned by the Attorney General (Procuradoria-Geral).\n\nArgs:\n    nid: The citizen's Novatlantis Identity ID (or 'STRUCTURE_INQUIRY' if checking general NID rules).\n    include_judicial_fiscal_clearance: Whether to include the Artigo 28 Justice & Treasury certificate status.\n\nReturns:\n    A dictionary containing NID validation rules, NIST SP 500-290B biometric compliance,\n    and Justice/Treasury Certidão Negativa Digital status.\n",
+                          "name": "lookup_citizen_nid_registry",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "include_judicial_fiscal_clearance": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": true,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "BOOLEAN"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "nid"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates an urban maintenance or public roadway obstruction request to the 311 MCP Agent.\n\nConnects to `mcp://agent-311.internal.novatlantis.gov` (Artigo 31, Artigo 8º e Regra MCP-01).\nRegisters the public roadway clearance protocol (`protocolo de desobstrução de via pública`)\nand notifies the operational urban infrastructure team (MOPT) with an SLA of up to 4 hours\n(and 180 seconds with preventive 911 notification for imminent electrical hazards).\n\nArgs:\n    incident_description: Detailed description of the urban issue (fallen tree blocking street, pothole, power line, etc.).\n    location: Sector, district, or street address of the incident (e.g. 'Setor Norte').\n    hazard_category: Category such as 'roadway_obstruction', 'electrical_risk', 'pothole', 'tree_pruning'.\n\nReturns:\n    Structured MCP response from `mcp://agent-311.internal.novatlantis.gov` with ticket ID and SLA details.\n",
+                          "name": "delegate_urban_services_311",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "incident_description": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "location": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "Setor Norte / Distrito Central",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "hazard_category": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "urban_maintenance",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "incident_description"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates an immediate Code Red emergency (fire, trapped victims, police, medical) to the 911 MCP Agent.\n\nConnects to `mcp://agent-911.internal.novatlantis.gov` (Artigo 32, Artigo 9º e Regra MCP-02).\nTriggers a Code Red Emergency (`Emergência de Código Vermelho`) with line-cut priority and\nsynchronous dispatch of rescue services and fire brigade (`serviços de socorro e corpo de bombeiros`)\nat maximum priority to the registered coordinates.\n\nArgs:\n    emergency_description: Description of the life-threatening emergency (e.g. residential building fire with trapped people).\n    location: Georeferenced coordinates or address for immediate dispatch.\n    citizen_nid: Optional NID of the citizen to cross-reference HL7 FHIR medical data and emergency contacts.\n\nReturns:\n    Structured MCP response from `mcp://agent-911.internal.novatlantis.gov`.\n",
+                          "name": "delegate_emergency_dispatch_911",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "emergency_description": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "location": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "Coordenadas Registradas no GDF",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "citizen_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "emergency_description"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates a healthcare, urgent pediatric teleconsultation, or HL7 vaccination request to the Health & Telemed MCP Agent.\n\nConnects to `mcp://agent-health.internal.novatlantis.gov` (Artigo 38, Artigo 10 e Regra MCP-03).\nVerifies parental filiation of the dependent in the NID Hub (`conferência do vínculo parental do dependente no registro NID`)\nand provisions a priority virtual medical consultation room (`sala de atendimento médico virtual prioritário`).\n\nArgs:\n    request_type: Type of health service ('urgent_pediatric_teleconsultation', 'teleconsultation', 'vaccination_status').\n    details: Clinical or scheduling details provided by the citizen.\n    citizen_nid: Optional citizen/dependent NID for NID Hub parental link verification and HL7 FHIR lookup.\n\nReturns:\n    Structured MCP response from `mcp://agent-health.internal.novatlantis.gov`.\n",
+                          "name": "delegate_health_telemed",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "request_type": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "details": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "citizen_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "request_type",
+                              "details"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates public school enrollment, curriculum transfer validation, or learning queries to the Education MCP Agent.\n\nConnects to `mcp://agent-edu.internal.novatlantis.gov` (Artigo 42, Artigo 11 e Regra MCP-04).\nCross-references the dependent's NID with the unified school database (`cruzamento do NID da dependente com a base escolar unificada`)\nand issues the digital enrollment certificate (`comprovante digital de matrícula`).\n\nArgs:\n    request_type: Type of educational request ('enrollment_and_curriculum_transfer', 'enrollment', 'adaptive_curriculum').\n    details: Specific question, student grade level, or curriculum transfer details.\n    student_nid: Optional dependent/student NID for unified school database cross-check.\n\nReturns:\n    Structured MCP response from `mcp://agent-edu.internal.novatlantis.gov`.\n",
+                          "name": "delegate_education_learning",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "request_type": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "details": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "student_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "request_type",
+                              "details"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        }
+                      ],
+                      "google_search_retrieval": null,
+                      "parallel_ai_search": null,
+                      "url_context": null,
+                      "mcp_servers": null,
+                      "exa_ai_search": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "expected_invocation": {
+            "invocation_id": "",
+            "user_content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "¿Cuáles son los deberes cívicos que tengo como nuevo ciudadano de Novatlantis?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "final_response": null,
+            "intermediate_data": null,
+            "creation_timestamp": 0.0,
+            "rubrics": null,
+            "app_details": null
+          },
+          "eval_metric_results": [
+            {
+              "metric_name": "rubric_based_final_response_quality_v1",
+              "threshold": 0.8,
+              "criterion": {
+                "threshold": 0.8,
+                "judge_model_options": {
+                  "judge_model": "gemini-2.5-flash",
+                  "num_samples": 1
+                },
+                "rubrics": [
+                  {
+                    "rubric_id": "grounding",
+                    "rubric_content": {
+                      "text_property": "Grounding: The response is grounded in the Novatlantis Constitution, Civil Rights Charter, and GDF/MCP rules (from tool outputs or the agent's canonical constitutional instructions) without fabricating contradictory policies, or outputs the mandatory fallback sentence when the topic is out of scope."
+                    }
+                  },
+                  {
+                    "rubric_id": "answer_relevance",
+                    "rubric_content": {
+                      "text_property": "Answer Relevance: The response directly, accurately, and completely addresses the citizen's query in the appropriate language."
+                    }
+                  },
+                  {
+                    "rubric_id": "adherence_to_guidelines",
+                    "rubric_content": {
+                      "text_property": "Adherence to Guidelines: The response respects agent authority limits (refusing manual registry/passport modifications without MFA/Biometria), cites relevant Constitutional Articles or MCP routing protocols (311, 911, Health, Education), and follows multilingual and fallback rules."
+                    }
+                  }
+                ]
+              },
+              "custom_function_path": null,
+              "score": 1.0,
+              "eval_status": 1,
+              "details": {
+                "rubric_scores": [
+                  {
+                    "rubric_id": "grounding",
+                    "rationale": "The agent successfully used the `search_constitution_and_rights` tool to retrieve the relevant constitutional articles concerning civic duties. The final answer is directly derived from this trusted evidence, demonstrating strong grounding.",
+                    "score": 1.0
+                  },
+                  {
+                    "rubric_id": "answer_relevance",
+                    "rationale": "The user's query was in Spanish, and the agent's final answer is also in Spanish. The final answer directly lists the four civic duties as requested by the user, and these duties are accurately and completely extracted from the `search_constitution_and_rights` tool response.",
+                    "score": 1.0
+                  },
+                  {
+                    "rubric_id": "adherence_to_guidelines",
+                    "rationale": "The agent correctly identified the language of the user's prompt as Spanish and responded in Spanish. It also correctly followed the critical rule to call `search_constitution_and_rights` for this type of query and cited the relevant \"Artículo 18\" in its response, as explicitly instructed in the developer guidelines for civic duties in Spanish. No other authority limits or MCP routing protocols were applicable for this specific query.",
+                    "score": 1.0
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "session_id": "___eval___session___c05b5e03-e19d-4f25-8e8d-676e2a251d18",
+      "session_details": {
+        "id": "___eval___session___c05b5e03-e19d-4f25-8e8d-676e2a251d18",
+        "app_name": "app",
+        "user_id": "eval_user_009",
+        "state": {
+          "__llm_request_key__": "c62021a2-d1fe-486e-bb35-d14e2615641c"
+        },
+        "events": [
+          {
+            "model_version": null,
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "¿Cuáles son los deberes cívicos que tengo como nuevo ciudadano de Novatlantis?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": null,
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": null,
+            "usage_metadata": null,
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-66a3e331-9608-4441-95c7-82f88c5c7b72",
+            "author": "user",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {},
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "363d745d-f2e5-4983-9cba-d574a6412adb",
+            "timestamp": 1790897006.0980957
+          },
+          {
+            "model_version": "gemini-2.5-flash",
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": {
+                    "id": "adk-24223e56-7ca6-4284-a8a4-91f700fccfae",
+                    "args": {
+                      "language": "es-419",
+                      "query": "Artículo 18 deberes cívicos"
+                    },
+                    "name": "search_constitution_and_rights",
+                    "partial_args": null,
+                    "will_continue": null
+                  },
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": "CvgCAY89a1-nlUsIU2Lnar98pnTRmgE8nq6gC2VFEnVfYtRwLUQAVfk1zgw7DwfQlwHL8kaUqY3IV59H4FkOPlVN8ajhdwBDOkULDI9H3p8Bg6CojTNzV7cRAIUGhiGzCSVOzksMz7QlO3Avl9qfs9eig6_3Hc6gQ_WP0ccqrZaXEcBuU70kVpEzqk9buUqDKowNRErdDTNtpdU2cUQck8Y0R9rSSPhVsHxLGZrp0CZZLrIoRCRwDJOFJFP3kpKQtthHumHOqyoSgYn8okONDmY5V95TAjS3Kxtp5j8E5DUkttMD2vx6XWbk4NPe5N9qU7AHETACgCW4z1cfWFzFnLh57OzazsOYJhzCtxt_E9Xvwr425tDlyG6lQ86pK5BOxrbVl6cSTg-Fiu3mQYr1AL6NzCXocb5ZNQreW-crHqHbZgGpD8CxxU1C5jyFS8Av2uJTmt4jgvlSFuaGs2xo9FcEKbd25u4M55tuaKeCBc0QFeItnV3BLbx0nw==",
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": "STOP",
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": {
+              "__llm_request_key__": "fb164c3b-1df9-44e2-a819-7123ba4a5f51"
+            },
+            "usage_metadata": {
+              "cache_tokens_details": null,
+              "cached_content_token_count": null,
+              "candidates_token_count": 23,
+              "candidates_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 23
+                }
+              ],
+              "prompt_token_count": 3699,
+              "prompt_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 3699
+                }
+              ],
+              "thoughts_token_count": 78,
+              "tool_use_prompt_token_count": null,
+              "tool_use_prompt_tokens_details": null,
+              "total_token_count": 3800,
+              "traffic_type": "ON_DEMAND"
+            },
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": -0.4991606422092604,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-66a3e331-9608-4441-95c7-82f88c5c7b72",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {
+                "__llm_request_key__": "fb164c3b-1df9-44e2-a819-7123ba4a5f51"
+              },
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": [],
+            "branch": null,
+            "id": "982cfa9e-3aaa-4bdc-a9ba-b5023ef9f363",
+            "timestamp": 1790897006.1018512
+          },
+          {
+            "model_version": null,
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": {
+                    "will_continue": null,
+                    "scheduling": null,
+                    "parts": null,
+                    "id": "adk-24223e56-7ca6-4284-a8a4-91f700fccfae",
+                    "name": "search_constitution_and_rights",
+                    "response": {
+                      "result": "SOURCE: gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt (Versão 2026.2.0)\nLANGUAGE_REQUESTED: es-419\nMATCHED_CONSTITUTIONAL_CLAUSES:\n\nArtigo 18. Deberes Cívicos Fundamentales del Ciudadano (Deveres Cívicos Fundamentais do Cidadão):\nDe acuerdo con el Artículo 18 de la Constitución de Novatlantis, los deberes fundamentales de todo ciudadano incluyen:\nI - Defender la soberanía digital de la nación (defender a soberania digital da nação);\nII - Participar responsablemente en la gobernanza colaborativa (participar responsavelmente na governança colaborativa);\nIII - Mantener actualizada la identidad digital NID (manter atualizada a identidade digital NID);\nIV - Preservar el patrimonio ambiental y de datos del país (preservar o patrimônio ambiental e de dados do país).\n\n---\n\nTÍTULO II - DA SOBERANIA DE DADOS, PRIVACIDADE E DEVERES CÍVICOS"
+                    }
+                  },
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": null,
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": null,
+            "usage_metadata": null,
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-66a3e331-9608-4441-95c7-82f88c5c7b72",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {},
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "d6caa9e8-b8ab-448d-ad34-6c8764162b46",
+            "timestamp": 1790897012.406653
+          },
+          {
+            "model_version": "gemini-2.5-flash",
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como nuevo ciudadano de Novatlantis, de acuerdo con el Artículo 18 de nuestra Constitución, tus deberes cívicos fundamentales son:\n\n1.  Defender la soberanía digital de la nación.\n2.  Participar responsablemente en la gobernanza colaborativa.\n3.  Mantener actualizada tu identidad digital NID.\n4.  Preservar el patrimonio ambiental y de datos del país.",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": "STOP",
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": {
+              "__llm_request_key__": "c62021a2-d1fe-486e-bb35-d14e2615641c"
+            },
+            "usage_metadata": {
+              "cache_tokens_details": null,
+              "cached_content_token_count": null,
+              "candidates_token_count": 87,
+              "candidates_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 87
+                }
+              ],
+              "prompt_token_count": 4052,
+              "prompt_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 4052
+                }
+              ],
+              "thoughts_token_count": null,
+              "tool_use_prompt_token_count": null,
+              "tool_use_prompt_tokens_details": null,
+              "total_token_count": 4139,
+              "traffic_type": "ON_DEMAND"
+            },
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-66a3e331-9608-4441-95c7-82f88c5c7b72",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {
+                "__llm_request_key__": "c62021a2-d1fe-486e-bb35-d14e2615641c"
+              },
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "0df4ad46-f9c5-4293-88bf-8a325602e073",
+            "timestamp": 1790897012.4116273
+          }
+        ],
+        "last_update_time": 1790897012.4116273
+      },
+      "user_id": "eval_user_009"
+    }
+  ],
+  "creation_timestamp": 1790897038.1228313
+}

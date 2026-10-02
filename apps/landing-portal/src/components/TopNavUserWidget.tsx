@@ -356,6 +356,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [dispatchedOtpPreview, setDispatchedOtpPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [initialPasswordDisabled, setInitialPasswordDisabled] = useState(false);
 
   // Profile edit state
   const [editSocialName, setEditSocialName] = useState('');
@@ -468,6 +469,33 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     }
   }, [openLoginTrigger, loginReasonMessage, user]);
 
+  // Verifica automaticamente se o NID informado já criou a primeira senha definitiva para desativar o botão de senha inicial
+  useEffect(() => {
+    if (!loginModalOpen) return;
+    const cleanTarget = nidInput.trim();
+    if (cleanTarget.length < 2) {
+      setInitialPasswordDisabled(false);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/v1/auth/postal-dispatch?nid=${encodeURIComponent(cleanTarget)}&check_only=1`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) {
+          setInitialPasswordDisabled(Boolean(data.initial_password_disabled));
+        }
+      } catch {
+        // ignore check error
+      }
+    }, 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [nidInput, loginModalOpen]);
+
   const loadFamilyData = async (targetNid: string) => {
     setLoadingFamily(true);
     try {
@@ -491,13 +519,27 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
     }
     setAuthError(null);
     try {
-      const res = await fetch(`/api/v1/auth/postal-dispatch?nid=${encodeURIComponent(cleanTarget)}`);
+      const res = await fetch(`/api/v1/auth/postal-dispatch?nid=${encodeURIComponent(cleanTarget)}&check_only=1`);
       const data = await res.json();
+      if (data.initial_password_disabled) {
+        setInitialPasswordDisabled(true);
+        setPasswordInput('');
+        setEmailInput(data.citizen?.email || '');
+        setAuthNotice(
+          activeLang === 'es-419'
+            ? `Por seguridad, la opción de contraseña inicial fue desactivada para ${data.citizen?.full_name || cleanTarget} porque ya creó su primera contraseña definitiva.`
+            : activeLang === 'en-US'
+            ? `For security, the initial password option has been disabled for ${data.citizen?.full_name || cleanTarget} because the first custom password has already been created.`
+            : `Por segurança, a opção de preencher a senha inicial foi desativada para ${data.citizen?.full_name || cleanTarget} porque a primeira senha definitiva já foi criada.`
+        );
+        return;
+      }
       if (res.ok && data.initial_password) {
+        setInitialPasswordDisabled(false);
         setPasswordInput(data.initial_password);
         setEmailInput(data.citizen?.email || '');
         setAuthNotice(
-          `Credencial localizada no AlloyDB para ${data.citizen?.full_name || cleanTarget}: senha preenchida (${data.initial_password})`
+          `Credencial localizada no AlloyDB para ${data.citizen?.full_name || cleanTarget}: senha inicial preenchida (${data.initial_password})`
         );
       } else {
         setAuthError(data.error || 'NID não encontrado no lote de 100.000 cidadãos.');
@@ -522,6 +564,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       });
       const data = await res.json();
       if (res.ok) {
+        setInitialPasswordDisabled(false);
         setPasswordInput(data.initial_password || '');
         setAuthStep('LOGIN');
         setAuthNotice(
@@ -610,6 +653,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
         return;
       }
 
+      setInitialPasswordDisabled(true);
       setDispatchedOtpPreview(data.otp_dispatch?.otp_code_preview || null);
       if (data.otp_dispatch?.otp_code_preview) {
         setOtpInput(data.otp_dispatch.otp_code_preview);
@@ -649,6 +693,7 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
           ...data.user,
           avatarUrl: data.user.avatarUrl || data.user.avatar_url || null
         };
+        setInitialPasswordDisabled(true);
         setUser(normalizedUser);
         setSsoToken(data.sso_token || null);
         syncFormStateFromUser(normalizedUser);
@@ -819,10 +864,11 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.updated) {
+        setInitialPasswordDisabled(true);
         setCurrentPasswordForChange('');
         setNewPasswordForChange('');
         setConfirmNewPasswordForChange('');
-        setProfileStatusMsg(data.message || 'Senha de acesso atualizada com sucesso no AlloyDB!');
+        setProfileStatusMsg(data.message || 'Senha de acesso atualizada com sucesso no AlloyDB! A senha inicial foi desativada.');
       } else {
         setProfileErrorMsg(data.error || 'Não foi possível alterar a senha.');
       }
@@ -1105,16 +1151,31 @@ export const TopNavUserWidget: React.FC<TopNavUserWidgetProps> = ({
                 size="medium"
               />
 
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                 <Button
                   size="small"
                   variant="outlined"
                   startIcon={<KeyIcon />}
+                  disabled={initialPasswordDisabled}
                   onClick={() => lookupPostalInitialPassword(nidInput)}
                   sx={{ textTransform: 'none' }}
                 >
                   {t.fillInitialPassword}
                 </Button>
+                {initialPasswordDisabled && (
+                  <Chip
+                    size="small"
+                    color="default"
+                    label={
+                      activeLang === 'es-419'
+                        ? 'Contraseña inicial desactivada (1ra contraseña creada)'
+                        : activeLang === 'en-US'
+                        ? 'Initial password disabled (1st password created)'
+                        : 'Senha inicial desativada (1ª senha já criada)'
+                    }
+                    sx={{ fontSize: '0.72rem', fontWeight: 700, bgcolor: '#fee2e2', color: '#991b1b' }}
+                  />
+                )}
                 <Button
                   size="small"
                   variant="outlined"

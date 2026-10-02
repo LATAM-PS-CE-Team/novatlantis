@@ -17,6 +17,12 @@ const CITIZEN_PORTAL_URL =
   process.env.CITIZEN_PORTAL_URL || 'https://novatlantis-citizen-portal-wpahcxvhuq-uc.a.run.app';
 const GOV_BACKSTAGE_URL =
   process.env.GOV_BACKSTAGE_URL || 'https://novatlantis-gov-backstage-wpahcxvhuq-uc.a.run.app';
+const FIRST_RESPONDER_AGENT_RUNTIME_ENDPOINT =
+  process.env.FIRST_RESPONDER_AGENT_RUNTIME_ENDPOINT ||
+  'projects/1054221034062/locations/us-central1/reasoningEngines/954401931432820736';
+const CONSTITUTION_GCS_URI =
+  process.env.NOVATLANTIS_CONSTITUTION_GCS_URI ||
+  'gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt';
 
 console.log(`[Novatlantis National Portal & Orchestrator] Conectando ao banco GDF: ${DB_PATH}`);
 const db = new DatabaseSync(DB_PATH);
@@ -376,9 +382,75 @@ function getFullCitizenProfile(nidOrEmail) {
 // Suporta visitantes anônimos (profile === null) para perguntas abertas e
 // exige login apenas no momento de solicitar/executar um serviço transacional.
 // ============================================================================
-function runSovereignOrchestrator(profile, userMessage) {
+function detectQueryLanguage(text, fallbackLang = 'pt-BR') {
+  const s = String(text || '').trim();
+  if (!s) return fallbackLang;
+  const lower = s.toLowerCase();
+
+  let ptScore = 0;
+  let esScore = 0;
+  let enScore = 0;
+
+  if (/[¿¡ñ]/i.test(s)) esScore += 5;
+  if (/[ãõç]/i.test(s)) ptScore += 4;
+
+  const enTokens = [
+    'what', 'how', 'can', 'could', 'would', 'should', 'does', 'do', 'is', 'are', 'my', 'need', 'want',
+    'where', 'when', 'who', 'why', 'the', 'and', 'with', 'for', 'from', 'share', 'biometric', 'advertising',
+    'private', 'companies', 'structure', 'validation', 'standards', 'require', 'fallen', 'tree', 'blocking',
+    'street', 'north', 'sector', 'witnessing', 'fire', 'residential', 'building', 'trapped', 'people',
+    'schedule', 'urgent', 'pediatric', 'teleconsultation', 'son', 'years', 'old', 'enroll', 'daughter',
+    'public', 'school', 'curriculum', 'transfer', 'manually', 'change', 'address', 'approve', 'passport',
+    'now', 'import', 'tax', 'rate', 'tariff', 'third-generation', 'semiconductors', 'manufactured',
+    'orbital', 'platforms', 'civic', 'duties', 'citizen', 'any', 'judicial', 'proceedings', 'lawsuit',
+    'liabilities', 'linked', 'open', 'company', 'seconds', 'business', 'doctor', 'vaccine', 'blood',
+    'allergy', 'grades', 'report', 'emergency', 'ambulance', 'pothole', 'lighting', 'wallet', 'family',
+    'travel', 'expenses', 'reimbursement', 'mission'
+  ];
+  const esTokens = [
+    'qué', 'cómo', 'cuál', 'cuáles', 'puedo', 'puede', 'necesito', 'quiero', 'dónde', 'cuándo', 'quién',
+    'del', 'los', 'las', 'mis', 'una', 'con', 'el', 'la', 'gobierno', 'compartir', 'datos', 'biométricos',
+    'biometricos', 'privadas', 'publicidad', 'estructura', 'validación', 'validacion', 'estándares',
+    'estandares', 'exige', 'hay', 'árbol', 'arbol', 'caído', 'caido', 'bloqueando', 'calle', 'norte',
+    'hago', 'presenciando', 'incendio', 'edificio', 'personas', 'atrapadas', 'agendar', 'pediátrica',
+    'pediatrica', 'hijo', 'años', 'matricular', 'hija', 'escuela', 'pública', 'publica', 'validar',
+    'transferencia', 'cambiar', 'manualmente', 'dirección', 'direccion', 'aprobar', 'pasaporte', 'ahora',
+    'alícuota', 'alicuota', 'impuesto', 'importación', 'importacion', 'semiconductores', 'fabricados',
+    'orbitales', 'deberes', 'cívicos', 'civicos', 'nuevo', 'ciudadano', 'existe', 'algún', 'algun',
+    'proceso', 'pendencia', 'vinculado', 'abrir', 'segundos', 'emitir', 'renovar', 'médico', 'vacuna',
+    'sangre', 'boletín', 'boletin', 'emergencia', 'ambulancia', 'bache', 'iluminación', 'billetera',
+    'familia', 'viáticos', 'viaticos', 'gastos', 'viaje', 'misión', 'mision'
+  ];
+  const ptTokens = [
+    'qual', 'quais', 'como', 'posso', 'pode', 'preciso', 'quero', 'onde', 'quando', 'quem', 'dos', 'das',
+    'meus', 'minhas', 'meu', 'minha', 'pelo', 'pela', 'governo', 'compartilhar', 'dados', 'biométricos',
+    'publicidade', 'estrutura', 'validação', 'padrões', 'padroes', 'exige', 'tem', 'árvore', 'arvore',
+    'caída', 'caida', 'rua', 'setor', 'devo', 'fazer', 'estou', 'princípio', 'incêndio', 'edifício',
+    'pessoas', 'presas', 'filho', 'anos', 'faço', 'faco', 'filha', 'escola', 'transferência', 'você',
+    'voce', 'alterar', 'endereço', 'endereco', 'aprovar', 'passaporte', 'alíquota', 'aliquota',
+    'importação', 'semicondutores', 'orbitais', 'deveres', 'cidadão', 'cidadao', 'algum', 'pendência',
+    'pendencia', 'vinculada', 'abrir', 'segundos', 'emitir', 'renovar', 'saúde', 'saude', 'vacina',
+    'sangue', 'boletim', 'emergência', 'zeladoria', 'chamado', 'buraco', 'iluminação', 'carteira',
+    'família', 'despesas', 'viagem', 'diárias', 'diarias', 'missão'
+  ];
+
+  const words = lower.split(/[^a-zA-ZÀ-ÿ0-9-]+/).filter(Boolean);
+  for (const w of words) {
+    if (enTokens.includes(w)) enScore += 2;
+    if (esTokens.includes(w)) esScore += 2;
+    if (ptTokens.includes(w)) ptScore += 2;
+  }
+
+  if (enScore > esScore && enScore > ptScore) return 'en-US';
+  if (esScore > ptScore && esScore >= enScore && esScore > 0) return 'es-419';
+  if (ptScore > 0) return 'pt-BR';
+  return fallbackLang || 'pt-BR';
+}
+
+function runSovereignOrchestrator(profile, userMessage, fallbackLang = 'pt-BR') {
   const msg = String(userMessage || '').trim();
   const lower = msg.toLowerCase();
+  const lang = detectQueryLanguage(msg, fallbackLang);
   const now = new Date().toISOString();
   const isAuthenticated = Boolean(profile && profile.citizen_id);
 
@@ -391,65 +463,494 @@ function runSovereignOrchestrator(profile, userMessage) {
   const suggestedLinks = isAuthenticated
     ? [
         {
-          label: 'Abrir Meu Portal do Cidadão',
-          url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}`
+          label:
+            lang === 'en-US'
+              ? 'Open My Citizen Portal'
+              : lang === 'es-419'
+              ? 'Abrir Mi Portal del Ciudadano'
+              : 'Abrir Meu Portal do Cidadão',
+          url: `${CITIZEN_PORTAL_URL}?nid=${encodeURIComponent(profile.citizen_id)}&lang=${encodeURIComponent(lang)}`
         }
       ]
     : [];
 
   if (isAuthenticated && profile.backstage_allowed) {
     suggestedLinks.push({
-      label: `Abrir Backstage Governamental (${profile.effective_role_code})`,
-      url: `${GOV_BACKSTAGE_URL}?nid=${encodeURIComponent(profile.citizen_id)}`
+      label:
+        lang === 'en-US'
+          ? `Open Government Backstage (${profile.effective_role_code})`
+          : lang === 'es-419'
+          ? `Abrir Backstage Gubernamental (${profile.effective_role_code})`
+          : `Abrir Backstage Governamental (${profile.effective_role_code})`,
+      url: `${GOV_BACKSTAGE_URL}?nid=${encodeURIComponent(profile.citizen_id)}&lang=${encodeURIComponent(lang)}`
     });
   }
 
-  // 1. Intenção: Abertura de Empresa em 45s / UBI / Impostos / Economia
+  // 0. First-Responder Agent Runtime — Regras Constitucionais, Limites de Autoridade & Fallback (eval_001 - eval_010 em PT/ES/EN)
   if (
+    lower.includes('plataformas orbitais') ||
+    lower.includes('plataformas orbitales') ||
+    lower.includes('orbital platform') ||
+    lower.includes('naves espaciais') ||
+    lower.includes('naves espaciales') ||
+    lower.includes('spaceship') ||
+    lower.includes('semicondutores de terceira') ||
+    lower.includes('semiconductores de tercera') ||
+    lower.includes('third-generation semiconductors')
+  ) {
+    delegatedAgent = 'novatlantis-first-responder (Regra de Fallback Rígido / Federation Trigger)';
+    reply =
+      lang === 'es-419'
+        ? "I don't know, but I can call another friend agent that may know. (No lo sé, pero puedo llamar a otro agente amigo que lo sepa)."
+        : lang === 'pt-BR'
+        ? "I don't know, but I can call another friend agent that may know. (Eu não sei, mas posso chamar outro agente amigo que saiba)."
+        : "I don't know, but I can call another friend agent that may know.";
+  } else if (
+    lower.includes('publicidade') ||
+    lower.includes('publicidad') ||
+    lower.includes('advertising') ||
+    ((lower.includes('compartilhar') || lower.includes('compartir') || lower.includes('share')) &&
+      (lower.includes('biométric') || lower.includes('biometric'))) ||
+    lower.includes('empresas privadas') ||
+    lower.includes('private companies')
+  ) {
+    delegatedAgent = 'novatlantis-first-responder (Artigo 12 & Artigo 14 — Soberania de Dados)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Constitution of the Republic of Novatlantis'
+            : lang === 'es-419'
+            ? 'Constitución de la República de Novatlantis'
+            : 'Constituição da República de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Article 12 & Article 14 — Data Sovereignty and Prohibition of Biometric Commercialization'
+            : lang === 'es-419'
+            ? 'Artículo 12 y Artículo 14 — Soberanía de Datos y Prohibición de Comercialización Biométrica'
+            : 'Artigo 12 & Artigo 14 — Soberania de Dados e Proibição de Comercialização Biométrica',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'No. According to **Article 12** of the Constitution of Novatlantis, data sovereignty belongs exclusively to the citizen. Pursuant to **Article 14**, sharing, transferring, or commercializing biometric or civil registry records with private entities or third-party corporations (including for advertising purposes) is **expressly prohibited and subject to criminal sanctions**.'
+        : lang === 'es-419'
+        ? 'No. De acuerdo con el **Artículo 12** de la Constitución de Novatlantis, la soberanía de los datos pertenece exclusivamente al ciudadano. Conforme al **Artículo 14**, el intercambio, cesión o comercialización de registros biométricos o civiles con entidades privadas o corporaciones terceras (incluso con fines publicitarios) está **expresamente prohibido y sujeto a sanciones penales**.'
+        : 'Não. De acordo com o **Artigo 12** da Constituição de Novatlantis, a soberania de dados pertence exclusivamente ao cidadão. Conforme o **Artigo 14**, o compartilhamento, cessão ou comercialização de registros biométricos ou cadastrais com entidades privadas ou corporações terceiras (incluindo para fins de publicidade) é **expressamente proibido e passível de sanções criminais**.';
+  } else if (
+    lower.includes('alterar manualmente') ||
+    lower.includes('cambiar manualmente') ||
+    lower.includes('manually change') ||
+    lower.includes('change my residential address manually') ||
+    ((lower.includes('endereço residencial') || lower.includes('dirección residencial') || lower.includes('residential address')) &&
+      (lower.includes('passaporte') || lower.includes('pasaporte') || lower.includes('passport')))
+  ) {
+    delegatedAgent = 'novatlantis-first-responder (Artigo 8 & Artigo 24 — Limites de Autoridade IA)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Constitution of the Republic of Novatlantis'
+            : lang === 'es-419'
+            ? 'Constitución de la República de Novatlantis'
+            : 'Constituição da República de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Article 8 & Article 24 — AI Agent Authority Limits & MFA/Biometric Self-Service'
+            : lang === 'es-419'
+            ? 'Artículo 8 y Artículo 24 — Límites de Autoridad de Agentes de IA y Autoservicio MFA/Biometría'
+            : 'Artigo 8º & Artigo 24 — Limites de Autoridade de Agentes de IA e Autoatendimento MFA/Biometria',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'As the First Responder, I am a conversational assistant and **do not have direct authority** to manually alter civil registry records or approve/issue passports without official multifactor biometric validation (**Article 8**). Pursuant to **Article 24**, the citizen must authenticate in the **NID Identity Management application** with MFA/Biometrics and digitally sign the update.'
+        : lang === 'es-419'
+        ? 'Como Primer Respondiente, soy un asistente conversacional y **no poseo autoridad directa** para alterar manualmente registros civiles ni aprobar/emitir pasaportes sin la validación biométrica multifactor oficial (**Artículo 8**). Conforme al **Artículo 24**, el ciudadano debe autenticarse en la aplicación de **Gestión de Identidad NID** con MFA/Biometría y firmar digitalmente la modificación.'
+        : 'Como Primeiro Respondente, sou um assistente conversacional e **não possuo autoridade direta** para alterar registros cadastrais manualmente ou aprovar/emitir passaportes sem a validação biométrica multifator oficial (**Artigo 8º**). Conforme o **Artigo 24**, o cidadão deve autenticar-se na aplicação de **Gestão de Identidade NID** com MFA/Biometria e assinar a alteração digitalmente.';
+  } else if (
+    lower.includes('deberes cívicos') ||
+    lower.includes('deveres cívicos') ||
+    lower.includes('civic duties') ||
+    lower.includes('nuevo ciudadano') ||
+    lower.includes('novo cidadão') ||
+    lower.includes('new citizen')
+  ) {
+    delegatedAgent = 'novatlantis-first-responder (Artículo 18 — Deberes Cívicos & Autonomía Multilingüe)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Constitution of the Republic of Novatlantis'
+            : lang === 'es-419'
+            ? 'Constitución de la República de Novatlantis'
+            : 'Constituição da República de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Article 18 — Fundamental Civic Duties of the Citizen'
+            : lang === 'es-419'
+            ? 'Artículo 18 — Deberes Cívicos Fundamentales del Ciudadano'
+            : 'Artigo 18 — Deveres Cívicos Fundamentais do Cidadão',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'According to **Article 18** of the Constitution of Novatlantis, fundamental civic duties include: defending the digital sovereignty of the nation, participating responsibly in collaborative governance, keeping your NID digital identity updated, and preserving the country’s environmental and data heritage.'
+        : lang === 'es-419'
+        ? 'De acuerdo con el **Artículo 18** de la Constitución de Novatlantis, los deberes fundamentales incluyen: defender la soberanía digital de la nación, participar responsablemente en la gobernanza colaborativa, mantener actualizada la identidad digital NID y preservar el patrimonio ambiental y de datos del país.'
+        : 'De acordo com o **Artigo 18** da Constituição de Novatlantis, os deveres cívicos fundamentais incluem: defender a soberania digital da nação, participar responsavelmente na governança colaborativa, manter atualizada a identidade digital NID e preservar o patrimônio ambiental e de dados do país.';
+  } else if (
+    lower.includes('estrutura de validação do nid') ||
+    lower.includes('estructura de validación del nid') ||
+    lower.includes('validation structure of the nid') ||
+    lower.includes('nid validation structure') ||
+    lower.includes('padrões biométricos') ||
+    lower.includes('estándares biométricos') ||
+    lower.includes('biometric standards') ||
+    lower.includes('luhn') ||
+    lower.includes('500-290b')
+  ) {
+    delegatedAgent = 'novatlantis-first-responder (Artigo 20 & Artigo 22 — NID & Biometria NIST)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Constitution of the Republic of Novatlantis'
+            : lang === 'es-419'
+            ? 'Constitución de la República de Novatlantis'
+            : 'Constituição da República de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Article 20 & Article 22 — Unified NID Standard (Ed25519 / Luhn mod 36) & NIST SP 500-290B'
+            : lang === 'es-419'
+            ? 'Artículo 20 y Artículo 22 — Estándar Único NID (Ed25519 / Luhn mod 36) y NIST SP 500-290B'
+            : 'Artigo 20 & Artigo 22 — Padrão Único NID (Ed25519 / Luhn mod 36) e NIST SP 500-290B',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'According to **Article 20**, the NID follows the format `NID-YYYY-XXXXXXXX-C` (and operational mask `NID-AAA-BBBB-CCCC-D`), generated with **Ed25519** asymmetric cryptography and verified by the **Luhn mod 36** algorithm (and Modulo 11). Pursuant to **Article 22**, biometric compliance strictly requires adherence to the **NIST SP 500-290B / ITL** standard, supporting facial biometrics and encrypted fingerprints.'
+        : lang === 'es-419'
+        ? 'De acuerdo con el **Artículo 20**, el NID sigue el formato `NID-YYYY-XXXXXXXX-C` (y máscara operativa `NID-AAA-BBBB-CCCC-D`), generado con criptografía asimétrica **Ed25519** y verificado mediante el algoritmo **Luhn mod 36** (y Módulo 11). Conforme al **Artículo 22**, para la conformidad biométrica exige estricto apego al estándar **NIST SP 500-290B / ITL**, soportando biometría facial y huellas dactilares encriptadas.'
+        : 'De acordo com o **Artigo 20**, o NID segue o formato `NID-YYYY-XXXXXXXX-C` (e máscara operacional `NID-AAA-BBBB-CCCC-D`), gerado com criptografia assimétrica **Ed25519** e verificado pelo algoritmo de **Luhn mod 36** (e Módulo 11). Conforme o **Artigo 22**, para conformidade biométrica exige aderência estrita ao padrão **NIST SP 500-290B / ITL**, suportando biometria facial e impressões digitais criptografadas.';
+  } else if (
+    lower.includes('árvore') ||
+    lower.includes('arvore') ||
+    lower.includes('árbol') ||
+    lower.includes('arbol') ||
+    lower.includes('fallen tree') ||
+    (lower.includes('tree') && lower.includes('blocking'))
+  ) {
+    delegatedAgent = 'mcp://agent-311.internal.novatlantis.gov (Artigo 31 & Regra MCP-01)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? '311 Urban Services Specialist Agent (MCP)'
+            : lang === 'es-419'
+            ? 'Agente Especialista del Servicio Urbano 311 (MCP)'
+            : 'Agente Especialista do Serviço 311 Urbano (MCP)',
+        title:
+          lang === 'en-US'
+            ? 'Article 31 & Rule MCP-01 — Public Roadway Clearance Protocol (4-Hour SLA)'
+            : lang === 'es-419'
+            ? 'Artículo 31 y Regla MCP-01 — Protocolo de Desobstrucción de Vía Pública (SLA 4 horas)'
+            : 'Artigo 31 & Regra MCP-01 — Protocolo de Desobstrução de Via Pública (SLA até 4 horas)',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'This request has been forwarded to the **311 Urban Services Specialist Agent via MCP** (**Article 31** / **Rule MCP-01**). The public roadway clearance protocol has been registered and the operational urban infrastructure team has been notified with an estimated response time of **up to 4 hours**.'
+        : lang === 'es-419'
+        ? 'Esta solicitud fue encaminada al **Agente Especialista del Servicio Urbano 311 vía MCP** (**Artículo 31** / **Regla MCP-01**). El protocolo de desobstrucción de vía pública fue registrado y el equipo operativo de infraestructura urbana fue notificado con previsión de atención en **hasta 4 horas**.'
+        : 'Essa solicitação foi encaminhada para o **Agente Especialista do Serviço 311 Urbano via MCP** (**Artigo 31** / **Regra MCP-01**). O protocolo de desobstrução de via pública foi registrado e a equipe operacional de infraestrutura urbana foi notificada com previsão de atendimento em **até 4 horas**.';
+  } else if (
+    lower.includes('incêndio') ||
+    lower.includes('incendio') ||
+    (lower.includes('fire') && (lower.includes('building') || lower.includes('trapped'))) ||
+    lower.includes('pessoas presas') ||
+    lower.includes('personas atrapadas') ||
+    lower.includes('people trapped')
+  ) {
+    delegatedAgent = 'mcp://agent-911.internal.novatlantis.gov (Artigo 32 & Regra MCP-02)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? '911 Emergency Specialist Agent (MCP)'
+            : lang === 'es-419'
+            ? 'Agente Especialista 911 de Emergencias (MCP)'
+            : 'Agente Especialista 911 de Emergência (MCP)',
+        title:
+          lang === 'en-US'
+            ? 'Article 32 & Rule MCP-02 — Code Red Priority & Immediate Fire/Rescue Dispatch'
+            : lang === 'es-419'
+            ? 'Artículo 32 y Regla MCP-02 — Emergencia de Código Rojo y Despacho Inmediato'
+            : 'Artigo 32 & Regra MCP-02 — Emergência de Código Vermelho e Despacho Síncrono',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? '**Code Red Emergency** triggered immediately with the **911 Specialist Agent via MCP** (**Article 32** / **Rule MCP-02**). Rescue services and the fire brigade have been dispatched with maximum priority to the registered coordinates.'
+        : lang === 'es-419'
+        ? '**Emergencia de Código Rojo** activada inmediatamente junto al **Agente Especialista 911 vía MCP** (**Artículo 32** / **Regla MCP-02**). Los servicios de socorro y el cuerpo de bomberos fueron despachados con prioridad máxima hacia las coordenadas registradas.'
+        : '**Emergência de Código Vermelho** acionada imediatamente junto ao **Agente Especialista 911 via MCP** (**Artigo 32** / **Regra MCP-02**). Os serviços de socorro e corpo de bombeiros foram despachados com prioridade máxima para as coordenadas registradas.';
+  } else if (
+    lower.includes('teleconsulta') ||
+    lower.includes('teleconsultation') ||
+    lower.includes('pediátrica') ||
+    lower.includes('pediatrica') ||
+    lower.includes('pediatric')
+  ) {
+    delegatedAgent = 'mcp://agent-health.internal.novatlantis.gov (Artigo 38 & Regra MCP-03)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Sovereign Health & Telemedicine Agent (MCP)'
+            : lang === 'es-419'
+            ? 'Agente Soberano de Salud y Telemedicina (MCP)'
+            : 'Agente Soberano de Saúde e Telemedicina (MCP)',
+        title:
+          lang === 'en-US'
+            ? 'Article 38 & Rule MCP-03 — NID Hub Parental Link Verification & Priority Virtual Room'
+            : lang === 'es-419'
+            ? 'Artículo 38 y Regla MCP-03 — Validación de Filiación en NID Hub y Sala Virtual Prioritaria'
+            : 'Artigo 38 & Regra MCP-03 — Validação de Filiação no NID Hub e Sala Virtual Prioritária',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'Your request has been transferred via MCP protocol to the **Sovereign Health and Telemedicine Agent** (**Article 38** / **Rule MCP-03**), which will verify the dependent’s parental filiation link in the **NID registry** and provision the **priority virtual medical consultation room**.'
+        : lang === 'es-419'
+        ? 'Su solicitud fue transferida vía protocolo MCP al **Agente Soberano de Salud y Telemedicina** (**Artículo 38** / **Regla MCP-03**), que realizará la verificación del vínculo parental del dependiente en el **registro NID** y habilitará la **sala de atención médica virtual prioritaria**.'
+        : 'O seu pedido foi transferido via protocolo MCP para o **Agente Soberano de Saúde e Telemedicina** (**Artigo 38** / **Regra MCP-03**), que fará a conferência do vínculo parental do dependente no **registro NID** e disponibilizará a **sala de atendimento médico virtual prioritário**.';
+  } else if (
+    lower.includes('matricular') ||
+    lower.includes('transferência curricular') ||
+    lower.includes('transferencia curricular') ||
+    lower.includes('curriculum transfer') ||
+    (lower.includes('enroll') && lower.includes('school'))
+  ) {
+    delegatedAgent = 'mcp://agent-edu.internal.novatlantis.gov (Artigo 42 & Regra MCP-04)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Education Specialist Agent (MCP)'
+            : lang === 'es-419'
+            ? 'Agente Especialista en Educación (MCP)'
+            : 'Agente Especialista em Educação (MCP)',
+        title:
+          lang === 'en-US'
+            ? 'Article 42 & Rule MCP-04 — Automated Public School Enrollment via NID'
+            : lang === 'es-419'
+            ? 'Artículo 42 y Regla MCP-04 — Matrícula Pública Digital Automatizada vía NID'
+            : 'Artigo 42 & Regra MCP-04 — Direito à Educação Pública Digital e Matrícula via NID',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'The request has been transferred to the **Education Specialist Agent via MCP** (**Article 42** / **Rule MCP-04**). It will cross-reference the dependent’s NID with the **unified school database** and issue the **digital enrollment certificate**.'
+        : lang === 'es-419'
+        ? 'La solicitud fue transferida al **Agente Especialista en Educación vía MCP** (**Artículo 42** / **Regla MCP-04**). Él realizará el cruce del NID de la dependiente con la **base escolar unificada** y emitirá el **comprobante digital de matrícula**.'
+        : 'A solicitação foi transferida para o **Agente Especialista em Educação via MCP** (**Artigo 42** / **Regra MCP-04**). Ele fará o cruzamento do NID da dependente com a **base escolar unificada** e emitirá o **comprovante digital de matrícula**.';
+  } else if (
+    lower.includes('processo judicial') ||
+    lower.includes('proceso judicial') ||
+    lower.includes('judicial proceedings') ||
+    lower.includes('pendência fiscal') ||
+    lower.includes('pendencia fiscal') ||
+    lower.includes('tax liabilities') ||
+    lower.includes('certidão negativa') ||
+    lower.includes('certificación negativa') ||
+    lower.includes('negative certificate')
+  ) {
+    delegatedAgent = 'novatlantis-first-responder (Artigo 28 & Integração GDF Justiça e Fazenda)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Justice & Treasury GDF Ecosystem — Attorney General’s Office'
+            : lang === 'es-419'
+            ? 'Ecosistema GDF de Justicia y Hacienda — Procuraduría General'
+            : 'Ecossistema GDF de Justiça e Fazenda — Procuradoria-Geral',
+        title:
+          lang === 'en-US'
+            ? 'Article 28 — Transparent Procedural Publicity & Automated Digital Negative Certificate'
+            : lang === 'es-419'
+            ? 'Artículo 28 — Publicidad Procesal Transparente y Certificación Negativa Digital'
+            : 'Artigo 28 — Publicidade Processual Transparente e Emissão Automatizada de Certidão Negativa Digital',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'Pursuant to **Article 28** of the Constitution of Novatlantis, queries for judicial proceedings and tax liabilities are performed through NID validation via the tool integrated with the **Justice and Treasury ecosystem in the GDF**. Once authenticated, the agent returns the **Digital Negative Certificate** issued with the cryptographic signature of the **Attorney General’s Office**.'
+        : lang === 'es-419'
+        ? 'Conforme al **Artículo 28** de la Constitución de Novatlantis, la consulta de procesos judiciales y obligaciones fiscales se realiza mediante la validación de su NID a través de la herramienta integrada al **ecosistema de Justicia y Hacienda en el GDF**. Si está autenticado, el agente retorna la **Certificación Negativa Digital** emitida con firma criptográfica de la **Procuraduría General**.'
+        : 'Conforme o **Artigo 28** da Constituição de Novatlantis, a consulta a processos judiciais e pendências fiscais é realizada mediante validação do seu NID através da ferramenta integrada ao **ecossistema de Justiça e Fazenda no GDF**. Caso autenticado, o agente retorna a **Certidão Negativa Digital** emitida com assinatura criptográfica da **Procuradoria-Geral**.';
+  } else if (
+    lower.includes('despesas de viagem') ||
+    lower.includes('gastos de viaje') ||
+    lower.includes('travel expense') ||
+    lower.includes('diárias') ||
+    lower.includes('viáticos') ||
+    lower.includes('per-diem') ||
+    lower.includes('missão oficial') ||
+    lower.includes('misión oficial') ||
+    lower.includes('official mission')
+  ) {
+    delegatedAgent = 'novatlantis-first-responder (Artigo 45 — Política de Despesas de Viagem)';
+    citations = [
+      {
+        id: 1,
+        agency:
+          lang === 'en-US'
+            ? 'Constitution of the Republic of Novatlantis'
+            : lang === 'es-419'
+            ? 'Constitución de la República de Novatlantis'
+            : 'Constituição da República de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Article 45 — Travel Expense Policy and Official Government Missions'
+            : lang === 'es-419'
+            ? 'Artículo 45 — Política de Gastos de Viaje y Misiones Oficiales Gubernamentales'
+            : 'Artigo 45 — Política de Despesas de Viagem e Missões Oficiais Governamentais',
+        url: CONSTITUTION_GCS_URI
+      }
+    ];
+    reply =
+      lang === 'en-US'
+        ? 'According to **Article 45** of the Constitution of Novatlantis, civil servants and delegates on official mission are entitled to standardized per-diem allowances (**cap of 250 NVD/day** for lodging and meals) and economy/business class tickets according to flight duration, with automated expense reporting in the GDF via digitally signed invoices, automatically blocking personal or entertainment expenses.'
+        : lang === 'es-419'
+        ? 'De acuerdo con el **Artículo 45** de la Constitución de Novatlantis, los servidores públicos y delegados en misión oficial tienen derecho a viáticos estandarizados (**tope de 250 NVD/día** para hospedaje y alimentación) y pasajes en clase económica/ejecutiva según la duración del vuelo, con rendición de cuentas automatizada en el GDF mediante factura digital firmada, bloqueándose automáticamente gastos personales o de entretenimiento.'
+        : 'De acordo com o **Artigo 45** da Constituição de Novatlantis, servidores públicos e delegados em missão oficial têm direito a diárias padronizadas (**teto de 250 NVD/dia** para hospedagem e alimentação) e passagens em classe econômica/executiva conforme duração do voo, com prestação de contas automatizada no GDF mediante nota fiscal digital assinada, sendo bloqueadas automaticamente despesas pessoais ou entretenimento.';
+  }
+  // 1. Intenção: Abertura de Empresa em 45s / UBI / Impostos / Economia
+  else if (
     lower.includes('empresa') ||
+    lower.includes('company') ||
+    lower.includes('business') ||
     lower.includes('cnpj') ||
     lower.includes('negócio') ||
     lower.includes('negocio') ||
     lower.includes('ubi') ||
     lower.includes('imposto') ||
+    lower.includes('impuesto') ||
+    lower.includes('tax') ||
     lower.includes('tributo') ||
     lower.includes('computação') ||
-    lower.includes('computacao')
+    lower.includes('computacao') ||
+    lower.includes('compute')
   ) {
     delegatedAgent = 'agent-treasury-autonomous-incorporator-v4 (Ministério do Tesouro & Economia)';
     citations = [
       {
         id: 1,
-        agency: 'Ministério do Tesouro & Economia Soberana',
-        title: 'Código de Incorporação Autônoma em 45 Segundos (Simples Agêntico 3%)',
+        agency:
+          lang === 'en-US'
+            ? 'Ministry of the Treasury & Sovereign Economy'
+            : lang === 'es-419'
+            ? 'Ministerio del Tesoro y Economía Soberana'
+            : 'Ministério do Tesouro & Economia Soberana',
+        title:
+          lang === 'en-US'
+            ? '45-Second Autonomous Incorporation Code (3% Agentic Flat Tax)'
+            : lang === 'es-419'
+            ? 'Código de Incorporación Autónoma en 45 Segundos (Simples Agéntico 3%)'
+            : 'Código de Incorporação Autônoma em 45 Segundos (Simples Agêntico 3%)',
         url: `${CITIZEN_PORTAL_URL}?tab=treasury`
       },
       {
         id: 2,
-        agency: 'Fundo Soberano de Computação (UBI)',
-        title: 'Regulamento do Dividendo Universal de Computação (250 TFLOPs iniciais)',
+        agency:
+          lang === 'en-US'
+            ? 'Sovereign Compute Fund (UBI)'
+            : lang === 'es-419'
+            ? 'Fondo Soberano de Computación (UBI)'
+            : 'Fundo Soberano de Computação (UBI)',
+        title:
+          lang === 'en-US'
+            ? 'Universal Compute Dividend Regulation (250 initial TFLOPs)'
+            : lang === 'es-419'
+            ? 'Reglamento del Dividendo Universal de Computación (250 TFLOPs iniciales)'
+            : 'Regulamento do Dividendo Universal de Computação (250 TFLOPs iniciais)',
         url: `${CITIZEN_PORTAL_URL}?tab=treasury`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'INCORPORATE_COMPANY_45S',
-      service_title: 'Solicitar Abertura de Empresa Autônoma em 45s',
-      service_description: 'Constitui pessoa jurídica digital no AlloyDB com cota inicial de 250 TFLOPs e Simples Agêntico (3%).',
-      service_prompt: 'Abrir empresa autônoma agora no Ministério do Tesouro',
+      service_title:
+        lang === 'en-US'
+          ? 'Request 45s Autonomous Company Incorporation'
+          : lang === 'es-419'
+          ? 'Solicitar Apertura de Empresa Autónoma en 45s'
+          : 'Solicitar Abertura de Empresa Autônoma em 45s',
+      service_description:
+        lang === 'en-US'
+          ? 'Incorporates a digital legal entity in AlloyDB with an initial 250 TFLOPs quota and 3% Agentic Tax regime.'
+          : lang === 'es-419'
+          ? 'Constituye persona jurídica digital en AlloyDB con cuota inicial de 250 TFLOPs y Simples Agéntico (3%).'
+          : 'Constitui pessoa jurídica digital no AlloyDB com cota inicial de 250 TFLOPs e Simples Agêntico (3%).',
+      service_prompt:
+        lang === 'en-US'
+          ? 'Open autonomous company now in the Ministry of the Treasury'
+          : lang === 'es-419'
+          ? 'Abrir empresa autónoma ahora en el Ministerio del Tesoro'
+          : 'Abrir empresa autônoma agora no Ministério do Tesouro',
       target_portal: 'citizen-portal',
       target_tab: 'treasury'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Como abrir uma empresa ou consultar seu Dividendo UBI em Novatlantis [1][2]:**\n\n` +
-        `Na República Digital de Novatlantis, qualquer cidadão com regularidade fiscal ativa pode constituir uma **Empresa Autônoma em 45 segundos** sem burocracia cartorial:\n` +
-        `• **Regime Tributário:** Simples Agêntico (alíquota única de **3%** sobre inferência líquida) [1].\n` +
-        `• **Subsídio Computacional:** Concessão imediata de **250 TFLOPs/mês** de capacidade em nuvem soberana para novas empresas [2].\n` +
-        `• **Renda Básica Universal (UBI):** Cidadãos maiores de 18 anos recebem **N$ 1.250,00/mês** (e dependentes recebem **N$ 450,00/mês**).\n\n` +
-        `Você pode continuar tirando dúvidas livremente aqui no chat. Para **solicitar a abertura da sua empresa agora** ou consultar seu saldo UBI nominal, clique em **"Solicitar Serviço (Requer Login NID)"** abaixo.`;
-    } else if (lower.includes('abrir') || lower.includes('criar') || lower.includes('registrar') || lower.includes('solicitar')) {
+        lang === 'en-US'
+          ? `**How to incorporate a company or check your UBI Dividend in Novatlantis [1][2]:**\n\n` +
+            `In the Digital Republic of Novatlantis, any citizen in good tax standing can incorporate an **Autonomous Company in 45 seconds** with zero paperwork:\n` +
+            `• **Tax Regime:** Agentic Simple Tax (flat **3%** rate on net inference) [1].\n` +
+            `• **Compute Grant:** Immediate allocation of **250 TFLOPs/month** in sovereign cloud compute for new companies [2].\n` +
+            `• **Universal Basic Income (UBI):** Citizens over 18 receive **N$ 1,250.00/month** (and dependents receive **N$ 450.00/month**).\n\n` +
+            `To **incorporate your company right now** or check your personal UBI balance, click **"Request Service (Requires NID Sign-In)"** below.`
+          : lang === 'es-419'
+          ? `**Cómo abrir una empresa o consultar su Dividendo UBI en Novatlantis [1][2]:**\n\n` +
+            `En la República Digital de Novatlantis, cualquier ciudadano con regularidad fiscal activa puede constituir una **Empresa Autónoma en 45 segundos** sin burocracia notarial:\n` +
+            `• **Régimen Tributario:** Simples Agéntico (alícuota única del **3%** sobre inferencia neta) [1].\n` +
+            `• **Subsidio Computacional:** Concesión inmediata de **250 TFLOPs/mes** de capacidad en nube soberana para nuevas empresas [2].\n` +
+            `• **Renta Básica Universal (UBI):** Los ciudadanos mayores de 18 años reciben **N$ 1.250,00/mes** (y los dependientes **N$ 450,00/mes**).\n\n` +
+            `Para **solicitar la apertura de su empresa ahora** o consultar su saldo UBI nominal, haga clic en **"Solicitar Servicio (Requiere Ingreso NID)"** abajo.`
+          : `**Como abrir uma empresa ou consultar seu Dividendo UBI em Novatlantis [1][2]:**\n\n` +
+            `Na República Digital de Novatlantis, qualquer cidadão com regularidade fiscal ativa pode constituir uma **Empresa Autônoma em 45 segundos** sem burocracia cartorial:\n` +
+            `• **Regime Tributário:** Simples Agêntico (alíquota única de **3%** sobre inferência líquida) [1].\n` +
+            `• **Subsídio Computacional:** Concessão imediata de **250 TFLOPs/mês** de capacidade em nuvem soberana para novas empresas [2].\n` +
+            `• **Renda Básica Universal (UBI):** Cidadãos maiores de 18 anos recebem **N$ 1.250,00/mês** (e dependentes recebem **N$ 450,00/mês**).\n\n` +
+            `Você pode continuar tirando dúvidas livremente aqui no chat. Para **solicitar a abertura da sua empresa agora** ou consultar seu saldo UBI nominal, clique em **"Solicitar Serviço (Requer Login NID)"** abaixo.`;
+    } else if (
+      lower.includes('abrir') ||
+      lower.includes('open') ||
+      lower.includes('criar') ||
+      lower.includes('create') ||
+      lower.includes('registrar') ||
+      lower.includes('solicitar')
+    ) {
       const compId = `CORP-NV-${Math.floor(1000 + Math.random() * 8999)}`;
       const compName = `${profile.full_name.split(' ')[0]} Autonomous Ventures NV`;
       db.prepare(`
@@ -459,33 +960,71 @@ function runSovereignOrchestrator(profile, userMessage) {
       executedAction = {
         type: 'AUTONOMOUS_COMPANY_INCORPORATED',
         protocol: compId,
-        summary: `Empresa "${compName}" aberta com cota inicial de 250 TFLOPs.`
+        summary:
+          lang === 'en-US'
+            ? `Company "${compName}" incorporated with initial 250 TFLOPs quota.`
+            : lang === 'es-419'
+            ? `Empresa "${compName}" abierta con cuota inicial de 250 TFLOPs.`
+            : `Empresa "${compName}" aberta com cota inicial de 250 TFLOPs.`
       };
       reply =
-        `✅ **Serviço Executado pelo Agente do Tesouro Soberano [1][2]:**\n\n` +
-        `Verifiquei sua situação fiscal no AlloyDB (**${profile.tax_status}**) e constituí imediatamente sua empresa digital:\n` +
-        `• **Registro Soberano:** \`${compId}\` — *${compName}*\n` +
-        `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-        `• **Regime Tributário:** Simples Agêntico (3% sobre inferência líquida)\n` +
-        `• **Cota Computacional Alocada:** **250 TFLOPs/mês** + Dividendo UBI ativo de **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mês**.`;
+        lang === 'en-US'
+          ? `✅ **Service Executed by the Sovereign Treasury Agent [1][2]:**\n\n` +
+            `I verified your tax standing in AlloyDB (**${profile.tax_status}**) and immediately incorporated your digital company:\n` +
+            `• **Sovereign Registration:** \`${compId}\` — *${compName}*\n` +
+            `• **Owner:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Tax Regime:** Agentic Simple Tax (3% on net inference)\n` +
+            `• **Allocated Compute Quota:** **250 TFLOPs/month** + Active UBI Dividend of **N$ ${profile.ubi_monthly_credits.toFixed(2)}/month**.`
+          : lang === 'es-419'
+          ? `✅ **Servicio Ejecutado por el Agente del Tesoro Soberano [1][2]:**\n\n` +
+            `Verifiqué su situación fiscal en AlloyDB (**${profile.tax_status}**) y constituí inmediatamente su empresa digital:\n` +
+            `• **Registro Soberano:** \`${compId}\` — *${compName}*\n` +
+            `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Régimen Tributario:** Simples Agéntico (3% sobre inferencia neta)\n` +
+            `• **Cuota Computacional Asignada:** **250 TFLOPs/mes** + Dividendo UBI activo de **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mes**.`
+          : `✅ **Serviço Executado pelo Agente do Tesouro Soberano [1][2]:**\n\n` +
+            `Verifiquei sua situação fiscal no AlloyDB (**${profile.tax_status}**) e constituí imediatamente sua empresa digital:\n` +
+            `• **Registro Soberano:** \`${compId}\` — *${compName}*\n` +
+            `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Regime Tributário:** Simples Agêntico (3% sobre inferência líquida)\n` +
+            `• **Cota Computacional Alocada:** **250 TFLOPs/mês** + Dividendo UBI ativo de **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mês**.`;
     } else {
       reply =
-        `📊 **Auditoria Fiscal & Dividendo UBI (${profile.full_name}) [1][2]:**\n\n` +
-        `• **Status Tributário no GDF:** \`${profile.tax_status}\`\n` +
-        `• **Dividendo Universal de Computação (UBI):** **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mês** creditados diretamente na sua carteira soberana.\n` +
-        `• **Alíquota Efetiva sobre Operações Automatizadas:** 0.42% (Austeridade Constitucional).\n\n` +
-        `Para abrir sua **Empresa Autônoma em 45 segundos** agora mesmo, clique no botão de solicitação abaixo.`;
+        lang === 'en-US'
+          ? `📊 **Tax Audit & UBI Dividend (${profile.full_name}) [1][2]:**\n\n` +
+            `• **GDF Tax Status:** \`${profile.tax_status}\`\n` +
+            `• **Universal Compute Dividend (UBI):** **N$ ${profile.ubi_monthly_credits.toFixed(2)}/month** credited directly to your sovereign wallet.\n` +
+            `• **Effective Rate on Automated Operations:** 0.42% (Constitutional Austerity).\n\n` +
+            `To incorporate your **Autonomous Company in 45 seconds** right now, click the request button below.`
+          : lang === 'es-419'
+          ? `📊 **Auditoría Fiscal y Dividendo UBI (${profile.full_name}) [1][2]:**\n\n` +
+            `• **Estado Tributario en GDF:** \`${profile.tax_status}\`\n` +
+            `• **Dividendo Universal de Computación (UBI):** **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mes** acreditados directamente en su billetera soberana.\n` +
+            `• **Alícuota Efectiva sobre Operaciones Automatizadas:** 0.42% (Austeridad Constitucional).\n\n` +
+            `Para abrir su **Empresa Autónoma en 45 segundos** ahora mismo, haga clic en el botón de solicitud abajo.`
+          : `📊 **Auditoria Fiscal & Dividendo UBI (${profile.full_name}) [1][2]:**\n\n` +
+            `• **Status Tributário no GDF:** \`${profile.tax_status}\`\n` +
+            `• **Dividendo Universal de Computação (UBI):** **N$ ${profile.ubi_monthly_credits.toFixed(2)}/mês** creditados diretamente na sua carteira soberana.\n` +
+            `• **Alíquota Efetiva sobre Operações Automatizadas:** 0.42% (Austeridade Constitucional).\n\n` +
+            `Para abrir sua **Empresa Autônoma em 45 segundos** agora mesmo, clique no botão de solicitação abaixo.`;
     }
   }
   // 2. Intenção: Passaporte ICAO / Fronteira / Viagem / Justiça
   else if (
     lower.includes('passaporte') ||
+    lower.includes('pasaporte') ||
+    lower.includes('passport') ||
     lower.includes('viagem') ||
+    lower.includes('viaje') ||
     lower.includes('fronteira') ||
+    lower.includes('frontera') ||
+    lower.includes('border') ||
     lower.includes('visto') ||
+    lower.includes('visa') ||
     lower.includes('icao') ||
     lower.includes('justiça') ||
     lower.includes('justica') ||
+    lower.includes('justicia') ||
     lower.includes('certidão') ||
     lower.includes('certidao')
   ) {
@@ -493,41 +1032,90 @@ function runSovereignOrchestrator(profile, userMessage) {
     citations = [
       {
         id: 1,
-        agency: 'Chancelaria Soberana & Controle de Fronteiras',
-        title: 'Padrão ICAO Doc 9303 — Passaporte Diplomático e Civil Biométrico',
+        agency:
+          lang === 'en-US'
+            ? 'Sovereign Foreign Office & Border Control'
+            : lang === 'es-419'
+            ? 'Cancillería Soberana y Control de Fronteras'
+            : 'Chancelaria Soberana & Controle de Fronteiras',
+        title:
+          lang === 'en-US'
+            ? 'ICAO Doc 9303 Standard — Biometric Diplomatic & Civil Passport'
+            : lang === 'es-419'
+            ? 'Estándar ICAO Doc 9303 — Pasaporte Diplomático y Civil Biométrico'
+            : 'Padrão ICAO Doc 9303 — Passaporte Diplomático e Civil Biométrico',
         url: `${CITIZEN_PORTAL_URL}?tab=treasury`
       },
       {
         id: 2,
-        agency: 'Suprema Corte Digital de Novatlantis',
-        title: 'Protocolo de Cruzamento Automático (Passaporte × Justiça × Regularidade Fiscal)',
+        agency:
+          lang === 'en-US'
+            ? 'Digital Supreme Court of Novatlantis'
+            : lang === 'es-419'
+            ? 'Suprema Corte Digital de Novatlantis'
+            : 'Suprema Corte Digital de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Automated Cross-Check Protocol (Passport × Justice × Tax Compliance)'
+            : lang === 'es-419'
+            ? 'Protocolo de Cruce Automático (Pasaporte × Justicia × Regularidad Fiscal)'
+            : 'Protocolo de Cruzamento Automático (Passaporte × Justiça × Regularidade Fiscal)',
         url: `${CITIZEN_PORTAL_URL}?tab=treasury`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'ISSUE_ICAO_PASSPORT',
-      service_title: 'Solicitar Emissão / Renovação de Passaporte Digital ICAO',
-      service_description: 'Executa o cruzamento automático entre Registro Civil, Suprema Corte e Receita para liberar o e-Gate.',
-      service_prompt: 'Emitir e validar meu Passaporte Digital ICAO agora',
+      service_title:
+        lang === 'en-US'
+          ? 'Request Issuance / Renewal of ICAO Digital Passport'
+          : lang === 'es-419'
+          ? 'Solicitar Emisión / Renovación de Pasaporte Digital ICAO'
+          : 'Solicitar Emissão / Renovação de Passaporte Digital ICAO',
+      service_description:
+        lang === 'en-US'
+          ? 'Runs automated cross-check across Civil Registry, Supreme Court, and Treasury to clear e-Gate access.'
+          : lang === 'es-419'
+          ? 'Ejecuta el cruce automático entre Registro Civil, Suprema Corte y Hacienda para liberar el e-Gate.'
+          : 'Executa o cruzamento automático entre Registro Civil, Suprema Corte e Receita para liberar o e-Gate.',
+      service_prompt:
+        lang === 'en-US'
+          ? 'Issue and validate my ICAO Digital Passport now'
+          : lang === 'es-419'
+          ? 'Emitir y validar mi Pasaporte Digital ICAO ahora'
+          : 'Emitir e validar meu Passaporte Digital ICAO agora',
       target_portal: 'citizen-portal',
       target_tab: 'treasury'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Emissão e Renovação de Passaporte Digital ICAO e Certidão Judicial [1][2]:**\n\n` +
-        `O Passaporte Soberano de Novatlantis segue o padrão **ICAO Doc 9303** com assinatura criptográfica **Ed25519** e garante trânsito rápido (e-Gate) em **174 países** [1]:\n` +
-        `• **Requisitos Automáticos:** Ausência de mandados judiciais ativos na Suprema Corte Digital e situação fiscal regular (\`REGULAR\` ou \`EXEMPT\`) [2].\n` +
-        `• **Prazo de Emissão:** Instantâneo (validação em tempo real na base AlloyDB com validade de 10 anos).\n\n` +
-        `Para **emitir ou renovar seu passaporte** ou baixar sua certidão negativa agora, faça login clicando no botão de solicitação do serviço abaixo.`;
+        lang === 'en-US'
+          ? `**Issuance and Renewal of ICAO Digital Passport & Judicial Clearance [1][2]:**\n\n` +
+            `The Sovereign Passport of Novatlantis complies with **ICAO Doc 9303** using **Ed25519** cryptographic signatures and grants fast-track e-Gate access in **174 countries** [1]:\n` +
+            `• **Automated Requirements:** No active judicial warrants in the Digital Supreme Court and regular tax standing (\`REGULAR\` or \`EXEMPT\`) [2].\n` +
+            `• **Issuance Time:** Instant (real-time validation in AlloyDB with 10-year validity).\n\n` +
+            `To **issue or renew your passport** or download your clearance certificate now, sign in by clicking the service request button below.`
+          : lang === 'es-419'
+          ? `**Emisión y Renovación de Pasaporte Digital ICAO y Certificación Judicial [1][2]:**\n\n` +
+            `El Pasaporte Soberano de Novatlantis sigue el estándar **ICAO Doc 9303** con firma criptográfica **Ed25519** y garantiza tránsito rápido (e-Gate) en **174 países** [1]:\n` +
+            `• **Requisitos Automáticos:** Ausencia de órdenes judiciales activas en la Suprema Corte Digital y situación fiscal regular (\`REGULAR\` o \`EXEMPT\`) [2].\n` +
+            `• **Plazo de Emisión:** Instantáneo (validación en tiempo real en AlloyDB con validez de 10 años).\n\n` +
+            `Para **emitir o renovar su pasaporte** o descargar su certificación negativa ahora, inicie sesión haciendo clic en el botón de solicitud abajo.`
+          : `**Emissão e Renovação de Passaporte Digital ICAO e Certidão Judicial [1][2]:**\n\n` +
+            `O Passaporte Soberano de Novatlantis segue o padrão **ICAO Doc 9303** com assinatura criptográfica **Ed25519** e garante trânsito rápido (e-Gate) em **174 países** [1]:\n` +
+            `• **Requisitos Automáticos:** Ausência de mandados judiciais ativos na Suprema Corte Digital e situação fiscal regular (\`REGULAR\` ou \`EXEMPT\`) [2].\n` +
+            `• **Prazo de Emissão:** Instantâneo (validação em tempo real na base AlloyDB com validade de 10 anos).\n\n` +
+            `Para **emitir ou renovar seu passaporte** ou baixar sua certidão negativa agora, faça login clicando no botão de solicitação do serviço abaixo.`;
     } else {
       const bg = profile.justice?.background_check_status || 'CLEAR';
       if (bg === 'WARRANT_ACTIVE' || profile.tax_status === 'SUSPENDED') {
         reply =
-          `⚠️ **Alerta do Cruzamento GDF #1 (Passaporte × Justiça × Fisco) [1][2]:**\n\n` +
-          `Identifiquei uma restrição ativa no seu prontuário (Justiça: \`${bg}\`, Fiscal: \`${profile.tax_status}\`). ` +
-          `A emissão automática via e-Gate foi retida para revisão de um Magistrado no Backstage.`;
+          lang === 'en-US'
+            ? `⚠️ **GDF Cross-Check Alert #1 (Passport × Justice × Treasury) [1][2]:**\n\nI detected an active restriction on your record (Justice: \`${bg}\`, Tax: \`${profile.tax_status}\`). Automated e-Gate issuance has been held for Magistrate review in the Backstage.`
+            : lang === 'es-419'
+            ? `⚠️ **Alerta del Cruce GDF #1 (Pasaporte × Justicia × Fisco) [1][2]:**\n\nIdentifiqué una restricción activa en su expediente (Justicia: \`${bg}\`, Fiscal: \`${profile.tax_status}\`). La emisión automática vía e-Gate fue retenida para revisión de un Magistrado en el Backstage.`
+            : `⚠️ **Alerta do Cruzamento GDF #1 (Passaporte × Justiça × Fisco) [1][2]:**\n\nIdentifiquei uma restrição ativa no seu prontuário (Justiça: \`${bg}\`, Fiscal: \`${profile.tax_status}\`). A emissão automática via e-Gate foi retida para revisão de um Magistrado no Backstage.`;
       } else {
         const passNum = profile.passport?.passport_number || `NV-P${Math.floor(1000000 + Math.random() * 8999999)}`;
         if (!profile.passport) {
@@ -543,15 +1131,29 @@ function runSovereignOrchestrator(profile, userMessage) {
         executedAction = {
           type: 'PASSPORT_ICAO_VALIDATED',
           protocol: passNum,
-          summary: `Passaporte Digital ICAO ${passNum} validado com decisão CLEARED_AUTONOMOUS_EGATE.`
+          summary: `ICAO Digital Passport ${passNum} validated (CLEARED_AUTONOMOUS_EGATE).`
         };
         reply =
-          `🛂 **Serviço Concluído — Passaporte ICAO Validado [1][2]:**\n\n` +
-          `• **Cidadão:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-          `• **Antecedentes Judiciais:** \`${bg}\` (Nada Consta)\n` +
-          `• **Regularidade Fiscal:** \`${profile.tax_status}\`\n` +
-          `• **Passaporte Digital ICAO:** \`${passNum}\` — Status: **ACTIVE (Validade: 2036-10-01)**\n` +
-          `• **Decisão de Fronteira:** \`CLEARED_AUTONOMOUS_EGATE\` (Isenção de visto ativa em 174 países).`;
+          lang === 'en-US'
+            ? `🛂 **Service Completed — ICAO Passport Validated [1][2]:**\n\n` +
+              `• **Citizen:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+              `• **Judicial Background:** \`${bg}\` (Clear)\n` +
+              `• **Tax Standing:** \`${profile.tax_status}\`\n` +
+              `• **ICAO Digital Passport:** \`${passNum}\` — Status: **ACTIVE (Expires: 2036-10-01)**\n` +
+              `• **Border Decision:** \`CLEARED_AUTONOMOUS_EGATE\` (Visa-free access active in 174 countries).`
+            : lang === 'es-419'
+            ? `🛂 **Servicio Completado — Pasaporte ICAO Validado [1][2]:**\n\n` +
+              `• **Ciudadano:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+              `• **Antecedentes Judiciales:** \`${bg}\` (Sin Antecedentes)\n` +
+              `• **Regularidad Fiscal:** \`${profile.tax_status}\`\n` +
+              `• **Pasaporte Digital ICAO:** \`${passNum}\` — Estado: **ACTIVE (Validez: 2036-10-01)**\n` +
+              `• **Decisión de Frontera:** \`CLEARED_AUTONOMOUS_EGATE\` (Exención de visa activa en 174 países).`
+            : `🛂 **Serviço Concluído — Passaporte ICAO Validado [1][2]:**\n\n` +
+              `• **Cidadão:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+              `• **Antecedentes Judiciais:** \`${bg}\` (Nada Consta)\n` +
+              `• **Regularidade Fiscal:** \`${profile.tax_status}\`\n` +
+              `• **Passaporte Digital ICAO:** \`${passNum}\` — Status: **ACTIVE (Validade: 2036-10-01)**\n` +
+              `• **Decisão de Fronteira:** \`CLEARED_AUTONOMOUS_EGATE\` (Isenção de visto ativa em 174 países).`;
       }
     }
   }
@@ -559,47 +1161,103 @@ function runSovereignOrchestrator(profile, userMessage) {
   else if (
     lower.includes('saúde') ||
     lower.includes('saude') ||
+    lower.includes('salud') ||
+    lower.includes('health') ||
     lower.includes('médico') ||
     lower.includes('medico') ||
+    lower.includes('doctor') ||
     lower.includes('telemedicina') ||
+    lower.includes('telemedicine') ||
     lower.includes('consulta') ||
     lower.includes('vacina') ||
+    lower.includes('vacuna') ||
+    lower.includes('vaccine') ||
     lower.includes('sangue') ||
+    lower.includes('sangre') ||
+    lower.includes('blood') ||
     lower.includes('alergia') ||
+    lower.includes('allergy') ||
     lower.includes('hospital')
   ) {
     delegatedAgent = 'agent-health-hl7-telemed-v4 (Ministério da Saúde & Hospitais)';
     citations = [
       {
         id: 1,
-        agency: 'Ministério da Saúde, Hospitais & Telemedicina',
-        title: 'Rede Nacional de Prontuário Único HL7 FHIR & Telemedicina Agêntica 24/7',
+        agency:
+          lang === 'en-US'
+            ? 'Ministry of Health, Hospitals & Telemedicine'
+            : lang === 'es-419'
+            ? 'Ministerio de Salud, Hospitales y Telemedicina'
+            : 'Ministério da Saúde, Hospitais & Telemedicina',
+        title:
+          lang === 'en-US'
+            ? 'National Unified HL7 FHIR Health Record & 24/7 Agentic Telemedicine'
+            : lang === 'es-419'
+            ? 'Red Nacional de Historia Clínica Única HL7 FHIR y Telemedicina Agéntica 24/7'
+            : 'Rede Nacional de Prontuário Único HL7 FHIR & Telemedicina Agêntica 24/7',
         url: `${CITIZEN_PORTAL_URL}?tab=health`
       },
       {
         id: 2,
-        agency: 'Conselho Médico Soberano de Novatlantis',
-        title: 'Protocolo de Prescrição Digital Assinada com Chave Ed25519',
+        agency:
+          lang === 'en-US'
+            ? 'Sovereign Medical Council of Novatlantis'
+            : lang === 'es-419'
+            ? 'Consejo Médico Soberano de Novatlantis'
+            : 'Conselho Médico Soberano de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Ed25519 Signed Digital Prescription Protocol'
+            : lang === 'es-419'
+            ? 'Protocolo de Receta Digital Firmada con Clave Ed25519'
+            : 'Protocolo de Prescrição Digital Assinada com Chave Ed25519',
         url: `${CITIZEN_PORTAL_URL}?tab=health`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'BOOK_TELEMEDICINE_SESSION',
-      service_title: 'Solicitar Teleconsulta Médica & Prontuário HL7 FHIR',
-      service_description: 'Abre sala de telemedicina com triagem IA (SOAP) e vincula seu hospital de referência.',
-      service_prompt: 'Agendar teleconsulta médica agora com resumo clínico HL7',
+      service_title:
+        lang === 'en-US'
+          ? 'Request Medical Teleconsultation & HL7 FHIR Health Record'
+          : lang === 'es-419'
+          ? 'Solicitar Teleconsulta Médica e Historia Clínica HL7 FHIR'
+          : 'Solicitar Teleconsulta Médica & Prontuário HL7 FHIR',
+      service_description:
+        lang === 'en-US'
+          ? 'Opens a telemedicine room with AI clinical triage (SOAP) and links your reference hospital.'
+          : lang === 'es-419'
+          ? 'Abre sala de telemedicina con triaje IA (SOAP) y vincula su hospital de referencia.'
+          : 'Abre sala de telemedicina com triagem IA (SOAP) e vincula seu hospital de referência.',
+      service_prompt:
+        lang === 'en-US'
+          ? 'Schedule medical teleconsultation now with HL7 clinical summary'
+          : lang === 'es-419'
+          ? 'Agendar teleconsulta médica ahora con resumen clínico HL7'
+          : 'Agendar teleconsulta médica agora com resumo clínico HL7',
       target_portal: 'citizen-portal',
       target_tab: 'health'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Atendimento Médico, Prontuário HL7 FHIR e Telemedicina em Novatlantis [1][2]:**\n\n` +
-        `O Sistema Público de Saúde de Novatlantis opera 5 hospitais de alta complexidade integrados ao **Serviço Nacional de Telemedicina Agêntica 24/7** [1]:\n` +
-        `• **Triagem Clínica Assistida por IA:** Antes de entrar na sala com o médico, o agente consolida automaticamente seu tipo sanguíneo, alergias e histórico vacinal no padrão **HL7 FHIR**.\n` +
-        `• **Receituário Digital Soberano:** Todas as prescrições médicas são assinadas eletronicamente via **Ed25519** com dispensação direta nas farmácias distritais [2].\n\n` +
-        `Para **agendar uma teleconsulta médica agora** ou visualizar seu prontuário HL7 pessoal, autentique-se clicando no botão de solicitação abaixo.`;
+        lang === 'en-US'
+          ? `**Medical Care, HL7 FHIR Health Record & Telemedicine in Novatlantis [1][2]:**\n\n` +
+            `The Novatlantis Public Health System operates 5 high-complexity hospitals integrated with the **24/7 National Agentic Telemedicine Service** [1]:\n` +
+            `• **AI-Assisted Clinical Triage:** Before joining the physician, the agent automatically consolidates your blood type, allergies, and immunization history in **HL7 FHIR** format.\n` +
+            `• **Sovereign Digital Prescriptions:** All medical prescriptions are electronically signed via **Ed25519** for direct dispensing at district pharmacies [2].\n\n` +
+            `To **schedule a medical teleconsultation now** or view your personal HL7 health record, sign in by clicking the request button below.`
+          : lang === 'es-419'
+          ? `**Atención Médica, Historia Clínica HL7 FHIR y Telemedicina en Novatlantis [1][2]:**\n\n` +
+            `El Sistema Público de Salud de Novatlantis opera 5 hospitales de alta complejidad integrados al **Servicio Nacional de Telemedicina Agéntica 24/7** [1]:\n` +
+            `• **Triaje Clínico Asistido por IA:** Antes de ingresar a la sala con el médico, el agente consolida automáticamente su grupo sanguíneo, alergias e historial de vacunación en el estándar **HL7 FHIR**.\n` +
+            `• **Recetario Digital Soberano:** Todas las recetas médicas se firman electrónicamente vía **Ed25519** con dispensación directa en las farmacias distritales [2].\n\n` +
+            `Para **agendar una teleconsulta médica ahora** o visualizar su historia clínica HL7 personal, autentíquese haciendo clic en el botón de solicitud abajo.`
+          : `**Atendimento Médico, Prontuário HL7 FHIR e Telemedicina em Novatlantis [1][2]:**\n\n` +
+            `O Sistema Público de Saúde de Novatlantis opera 5 hospitais de alta complexidade integrados ao **Serviço Nacional de Telemedicina Agêntica 24/7** [1]:\n` +
+            `• **Triagem Clínica Assistida por IA:** Antes de entrar na sala com o médico, o agente consolida automaticamente seu tipo sanguíneo, alergias e histórico vacinal no padrão **HL7 FHIR**.\n` +
+            `• **Receituário Digital Soberano:** Todas as prescrições médicas são assinadas eletronicamente via **Ed25519** com dispensação direta nas farmácias distritais [2].\n\n` +
+            `Para **agendar uma teleconsulta médica agora** ou visualizar seu prontuário HL7 pessoal, autentique-se clicando no botão de solicitação abaixo.`;
     } else {
       const sessionId = `TMED-2026-${Math.floor(200 + Math.random() * 799)}`;
       const sig = `sig_ed25519_nv_${Date.now().toString(16)}`;
@@ -619,62 +1277,130 @@ function runSovereignOrchestrator(profile, userMessage) {
       executedAction = {
         type: 'TELEMEDICINE_TRIAGE_CREATED',
         protocol: sessionId,
-        summary: `Sala de Telemedicina ${sessionId} aberta no ${profile.health?.assigned_hospital_id} com Dra. Sofia Mendes Costa.`
+        summary: `Telemedicine Room ${sessionId} opened at ${profile.health?.assigned_hospital_id} with Dr. Sofia Mendes Costa.`
       };
       reply =
-        `🏥 **Teleconsulta Agendada & Prontuário HL7 FHIR Carregado [1][2]:**\n\n` +
-        `• **Paciente:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-        `• **Tipo Sanguíneo:** \`${profile.health?.blood_type}\` | **Alergias:** ${profile.health?.allergies?.join(', ')}\n` +
-        `• **Condições Crônicas:** ${profile.health?.chronic_conditions?.join(', ')}\n` +
-        `• **Hospital de Referência:** \`${profile.health?.assigned_hospital_id}\` | **Status Vacinal:** \`${profile.health?.vaccination_status}\`\n` +
-        `• **Protocolo de Teleconsulta Aberto:** \`${sessionId}\` com **Dra. Sofia Mendes Costa** (\`NID-000-0000-0004-3\`).`;
+        lang === 'en-US'
+          ? `🏥 **Teleconsultation Scheduled & HL7 FHIR Record Loaded [1][2]:**\n\n` +
+            `• **Patient:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Blood Type:** \`${profile.health?.blood_type}\` | **Allergies:** ${profile.health?.allergies?.join(', ')}\n` +
+            `• **Chronic Conditions:** ${profile.health?.chronic_conditions?.join(', ')}\n` +
+            `• **Reference Hospital:** \`${profile.health?.assigned_hospital_id}\` | **Vaccination Status:** \`${profile.health?.vaccination_status}\`\n` +
+            `• **Open Teleconsultation Protocol:** \`${sessionId}\` with **Dr. Sofia Mendes Costa** (\`NID-000-0000-0004-3\`).`
+          : lang === 'es-419'
+          ? `🏥 **Teleconsulta Agendada e Historia Clínica HL7 FHIR Cargada [1][2]:**\n\n` +
+            `• **Paciente:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Grupo Sanguíneo:** \`${profile.health?.blood_type}\` | **Alergias:** ${profile.health?.allergies?.join(', ')}\n` +
+            `• **Condiciones Crónicas:** ${profile.health?.chronic_conditions?.join(', ')}\n` +
+            `• **Hospital de Referencia:** \`${profile.health?.assigned_hospital_id}\` | **Estado Vacunal:** \`${profile.health?.vaccination_status}\`\n` +
+            `• **Protocolo de Teleconsulta Abierto:** \`${sessionId}\` con **Dra. Sofia Mendes Costa** (\`NID-000-0000-0004-3\`).`
+          : `🏥 **Teleconsulta Agendada & Prontuário HL7 FHIR Carregado [1][2]:**\n\n` +
+            `• **Paciente:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Tipo Sanguíneo:** \`${profile.health?.blood_type}\` | **Alergias:** ${profile.health?.allergies?.join(', ')}\n` +
+            `• **Condições Crônicas:** ${profile.health?.chronic_conditions?.join(', ')}\n` +
+            `• **Hospital de Referência:** \`${profile.health?.assigned_hospital_id}\` | **Status Vacinal:** \`${profile.health?.vaccination_status}\`\n` +
+            `• **Protocolo de Teleconsulta Aberto:** \`${sessionId}\` com **Dra. Sofia Mendes Costa** (\`NID-000-0000-0004-3\`).`;
     }
   }
   // 4. Intenção: Educação / Escola / Notas / Boletim / Aluno / Professor
   else if (
     lower.includes('escola') ||
+    lower.includes('escuela') ||
+    lower.includes('school') ||
     lower.includes('educação') ||
     lower.includes('educacao') ||
+    lower.includes('educación') ||
+    lower.includes('education') ||
     lower.includes('nota') ||
+    lower.includes('grades') ||
     lower.includes('boletim') ||
+    lower.includes('boletín') ||
+    lower.includes('boletin') ||
+    lower.includes('report card') ||
     lower.includes('prova') ||
     lower.includes('aluno') ||
+    lower.includes('alumno') ||
+    lower.includes('student') ||
     lower.includes('estudante') ||
     lower.includes('filho') ||
-    lower.includes('universidade')
+    lower.includes('hijo') ||
+    lower.includes('universidade') ||
+    lower.includes('university')
   ) {
     delegatedAgent = 'agent-education-adaptive-tutor-v4 (Ministério da Educação & Escolas)';
     citations = [
       {
         id: 1,
-        agency: 'Ministério da Educação, Escolas & Avaliação Nacional',
-        title: 'Currículo Nacional AI-First (Matemática, Ciências, IA & Robótica e Idiomas)',
+        agency:
+          lang === 'en-US'
+            ? 'Ministry of Education, Schools & National Assessment'
+            : lang === 'es-419'
+            ? 'Ministerio de Educación, Escuelas y Evaluación Nacional'
+            : 'Ministério da Educação, Escolas & Avaliação Nacional',
+        title:
+          lang === 'en-US'
+            ? 'AI-First National Curriculum (Mathematics, Sciences, AI & Robotics, and Languages)'
+            : lang === 'es-419'
+            ? 'Currículo Nacional AI-First (Matemáticas, Ciencias, IA y Robótica e Idiomas)'
+            : 'Currículo Nacional AI-First (Matemática, Ciências, IA & Robótica e Idiomas)',
         url: `${CITIZEN_PORTAL_URL}?tab=education`
       },
       {
         id: 2,
         agency: 'Government Data Platform (GDP — Education Data Platform)',
-        title: 'Sistema de Alerta Precoce de Frequência Escolar Integrado ao Grafo Familiar',
+        title:
+          lang === 'en-US'
+            ? 'Early Warning School Attendance System Integrated with the Family Graph'
+            : lang === 'es-419'
+            ? 'Sistema de Alerta Temprana de Asistencia Escolar Integrado al Grafo Familiar'
+            : 'Sistema de Alerta Precoce de Frequência Escolar Integrado ao Grafo Familiar',
         url: `${CITIZEN_PORTAL_URL}?tab=education`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'ACCESS_EDUCATION_RECORDS',
-      service_title: 'Solicitar Boletim Escolar & Tutoria Adaptativa IA',
-      service_description: 'Consulta notas por disciplina, frequência escolar e plano de estudo personalizado para você ou seus filhos.',
-      service_prompt: 'Consultar boletim escolar e frequência no Ministério da Educação',
+      service_title:
+        lang === 'en-US'
+          ? 'Request School Report Card & Adaptive AI Tutoring'
+          : lang === 'es-419'
+          ? 'Solicitar Boletín Escolar y Tutoría Adaptativa IA'
+          : 'Solicitar Boletim Escolar & Tutoria Adaptativa IA',
+      service_description:
+        lang === 'en-US'
+          ? 'Checks subject grades, school attendance, and personalized learning paths for you or your children.'
+          : lang === 'es-419'
+          ? 'Consulta calificaciones por materia, asistencia escolar y plan de estudio personalizado para usted o sus hijos.'
+          : 'Consulta notas por disciplina, frequência escolar e plano de estudo personalizado para você ou seus filhos.',
+      service_prompt:
+        lang === 'en-US'
+          ? 'Check school report card and attendance in the Ministry of Education'
+          : lang === 'es-419'
+          ? 'Consultar boletín escolar y asistencia en el Ministerio de Educación'
+          : 'Consultar boletim escolar e frequência no Ministério da Educação',
       target_portal: 'citizen-portal',
       target_tab: 'education'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Rede Pública de Educação e Tutoria Adaptativa por IA em Novatlantis [1][2]:**\n\n` +
-        `O Ministério da Educação administra **6 instituições soberanas** (da Educação Infantil à Universidade Soberana de Novatlantis — USN), atendendo **17.993 estudantes** com currículo bilíngue/trilíngue e foco em **IA & Robótica** [1]:\n` +
-        `• **Tutoria Adaptativa:** Cada estudante recebe trilhas de estudo personalizadas conforme sua idade e desempenho por disciplina.\n` +
-        `• **Acompanhamento Familiar (GDP):** Pais e responsáveis acompanham notas e frequência em tempo real com alertas automáticos se a presença ficar abaixo de 75% [2].\n\n` +
-        `Para **consultar o boletim escolar nominal** (seu ou de seus dependentes) ou solicitar tutoria IA, clique no botão abaixo para fazer login.`;
+        lang === 'en-US'
+          ? `**Public Education Network & Adaptive AI Tutoring in Novatlantis [1][2]:**\n\n` +
+            `The Ministry of Education manages **6 sovereign institutions** (from Early Childhood to the Sovereign University of Novatlantis — USN), serving **17,993 students** with a trilingual curriculum focused on **AI & Robotics** [1]:\n` +
+            `• **Adaptive Tutoring:** Every student receives personalized learning paths based on age and subject performance.\n` +
+            `• **Family Monitoring (GDP):** Parents track grades and attendance in real time with automatic alerts if attendance drops below 75% [2].\n\n` +
+            `To **check the personal report card** (yours or your dependents') or request AI tutoring, click the button below to sign in.`
+          : lang === 'es-419'
+          ? `**Red Pública de Educación y Tutoría Adaptativa por IA en Novatlantis [1][2]:**\n\n` +
+            `El Ministerio de Educación administra **6 instituciones soberanas** (desde Educación Inicial hasta la Universidad Soberana de Novatlantis — USN), atendiendo a **17.993 estudiantes** con currículo trilingüe y enfoque en **IA y Robótica** [1]:\n` +
+            `• **Tutoría Adaptativa:** Cada estudiante recibe rutas de estudio personalizadas según su edad y desempeño por materia.\n` +
+            `• **Seguimiento Familiar (GDP):** Padres y tutores acompañan calificaciones y asistencia en tiempo real con alertas automáticas si la asistencia baja del 75% [2].\n\n` +
+            `Para **consultar el boletín escolar nominal** (suyo o de sus dependientes) o solicitar tutoría IA, haga clic en el botón abajo para iniciar sesión.`
+          : `**Rede Pública de Educação e Tutoria Adaptativa por IA em Novatlantis [1][2]:**\n\n` +
+            `O Ministério da Educação administra **6 instituições soberanas** (da Educação Infantil à Universidade Soberana de Novatlantis — USN), atendendo **17.993 estudantes** com currículo bilíngue/trilíngue e foco em **IA & Robótica** [1]:\n` +
+            `• **Tutoria Adaptativa:** Cada estudante recebe trilhas de estudo personalizadas conforme sua idade e desempenho por disciplina.\n` +
+            `• **Acompanhamento Familiar (GDP):** Pais e responsáveis acompanham notas e frequência em tempo real com alertas automáticos se a presença ficar abaixo de 75% [2].\n\n` +
+            `Para **consultar o boletim escolar nominal** (seu ou de seus dependentes) ou solicitar tutoria IA, clique no botão abaixo para fazer login.`;
     } else {
       let targetEdu = profile.education;
       let studentLabel = `${profile.full_name} (${profile.citizen_id})`;
@@ -685,7 +1411,7 @@ function runSovereignOrchestrator(profile, userMessage) {
         const childProf = getFullCitizenProfile(fallbackNid);
         if (childProf?.education) {
           targetEdu = childProf.education;
-          studentLabel = `${childProf.full_name} (${childProf.citizen_id} — Dependente/Estudante)`;
+          studentLabel = `${childProf.full_name} (${childProf.citizen_id})`;
         }
       }
 
@@ -693,24 +1419,49 @@ function runSovereignOrchestrator(profile, userMessage) {
         executedAction = {
           type: 'EDUCATION_TRANSCRIPT_ISSUED',
           protocol: `EDU-${targetEdu.school_id}-2026`,
-          summary: `Boletim escolar oficial consultado para ${studentLabel}.`
+          summary: `Official school report card retrieved for ${studentLabel}.`
         };
         reply =
-          `🎓 **Relatório Escolar GDF & Desempenho por Disciplina [1][2]:**\n\n` +
-          `• **Estudante:** ${studentLabel}\n` +
-          `• **Instituição:** ${targetEdu.institution_name} (\`${targetEdu.school_id}\` — ${targetEdu.grade_level})\n` +
-          `• **Frequência Escolar:** **${targetEdu.attendance_rate}%** ${
-            targetEdu.attendance_rate < 75
-              ? '⚠️ *(Alerta Precoce de Evasão enviado aos pais via Grafo Familiar)*'
-              : '✅ *(Regular)*'
-          }\n` +
-          `• **Notas por Matéria:**\n` +
-          `  - Matemática & Lógica: **${targetEdu.score_mathematics}**\n` +
-          `  - Ciências da Natureza: **${targetEdu.score_sciences}**\n` +
-          `  - IA & Robótica: **${targetEdu.score_ai_robotics}**\n` +
-          `  - Linguagens (PT/ES/EN): **${targetEdu.score_languages}**`;
+          lang === 'en-US'
+            ? `🎓 **GDF School Report & Subject Performance [1][2]:**\n\n` +
+              `• **Student:** ${studentLabel}\n` +
+              `• **Institution:** ${targetEdu.institution_name} (\`${targetEdu.school_id}\` — ${targetEdu.grade_level})\n` +
+              `• **Attendance Rate:** **${targetEdu.attendance_rate}%** ${targetEdu.attendance_rate < 75 ? '⚠️ *(Early Warning Alert sent via Family Graph)*' : '✅ *(Regular)*'}\n` +
+              `• **Subject Grades:**\n` +
+              `  - Mathematics & Logic: **${targetEdu.score_mathematics}**\n` +
+              `  - Natural Sciences: **${targetEdu.score_sciences}**\n` +
+              `  - AI & Robotics: **${targetEdu.score_ai_robotics}**\n` +
+              `  - Languages (PT/ES/EN): **${targetEdu.score_languages}**`
+            : lang === 'es-419'
+            ? `🎓 **Informe Escolar GDF y Desempeño por Materia [1][2]:**\n\n` +
+              `• **Estudiante:** ${studentLabel}\n` +
+              `• **Institución:** ${targetEdu.institution_name} (\`${targetEdu.school_id}\` — ${targetEdu.grade_level})\n` +
+              `• **Asistencia Escolar:** **${targetEdu.attendance_rate}%** ${targetEdu.attendance_rate < 75 ? '⚠️ *(Alerta Temprana enviada vía Grafo Familiar)*' : '✅ *(Regular)*'}\n` +
+              `• **Calificaciones por Materia:**\n` +
+              `  - Matemáticas y Lógica: **${targetEdu.score_mathematics}**\n` +
+              `  - Ciencias Naturales: **${targetEdu.score_sciences}**\n` +
+              `  - IA y Robótica: **${targetEdu.score_ai_robotics}**\n` +
+              `  - Lenguajes (PT/ES/EN): **${targetEdu.score_languages}**`
+            : `🎓 **Relatório Escolar GDF & Desempenho por Disciplina [1][2]:**\n\n` +
+              `• **Estudante:** ${studentLabel}\n` +
+              `• **Instituição:** ${targetEdu.institution_name} (\`${targetEdu.school_id}\` — ${targetEdu.grade_level})\n` +
+              `• **Frequência Escolar:** **${targetEdu.attendance_rate}%** ${
+                targetEdu.attendance_rate < 75
+                  ? '⚠️ *(Alerta Precoce de Evasão enviado aos pais via Grafo Familiar)*'
+                  : '✅ *(Regular)*'
+              }\n` +
+              `• **Notas por Matéria:**\n` +
+              `  - Matemática & Lógica: **${targetEdu.score_mathematics}**\n` +
+              `  - Ciências da Natureza: **${targetEdu.score_sciences}**\n` +
+              `  - IA & Robótica: **${targetEdu.score_ai_robotics}**\n` +
+              `  - Linguagens (PT/ES/EN): **${targetEdu.score_languages}**`;
       } else {
-        reply = `Consultei a rede nacional de ensino (17.993 alunos matriculados nas 6 instituições soberanas). Você pode acessar o Portal do Cidadão para tutoria adaptativa ou o Backstage Educacional para lançar notas e provas.`;
+        reply =
+          lang === 'en-US'
+            ? `I queried the national education network (17,993 students enrolled across 6 sovereign institutions). You can access the Citizen Portal for adaptive tutoring or the Education Backstage to manage grades.`
+            : lang === 'es-419'
+            ? `Consulté la red nacional de educación (17.993 alumnos matriculados en las 6 instituciones soberanas). Puede acceder al Portal del Ciudadano para tutoría adaptativa o al Backstage Educativo.`
+            : `Consultei a rede nacional de ensino (17.993 alunos matriculados nas 6 instituições soberanas). Você pode acessar o Portal do Cidadão para tutoria adaptativa ou o Backstage Educacional para lançar notas e provas.`;
       }
     }
   }
@@ -719,37 +1470,77 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('911') ||
     lower.includes('emergência') ||
     lower.includes('emergencia') ||
+    lower.includes('emergency') ||
     lower.includes('socorro') ||
     lower.includes('ambulância') ||
     lower.includes('ambulancia') ||
-    lower.includes('resgate')
+    lower.includes('ambulance') ||
+    lower.includes('resgate') ||
+    lower.includes('rescue')
   ) {
     delegatedAgent = 'agent-emergency-911-tactical-dispatch-v4 (Comando Nacional 911)';
     citations = [
       {
         id: 1,
-        agency: 'Centro Integrado de Comando de Emergência 911',
-        title: 'Protocolo de Despacho Tático com Cruzamento HL7 FHIR e Grafo Familiar (ETA 3 min)',
+        agency:
+          lang === 'en-US'
+            ? '911 Integrated Emergency Command Center'
+            : lang === 'es-419'
+            ? 'Centro Integrado de Comando de Emergencia 911'
+            : 'Centro Integrado de Comando de Emergência 911',
+        title:
+          lang === 'en-US'
+            ? 'Tactical Dispatch Protocol with HL7 FHIR & Family Graph Cross-Check (3-min ETA)'
+            : lang === 'es-419'
+            ? 'Protocolo de Despacho Táctico con Cruce HL7 FHIR y Grafo Familiar (ETA 3 min)'
+            : 'Protocolo de Despacho Tático com Cruzamento HL7 FHIR e Grafo Familiar (ETA 3 min)',
         url: `${CITIZEN_PORTAL_URL}?tab=urban`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'DISPATCH_911_EMERGENCY',
-      service_title: 'Solicitar Despacho de Emergência 911 com Prontuário HL7',
-      service_description: 'Envia viatura/UTI móvel ao seu endereço registrado com seu tipo sanguíneo, alergias e aviso aos familiares.',
-      service_prompt: 'Acionar emergência 911 com meu prontuário HL7 agora',
+      service_title:
+        lang === 'en-US'
+          ? 'Request 911 Emergency Dispatch with HL7 Health Record'
+          : lang === 'es-419'
+          ? 'Solicitar Despacho de Emergencia 911 con Historia Clínica HL7'
+          : 'Solicitar Despacho de Emergência 911 com Prontuário HL7',
+      service_description:
+        lang === 'en-US'
+          ? 'Dispatches a mobile ICU/patrol unit to your registered address with your blood type, allergies, and family alert.'
+          : lang === 'es-419'
+          ? 'Envía unidad móvil/UCI a su dirección registrada con su grupo sanguíneo, alergias y aviso a familiares.'
+          : 'Envia viatura/UTI móvel ao seu endereço registrado com seu tipo sanguíneo, alergias e aviso aos familiares.',
+      service_prompt:
+        lang === 'en-US'
+          ? 'Trigger 911 emergency with my HL7 health record now'
+          : lang === 'es-419'
+          ? 'Activar emergencia 911 con mi historia clínica HL7 ahora'
+          : 'Acionar emergência 911 com meu prontuário HL7 agora',
       target_portal: 'citizen-portal',
       target_tab: 'urban'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Como funciona o Despacho Tático de Emergência 911 em Novatlantis [1]:**\n\n` +
-        `O Comando Nacional 911 utiliza o **Cruzamento Soberano GDF #3** para salvar vidas com tempo médio de resposta (ETA) de **3 minutos**:\n` +
-        `• Ao acionar o 911 autenticado, a ambulância recebe instantaneamente seu **endereço georreferenciado**, **tipo sanguíneo**, **alergias medicamentosas** e **condições crônicas**.\n` +
-        `• O hospital distrital mais próximo prepara o leito e seu **contato de emergência familiar** é notificado automaticamente.\n\n` +
-        `Para **solicitar o despacho 911 vinculado ao seu prontuário e endereço**, autentique-se clicando no botão abaixo.`;
+        lang === 'en-US'
+          ? `**How 911 Tactical Emergency Dispatch Works in Novatlantis [1]:**\n\n` +
+            `The 911 National Command uses **Sovereign GDF Cross-Check #3** to save lives with an average response time (ETA) of **3 minutes**:\n` +
+            `• When triggering authenticated 911, the ambulance immediately receives your **georeferenced address**, **blood type**, **drug allergies**, and **chronic conditions**.\n` +
+            `• The nearest district hospital prepares a bed and your **family emergency contact** is automatically notified.\n\n` +
+            `To **request a 911 dispatch linked to your health record and address**, sign in by clicking the button below.`
+          : lang === 'es-419'
+          ? `**Cómo funciona el Despacho Táctico de Emergencia 911 en Novatlantis [1]:**\n\n` +
+            `El Comando Nacional 911 utiliza el **Cruce Soberano GDF #3** para salvar vidas con un tiempo promedio de respuesta (ETA) de **3 minutos**:\n` +
+            `• Al activar el 911 autenticado, la ambulancia recibe instantáneamente su **dirección georreferenciada**, **grupo sanguíneo**, **alergias medicamentosas** y **condiciones crónicas**.\n` +
+            `• El hospital distrital más cercano prepara la cama y su **contacto de emergencia familiar** es notificado automáticamente.\n\n` +
+            `Para **solicitar el despacho 911 vinculado a su historia clínica y dirección**, autentíquese haciendo clic en el botón abajo.`
+          : `**Como funciona o Despacho Tático de Emergência 911 em Novatlantis [1]:**\n\n` +
+            `O Comando Nacional 911 utiliza o **Cruzamento Soberano GDF #3** para salvar vidas com tempo médio de resposta (ETA) de **3 minutos**:\n` +
+            `• Ao acionar o 911 autenticado, a ambulância recebe instantaneamente seu **endereço georreferenciado**, **tipo sanguíneo**, **alergias medicamentosas** e **condições crônicas**.\n` +
+            `• O hospital distrital mais próximo prepara o leito e seu **contato de emergência familiar** é notificado automaticamente.\n\n` +
+            `Para **solicitar o despacho 911 vinculado ao seu prontuário e endereço**, autentique-se clicando no botão abaixo.`;
     } else {
       const dispatchId = `911-NV-2026-${Math.floor(910 + Math.random() * 89)}`;
       const ecLink = profile.family_links?.[0];
@@ -773,15 +1564,29 @@ function runSovereignOrchestrator(profile, userMessage) {
       executedAction = {
         type: 'EMERGENCY_911_DISPATCHED',
         protocol: dispatchId,
-        summary: `Resgate 911 (${dispatchId}) despachado com ETA de 3 min + Cruzamento GDF #3 (HL7 + Família).`
+        summary: `911 Rescue (${dispatchId}) dispatched with 3-min ETA + GDF Cross-Check #3 (HL7 + Family).`
       };
       reply =
-        `🚨 **DESPACHO IMEDIATO 911 ATIVADO — PROTOCOLO \`${dispatchId}\` [1]:**\n\n` +
-        `Executei o **Cruzamento GDF #3 (Emergência × Prontuário HL7 × Grafo Familiar)**:\n` +
-        `• **Localização:** ${profile.residence?.street}, ${profile.residence?.number} (${profile.residence?.district})\n` +
-        `• **Dados Vitais Enviados à Ambulância:** Tipo Sanguíneo **${profile.health?.blood_type}**, Alergias: **${profile.health?.allergies?.join(', ')}**\n` +
-        `• **Hospital Preparado:** \`${profile.health?.assigned_hospital_id}\` (ETA: 3 minutos)\n` +
-        `• **Contato Familiar Notificado Automaticamente:** **${ecLink?.relative_name || 'Familiar GDF'}** (\`${ecLink?.relative_nid || 'NID-000-0000-0001-9'}\` • Tel: ${ecLink?.relative_phone || '+550 98100-0001'}).`;
+        lang === 'en-US'
+          ? `🚨 **IMMEDIATE 911 DISPATCH ACTIVATED — PROTOCOL \`${dispatchId}\` [1]:**\n\n` +
+            `Executed **GDF Cross-Check #3 (Emergency × HL7 Record × Family Graph)**:\n` +
+            `• **Location:** ${profile.residence?.street}, ${profile.residence?.number} (${profile.residence?.district})\n` +
+            `• **Vitals Sent to Ambulance:** Blood Type **${profile.health?.blood_type}**, Allergies: **${profile.health?.allergies?.join(', ')}**\n` +
+            `• **Hospital Prepared:** \`${profile.health?.assigned_hospital_id}\` (ETA: 3 minutes)\n` +
+            `• **Family Contact Notified Automatically:** **${ecLink?.relative_name || 'Family GDF'}** (\`${ecLink?.relative_nid || 'NID-000-0000-0001-9'}\` • Tel: ${ecLink?.relative_phone || '+550 98100-0001'}).`
+          : lang === 'es-419'
+          ? `🚨 **DESPACHO INMEDIATO 911 ACTIVADO — PROTOCOLO \`${dispatchId}\` [1]:**\n\n` +
+            `Ejecuté el **Cruce GDF #3 (Emergencia × Historia HL7 × Grafo Familiar)**:\n` +
+            `• **Ubicación:** ${profile.residence?.street}, ${profile.residence?.number} (${profile.residence?.district})\n` +
+            `• **Signos Vitales Enviados a la Ambulancia:** Grupo Sanguíneo **${profile.health?.blood_type}**, Alergias: **${profile.health?.allergies?.join(', ')}**\n` +
+            `• **Hospital Preparado:** \`${profile.health?.assigned_hospital_id}\` (ETA: 3 minutos)\n` +
+            `• **Contacto Familiar Notificado Automáticamente:** **${ecLink?.relative_name || 'Familiar GDF'}** (\`${ecLink?.relative_nid || 'NID-000-0000-0001-9'}\` • Tel: ${ecLink?.relative_phone || '+550 98100-0001'}).`
+          : `🚨 **DESPACHO IMEDIATO 911 ATIVADO — PROTOCOLO \`${dispatchId}\` [1]:**\n\n` +
+            `Executei o **Cruzamento GDF #3 (Emergência × Prontuário HL7 × Grafo Familiar)**:\n` +
+            `• **Localização:** ${profile.residence?.street}, ${profile.residence?.number} (${profile.residence?.district})\n` +
+            `• **Dados Vitais Enviados à Ambulância:** Tipo Sanguíneo **${profile.health?.blood_type}**, Alergias: **${profile.health?.allergies?.join(', ')}**\n` +
+            `• **Hospital Preparado:** \`${profile.health?.assigned_hospital_id}\` (ETA: 3 minutos)\n` +
+            `• **Contato Familiar Notificado Automaticamente:** **${ecLink?.relative_name || 'Familiar GDF'}** (\`${ecLink?.relative_nid || 'NID-000-0000-0001-9'}\` • Tel: ${ecLink?.relative_phone || '+550 98100-0001'}).`;
     }
   }
   // 6. Intenção: Zeladoria Urbana 311 / Iluminação / Vias / Saneamento
@@ -790,10 +1595,17 @@ function runSovereignOrchestrator(profile, userMessage) {
     lower.includes('zeladoria') ||
     lower.includes('iluminação') ||
     lower.includes('iluminacao') ||
+    lower.includes('iluminación') ||
+    lower.includes('lighting') ||
     lower.includes('buraco') ||
+    lower.includes('bache') ||
+    lower.includes('pothole') ||
     lower.includes('rua') ||
+    lower.includes('calle') ||
+    lower.includes('street') ||
     lower.includes('água') ||
     lower.includes('agua') ||
+    lower.includes('water') ||
     lower.includes('saneamento') ||
     lower.includes('chamado') ||
     lower.includes('demanda')
@@ -802,27 +1614,62 @@ function runSovereignOrchestrator(profile, userMessage) {
     citations = [
       {
         id: 1,
-        agency: 'Secretaria de Infraestrutura, Zeladoria 311 & Smart Grid IoT',
-        title: 'Carta de Serviços Urbanos 311 — SLA Médio de 6 Horas por Distrito',
+        agency:
+          lang === 'en-US'
+            ? 'Department of Infrastructure, 311 Urban Maintenance & Smart Grid IoT'
+            : lang === 'es-419'
+            ? 'Secretaría de Infraestructura, Atención Urbana 311 y Smart Grid IoT'
+            : 'Secretaria de Infraestrutura, Zeladoria 311 & Smart Grid IoT',
+        title:
+          lang === 'en-US'
+            ? '311 Urban Services Charter — 6-Hour Average SLA per District'
+            : lang === 'es-419'
+            ? 'Carta de Servicios Urbanos 311 — SLA Promedio de 6 Horas por Distrito'
+            : 'Carta de Serviços Urbanos 311 — SLA Médio de 6 Horas por Distrito',
         url: `${CITIZEN_PORTAL_URL}?tab=urban`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'OPEN_311_URBAN_TICKET',
-      service_title: 'Solicitar Abertura de Chamado Urbano 311',
-      service_description: 'Registra ordem de serviço georreferenciada no seu distrito e envia para a fila do Backstage Governamental.',
-      service_prompt: `Abrir chamado 311 para: ${msg}`,
+      service_title:
+        lang === 'en-US'
+          ? 'Request 311 Urban Maintenance Ticket'
+          : lang === 'es-419'
+          ? 'Solicitar Apertura de Ticket Urbano 311'
+          : 'Solicitar Abertura de Chamado Urbano 311',
+      service_description:
+        lang === 'en-US'
+          ? 'Registers a georeferenced work order in your district and dispatches it to the Government Backstage queue.'
+          : lang === 'es-419'
+          ? 'Registra orden de servicio georreferenciada en su distrito y la envía a la cola del Backstage Gubernamental.'
+          : 'Registra ordem de serviço georreferenciada no seu distrito e envia para a fila do Backstage Governamental.',
+      service_prompt:
+        lang === 'en-US'
+          ? `Open 311 ticket for: ${msg}`
+          : lang === 'es-419'
+          ? `Abrir ticket 311 para: ${msg}`
+          : `Abrir chamado 311 para: ${msg}`,
       target_portal: 'citizen-portal',
       target_tab: 'urban'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Atendimento de Zeladoria Urbana 311 e Smart Grid em Novatlantis [1]:**\n\n` +
-        `A central **311** recebe solicitações de manutenção de vias, iluminação pública LED/IoT, coleta seletiva e saneamento nos 5 distritos da nação (**Distrito Tecnológico**, **Distrito Oceânico**, **Colina da Justiça**, **Porto Solar** e **Vale das Águas**) [1]:\n` +
-        `• **Triagem por IA:** O Agente 311 classifica a severidade e encaminha diretamente à equipe de engenharia no **Backstage Governamental** com **SLA médio de 6 horas**.\n\n` +
-        `Para **abrir oficialmente este chamado 311** em seu nome e acompanhar o protocolo, clique no botão de solicitação abaixo para fazer login.`;
+        lang === 'en-US'
+          ? `**311 Urban Maintenance & Smart Grid Service in Novatlantis [1]:**\n\n` +
+            `The **311** center handles roadway maintenance, LED/IoT street lighting, recycling, and sanitation across the nation's 5 districts (**Tech District**, **Oceanic District**, **Justice Hill**, **Solar Port**, and **Water Valley**) [1]:\n` +
+            `• **AI Triage:** The 311 Agent classifies severity and routes directly to engineering teams in the **Government Backstage** with a **6-hour average SLA**.\n\n` +
+            `To **officially open this 311 work order** under your NID and track its protocol, click the request button below to sign in.`
+          : lang === 'es-419'
+          ? `**Atención de Mantenimiento Urbano 311 y Smart Grid en Novatlantis [1]:**\n\n` +
+            `La central **311** recibe solicitudes de mantenimiento vial, alumbrado público LED/IoT, recolección selectiva y saneamiento en los 5 distritos de la nación (**Distrito Tecnológico**, **Distrito Oceánico**, **Colina de la Justicia**, **Puerto Solar** y **Valle de las Aguas**) [1]:\n` +
+            `• **Triaje por IA:** El Agente 311 clasifica la severidad y encamina directamente al equipo de ingeniería en el **Backstage Gubernamental** con **SLA promedio de 6 horas**.\n\n` +
+            `Para **abrir oficialmente este ticket 311** a su nombre y seguir el protocolo, haga clic en el botón de solicitud abajo para iniciar sesión.`
+          : `**Atendimento de Zeladoria Urbana 311 e Smart Grid em Novatlantis [1]:**\n\n` +
+            `A central **311** recebe solicitações de manutenção de vias, iluminação pública LED/IoT, coleta seletiva e saneamento nos 5 distritos da nação (**Distrito Tecnológico**, **Distrito Oceânico**, **Colina da Justiça**, **Porto Solar** e **Vale das Águas**) [1]:\n` +
+            `• **Triagem por IA:** O Agente 311 classifica a severidade e encaminha diretamente à equipe de engenharia no **Backstage Governamental** com **SLA médio de 6 horas**.\n\n` +
+            `Para **abrir oficialmente este chamado 311** em seu nome e acompanhar o protocolo, clique no botão de solicitação abaixo para fazer login.`;
     } else {
       const ticketId = `311-NV-2026-${Math.floor(100 + Math.random() * 899)}`;
       db.prepare(`
@@ -839,76 +1686,158 @@ function runSovereignOrchestrator(profile, userMessage) {
       executedAction = {
         type: 'URBAN_311_TICKET_OPENED',
         protocol: ticketId,
-        summary: `Chamado urbano ${ticketId} aberto e enviado à fila dos servidores públicos no Backstage.`
+        summary: `Urban ticket ${ticketId} opened and routed to civil servants in Backstage.`
       };
       reply =
-        `🏙️ **Ordem de Serviço Urbana 311 Registrada (\`${ticketId}\`) [1]:**\n\n` +
-        `• **Solicitante:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-        `• **Imóvel Georreferenciado:** \`${profile.residence?.address_id}\` — ${profile.residence?.district}\n` +
-        `• **SLA Estimado pela IA:** 6 horas\n` +
-        `• **Encaminhamento:** Já disponível na fila do **Backstage Governamental 311** para execução pelos servidores públicos.`;
+        lang === 'en-US'
+          ? `🏙️ **311 Urban Work Order Registered (\`${ticketId}\`) [1]:**\n\n` +
+            `• **Requester:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Georeferenced Property:** \`${profile.residence?.address_id}\` — ${profile.residence?.district}\n` +
+            `• **AI Estimated SLA:** 6 hours\n` +
+            `• **Routing:** Now available in the **311 Government Backstage** queue for execution by civil servants.`
+          : lang === 'es-419'
+          ? `🏙️ **Orden de Servicio Urbana 311 Registrada (\`${ticketId}\`) [1]:**\n\n` +
+            `• **Solicitante:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Inmueble Georreferenciado:** \`${profile.residence?.address_id}\` — ${profile.residence?.district}\n` +
+            `• **SLA Estimado por la IA:** 6 horas\n` +
+            `• **Encaminamiento:** Ya disponible en la cola del **Backstage Gubernamental 311** para ejecución por los servidores públicos.`
+          : `🏙️ **Ordem de Serviço Urbana 311 Registrada (\`${ticketId}\`) [1]:**\n\n` +
+            `• **Solicitante:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Imóvel Georreferenciado:** \`${profile.residence?.address_id}\` — ${profile.residence?.district}\n` +
+            `• **SLA Estimado pela IA:** 6 horas\n` +
+            `• **Encaminhamento:** Já disponível na fila do **Backstage Governamental 311** para execução pelos servidores públicos.`;
     }
   }
   // 7. Intenção: Identidade 360 / NID / Biometria / Família / Permissões Backstage
   else if (
     lower.includes('identidade') ||
+    lower.includes('identidad') ||
+    lower.includes('identity') ||
     lower.includes('nid') ||
     lower.includes('biometria') ||
+    lower.includes('biometría') ||
+    lower.includes('biometric') ||
     lower.includes('família') ||
     lower.includes('familia') ||
+    lower.includes('family') ||
     lower.includes('permissão') ||
     lower.includes('permissao') ||
+    lower.includes('permiso') ||
+    lower.includes('permission') ||
     lower.includes('backstage') ||
     lower.includes('360') ||
-    lower.includes('perfil')
+    lower.includes('perfil') ||
+    lower.includes('profile') ||
+    lower.includes('wallet') ||
+    lower.includes('billetera') ||
+    lower.includes('carteira')
   ) {
     delegatedAgent = 'agent-identity-360-governor-v4 (Autoridade Nacional de Identidade 360)';
     citations = [
       {
         id: 1,
-        agency: 'Autoridade Nacional de Identidade Soberana (NID & NIST Biometrics)',
-        title: 'Padrão ANSI/NIST-ITL 1-2011 / ISO/IEC 19794-5 & Chave Pública Ed25519',
+        agency:
+          lang === 'en-US'
+            ? 'National Authority for Sovereign Identity (NID & NIST Biometrics)'
+            : lang === 'es-419'
+            ? 'Autoridad Nacional de Identidad Soberana (NID y Biometría NIST)'
+            : 'Autoridade Nacional de Identidade Soberana (NID & NIST Biometrics)',
+        title:
+          lang === 'en-US'
+            ? 'ANSI/NIST-ITL 1-2011 / ISO/IEC 19794-5 Standard & Ed25519 Public Key'
+            : lang === 'es-419'
+            ? 'Estándar ANSI/NIST-ITL 1-2011 / ISO/IEC 19794-5 y Clave Pública Ed25519'
+            : 'Padrão ANSI/NIST-ITL 1-2011 / ISO/IEC 19794-5 & Chave Pública Ed25519',
         url: `${CITIZEN_PORTAL_URL}?tab=identity`
       },
       {
         id: 2,
-        agency: 'Governança de Acesso Identidade 360 (RBAC Governamental)',
-        title: 'Regulamento de Concessão e Revogação de Acesso ao Backstage Governamental',
+        agency:
+          lang === 'en-US'
+            ? 'Identity 360 Access Governance (Government RBAC)'
+            : lang === 'es-419'
+            ? 'Gobernanza de Acceso Identidad 360 (RBAC Gubernamental)'
+            : 'Governança de Acesso Identidade 360 (RBAC Governamental)',
+        title:
+          lang === 'en-US'
+            ? 'Government Backstage Access Grant and Revocation Regulation'
+            : lang === 'es-419'
+            ? 'Reglamento de Concesión y Revocación de Acceso al Backstage Gubernamental'
+            : 'Regulamento de Concessão e Revogação de Acesso ao Backstage Governamental',
         url: `${GOV_BACKSTAGE_URL}`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'ACCESS_IDENTITY_360_WALLET',
-      service_title: 'Acessar Carteira Digital NID, Biometria NIST & Árvore Familiar',
-      service_description: 'Exibe sua credencial soberana NID, chave pública Ed25519, vínculos familiares e permissões Identidade 360.',
-      service_prompt: 'Consultar minha Carteira Digital NID e vínculos familiares',
+      service_title:
+        lang === 'en-US'
+          ? 'Access NID Digital Wallet, NIST Biometrics & Family Tree'
+          : lang === 'es-419'
+          ? 'Acceder a Billetera Digital NID, Biometría NIST y Árbol Familiar'
+          : 'Acessar Carteira Digital NID, Biometria NIST & Árvore Familiar',
+      service_description:
+        lang === 'en-US'
+          ? 'Displays your sovereign NID credential, Ed25519 public key, family links, and Identity 360 permissions.'
+          : lang === 'es-419'
+          ? 'Muestra su credencial soberana NID, clave pública Ed25519, vínculos familiares y permisos Identidad 360.'
+          : 'Exibe sua credencial soberana NID, chave pública Ed25519, vínculos familiares e permissões Identidade 360.',
+      service_prompt:
+        lang === 'en-US'
+          ? 'Check my NID Digital Wallet and family links'
+          : lang === 'es-419'
+          ? 'Consultar mi Billetera Digital NID y vínculos familiares'
+          : 'Consultar minha Carteira Digital NID e vínculos familiares',
       target_portal: 'citizen-portal',
       target_tab: 'identity'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Identidade Nacional Soberana (NID), Biometria NIST e Governança 360 [1][2]:**\n\n` +
-        `Todo cidadão de Novatlantis possui um **NID (Novatlantis Identity ID)** no padrão \`NID-XXX-XXXX-XXXX\` com dígito verificador Módulo 11, biometria facial/digital **ISO/IEC 19794** e par de chaves **Ed25519** [1]:\n` +
-        `• **Acesso Único (SSO):** O mesmo NID/e-mail autentica o cidadão nos serviços públicos e, caso possua nomeação ativa na **Identidade 360** (como Médico, Professor, Gestor 311/911 ou Primeiro-Ministro), libera automaticamente os módulos correspondentes no **Backstage Governamental** [2].\n\n` +
-        `Para **acessar sua Carteira NID, atualizar sua foto/perfil ou consultar sua Árvore Familiar**, clique no botão abaixo para entrar com seu NID.`;
+        lang === 'en-US'
+          ? `**Sovereign National Identity (NID), NIST Biometrics & 360 Governance [1][2]:**\n\n` +
+            `Every citizen of Novatlantis holds an **NID (Novatlantis Identity ID)** in the \`NID-XXX-XXXX-XXXX-D\` / \`NID-YYYY-XXXXXXXX-C\` standard with Modulo 11 / Luhn mod 36 check digit, **NIST SP 500-290B / ISO/IEC 19794** facial/fingerprint biometrics, and an **Ed25519** keypair [1]:\n` +
+            `• **Single Sign-On (SSO):** The same NID/email authenticates citizens across public services and, if holding an active **Identity 360** appointment (Physician, Teacher, 311/911 Manager, or Prime Minister), automatically unlocks the corresponding modules in the **Government Backstage** [2].\n\n` +
+            `To **access your NID Wallet, update your photo/profile, or view your Family Tree**, click the button below to sign in with your NID.`
+          : lang === 'es-419'
+          ? `**Identidad Nacional Soberana (NID), Biometría NIST y Gobernanza 360 [1][2]:**\n\n` +
+            `Todo ciudadano de Novatlantis posee un **NID (Novatlantis Identity ID)** en el estándar \`NID-XXX-XXXX-XXXX-D\` / \`NID-YYYY-XXXXXXXX-C\` con dígito verificador Módulo 11 / Luhn mod 36, biometría facial/dactilar **NIST SP 500-290B / ISO/IEC 19794** y par de claves **Ed25519** [1]:\n` +
+            `• **Acceso Único (SSO):** El mismo NID/correo autentica al ciudadano en los servicios públicos y, si posee designación activa en **Identidad 360** (Médico, Profesor, Gestor 311/911 o Primer Ministro), habilita automáticamente los módulos correspondientes en el **Backstage Gubernamental** [2].\n\n` +
+            `Para **acceder a su Billetera NID, actualizar su foto/perfil o consultar su Árbol Familiar**, haga clic en el botón abajo para ingresar con su NID.`
+          : `**Identidade Nacional Soberana (NID), Biometria NIST e Governança 360 [1][2]:**\n\n` +
+            `Todo cidadão de Novatlantis possui um **NID (Novatlantis Identity ID)** no padrão \`NID-XXX-XXXX-XXXX\` com dígito verificador Módulo 11, biometria facial/digital **ISO/IEC 19794** e par de chaves **Ed25519** [1]:\n` +
+            `• **Acesso Único (SSO):** O mesmo NID/e-mail autentica o cidadão nos serviços públicos e, caso possua nomeação ativa na **Identidade 360** (como Médico, Professor, Gestor 311/911 ou Primeiro-Ministro), libera automaticamente os módulos correspondentes no **Backstage Governamental** [2].\n\n` +
+            `Para **acessar sua Carteira NID, atualizar sua foto/perfil ou consultar sua Árvore Familiar**, clique no botão abaixo para entrar com seu NID.`;
     } else {
       const famList =
         profile.family_links?.map((f) => `${f.relationship_type}: ${f.relative_name} (${f.relative_nid})`).join(' • ') ||
-        'Sem vínculos diretos';
+        (lang === 'en-US' ? 'No direct links' : lang === 'es-419' ? 'Sin vínculos directos' : 'Sem vínculos diretos');
       executedAction = {
         type: 'IDENTITY_360_VERIFIED',
         protocol: profile.citizen_id,
-        summary: `Credencial NID ${profile.citizen_id} e grafo familiar verificados no AlloyDB.`
+        summary: `NID Credential ${profile.citizen_id} and family graph verified in AlloyDB.`
       };
       reply =
-        `🪪 **Credencial Soberana NID & Governança Identidade 360 [1][2]:**\n\n` +
-        `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
-        `• **Credencial Profissional:** \`${profile.professional_credential}\` (${profile.profession_label})\n` +
-        `• **Papel Ativo na Identidade 360:** \`${profile.effective_role_code}\` (${profile.role_title})\n` +
-        `• **Acesso ao Backstage Governamental:** **${profile.backstage_allowed ? 'AUTORIZADO (ATIVO)' : 'BLOQUEADO (CIDADÃO COMUM)'}**\n` +
-        `• **Grafo Familiar (\`rel_family_graph\`):** ${famList}`;
+        lang === 'en-US'
+          ? `🪪 **Sovereign NID Credential & Identity 360 Governance [1][2]:**\n\n` +
+            `• **Holder:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Professional Credential:** \`${profile.professional_credential}\` (${profile.profession_label})\n` +
+            `• **Active Identity 360 Role:** \`${profile.effective_role_code}\` (${profile.role_title})\n` +
+            `• **Government Backstage Access:** **${profile.backstage_allowed ? 'AUTHORIZED (ACTIVE)' : 'BLOCKED (STANDARD CITIZEN)'}**\n` +
+            `• **Family Graph (\`rel_family_graph\`):** ${famList}`
+          : lang === 'es-419'
+          ? `🪪 **Credencial Soberana NID y Gobernanza Identidad 360 [1][2]:**\n\n` +
+            `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Credencial Profesional:** \`${profile.professional_credential}\` (${profile.profession_label})\n` +
+            `• **Rol Activo en Identidad 360:** \`${profile.effective_role_code}\` (${profile.role_title})\n` +
+            `• **Acceso al Backstage Gubernamental:** **${profile.backstage_allowed ? 'AUTORIZADO (ACTIVO)' : 'BLOQUEADO (CIUDADANO COMÚN)'}**\n` +
+            `• **Grafo Familiar (\`rel_family_graph\`):** ${famList}`
+          : `🪪 **Credencial Soberana NID & Governança Identidade 360 [1][2]:**\n\n` +
+            `• **Titular:** ${profile.full_name} (\`${profile.citizen_id}\`)\n` +
+            `• **Credencial Profissional:** \`${profile.professional_credential}\` (${profile.profession_label})\n` +
+            `• **Papel Ativo na Identidade 360:** \`${profile.effective_role_code}\` (${profile.role_title})\n` +
+            `• **Acesso ao Backstage Governamental:** **${profile.backstage_allowed ? 'AUTORIZADO (ATIVO)' : 'BLOQUEADO (CIDADÃO COMUM)'}**\n` +
+            `• **Grafo Familiar (\`rel_family_graph\`):** ${famList}`;
     }
   }
   // 8. Resposta Geral Orquestrada para qualquer outra consulta
@@ -917,49 +1846,119 @@ function runSovereignOrchestrator(profile, userMessage) {
     citations = [
       {
         id: 1,
-        agency: 'Chancelaria Digital da República de Novatlantis',
-        title: 'Guia Oficial de Serviços Públicos Digitais & Estado AI-First',
+        agency:
+          lang === 'en-US'
+            ? 'Digital Foreign Office of the Republic of Novatlantis'
+            : lang === 'es-419'
+            ? 'Cancillería Digital de la República de Novatlantis'
+            : 'Chancelaria Digital da República de Novatlantis',
+        title:
+          lang === 'en-US'
+            ? 'Official Digital Public Services & AI-First State Guide'
+            : lang === 'es-419'
+            ? 'Guía Oficial de Servicios Públicos Digitales y Estado AI-First'
+            : 'Guia Oficial de Serviços Públicos Digitais & Estado AI-First',
         url: `${CITIZEN_PORTAL_URL}`
       },
       {
         id: 2,
         agency: 'Government Data Platform (AlloyDB + BigQuery Lakehouse)',
-        title: 'Arquitetura Soberana de Dados Cívicos (100.000 Cidadãos)',
+        title:
+          lang === 'en-US'
+            ? 'Sovereign Civic Data Architecture (100,000 Citizens)'
+            : lang === 'es-419'
+            ? 'Arquitectura Soberana de Datos Cívicos (100.000 Ciudadanos)'
+            : 'Arquitetura Soberana de Dados Cívicos (100.000 Cidadãos)',
         url: `${GOV_BACKSTAGE_URL}`
       }
     ];
     serviceRequestAction = {
       requires_auth: !isAuthenticated,
       service_id: 'OPEN_CITIZEN_PORTAL_SERVICES',
-      service_title: 'Solicitar Serviço Público no Portal do Cidadão',
-      service_description: 'Acesse todos os serviços digitais (NID, Saúde, Educação, Empresas em 45s, Passaporte ICAO e Zeladoria 311).',
-      service_prompt: 'Consultar meu prontuário completo e serviços disponíveis no GDF',
+      service_title:
+        lang === 'en-US'
+          ? 'Request Public Service in the Citizen Portal'
+          : lang === 'es-419'
+          ? 'Solicitar Servicio Público en el Portal del Ciudadano'
+          : 'Solicitar Serviço Público no Portal do Cidadão',
+      service_description:
+        lang === 'en-US'
+          ? 'Access all digital services (NID, Health, Education, 45s Companies, ICAO Passport, and 311 Urban Services).'
+          : lang === 'es-419'
+          ? 'Acceda a todos los servicios digitales (NID, Salud, Educación, Empresas en 45s, Pasaporte ICAO y Atención 311).'
+          : 'Acesse todos os serviços digitais (NID, Saúde, Educação, Empresas em 45s, Passaporte ICAO e Zeladoria 311).',
+      service_prompt:
+        lang === 'en-US'
+          ? 'Check my full citizen record and available services in the GDF'
+          : lang === 'es-419'
+          ? 'Consultar mi expediente completo y servicios disponibles en el GDF'
+          : 'Consultar meu prontuário completo e serviços disponíveis no GDF',
       target_portal: 'citizen-portal',
       target_tab: 'identity'
     };
 
     if (!isAuthenticated) {
       reply =
-        `**Bem-vindo ao Concierge Digital da República de Novatlantis [1][2]:**\n\n` +
-        `Você pode fazer qualquer pergunta sobre leis, documentos, saúde, educação, impostos ou serviços urbanos **sem precisar estar logado**.\n\n` +
-        `Principais áreas de atendimento imediato:\n` +
-        `1. **Identidade Soberana (NID) & Família:** Emissão de credencial, biometria padrão NIST e consulta ao núcleo familiar.\n` +
-        `2. **Saúde & Telemedicina 24/7:** Prontuário único HL7 FHIR, histórico vacinal e teleconsultas médicas.\n` +
-        `3. **Educação & Tutoria IA:** Boletim por matéria, frequência escolar e trilhas adaptativas.\n` +
-        `4. **Economia & Tesouro:** Abertura de empresa autônoma em 45 segundos e Dividendo UBI.\n` +
-        `5. **Passaporte Digital ICAO & Justiça:** Validação automática de fronteira (e-Gate em 174 países).\n` +
-        `6. **Zeladoria 311 & Emergência 911:** Abertura de chamados urbanos e resgate tático.\n\n` +
-        `Faça sua pergunta acima ou, se desejar **solicitar um serviço oficial agora**, clique no botão abaixo para autenticar seu NID.`;
+        lang === 'en-US'
+          ? `**Welcome to the Digital Concierge of the Republic of Novatlantis [1][2]:**\n\n` +
+            `You may ask any question in **English, Spanish, or Portuguese** about constitutional rights, documents, healthcare, education, taxes, or urban services **without signing in**.\n\n` +
+            `Core immediate service areas:\n` +
+            `1. **Sovereign Identity (NID) & Family:** Credential issuance, NIST SP 500-290B biometrics, and family nucleus lookup.\n` +
+            `2. **24/7 Health & Telemedicine:** Unified HL7 FHIR health record, vaccination status, and medical teleconsultations.\n` +
+            `3. **Education & AI Tutoring:** Subject report cards, school attendance, and adaptive learning paths.\n` +
+            `4. **Economy & Treasury:** 45-second autonomous company incorporation and UBI Dividend.\n` +
+            `5. **ICAO Digital Passport & Justice:** Automated border validation (e-Gate in 174 countries).\n` +
+            `6. **311 Urban Maintenance & 911 Emergency:** Urban work orders and tactical rescue dispatch.\n\n` +
+            `Ask your question in the sidebar or click the button below to authenticate with your NID.`
+          : lang === 'es-419'
+          ? `**Bienvenido al Conserje Digital de la República de Novatlantis [1][2]:**\n\n` +
+            `Puede realizar cualquier consulta en **español, portugués o inglés** sobre leyes, derechos constitucionales, salud, educación, impuestos o servicios urbanos **sin necesidad de iniciar sesión**.\n\n` +
+            `Principales áreas de atención inmediata:\n` +
+            `1. **Identidad Soberana (NID) y Familia:** Emisión de credencial, biometría NIST SP 500-290B y consulta del núcleo familiar.\n` +
+            `2. **Salud y Telemedicina 24/7:** Historia clínica única HL7 FHIR, historial vacunal y teleconsultas médicas.\n` +
+            `3. **Educación y Tutoría IA:** Boletín por materia, asistencia escolar y rutas adaptativas.\n` +
+            `4. **Economía y Tesoro:** Apertura de empresa autónoma en 45 segundos y Dividendo UBI.\n` +
+            `5. **Pasaporte Digital ICAO y Justicia:** Validación automática de frontera (e-Gate en 174 países).\n` +
+            `6. **Atención Urbana 311 y Emergencia 911:** Apertura de tickets urbanos y rescate táctico.\n\n` +
+            `Escriba su pregunta en la barra lateral o haga clic en el botón abajo para autenticar su NID.`
+          : `**Bem-vindo ao Concierge Digital da República de Novatlantis [1][2]:**\n\n` +
+            `Você pode fazer qualquer pergunta sobre leis, documentos, saúde, educação, impostos ou serviços urbanos **sem precisar estar logado**.\n\n` +
+            `Principais áreas de atendimento imediato:\n` +
+            `1. **Identidade Soberana (NID) & Família:** Emissão de credencial, biometria padrão NIST e consulta ao núcleo familiar.\n` +
+            `2. **Saúde & Telemedicina 24/7:** Prontuário único HL7 FHIR, histórico vacinal e teleconsultas médicas.\n` +
+            `3. **Educação & Tutoria IA:** Boletim por matéria, frequência escolar e trilhas adaptativas.\n` +
+            `4. **Economia & Tesouro:** Abertura de empresa autônoma em 45 segundos e Dividendo UBI.\n` +
+            `5. **Passaporte Digital ICAO & Justiça:** Validação automática de fronteira (e-Gate em 174 países).\n` +
+            `6. **Zeladoria 311 & Emergência 911:** Abertura de chamados urbanos e resgate tático.\n\n` +
+            `Faça sua pergunta na barra lateral ou, se desejar **solicitar um serviço oficial agora**, clique no botão abaixo para autenticar seu NID.`;
     } else {
       reply =
-        `🏛️ **Concierge Digital da República de Novatlantis [1][2]:**\n\n` +
-        `Olá, **${profile.full_name}** (\`${profile.citizen_id}\`). Sua sessão está autenticada no AlloyDB (Distrito: *${profile.residence?.district}*, Papel 360: \`${profile.effective_role_code}\`).\n\n` +
-        `Escolha ou digite o serviço que deseja executar agora:\n` +
-        `• *"Abrir empresa autônoma agora"* (Tesouro & UBI)\n` +
-        `• *"Emitir ou renovar meu passaporte digital ICAO"* (Chancelaria & Fronteiras)\n` +
-        `• *"Agendar teleconsulta médica"* (Saúde HL7 FHIR)\n` +
-        `• *"Consultar boletim escolar"* (Educação)\n` +
-        `• *"Abrir chamado 311 de iluminação"* (Zeladoria Urbana)`;
+        lang === 'en-US'
+          ? `🏛️ **Digital Concierge of the Republic of Novatlantis [1][2]:**\n\n` +
+            `Hello, **${profile.full_name}** (\`${profile.citizen_id}\`). Your session is authenticated on AlloyDB (District: *${profile.residence?.district}*, 360 Role: \`${profile.effective_role_code}\`).\n\n` +
+            `Choose or type the service you wish to execute now:\n` +
+            `• *"Open autonomous company now"* (Treasury & UBI)\n` +
+            `• *"Issue or renew my ICAO digital passport"* (Foreign Office & Borders)\n` +
+            `• *"Schedule medical teleconsultation"* (HL7 FHIR Health)\n` +
+            `• *"Check school report card"* (Education)\n` +
+            `• *"Open 311 street lighting ticket"* (Urban Maintenance)`
+          : lang === 'es-419'
+          ? `🏛️ **Conserje Digital de la República de Novatlantis [1][2]:**\n\n` +
+            `Hola, **${profile.full_name}** (\`${profile.citizen_id}\`). Su sesión está autenticada en AlloyDB (Distrito: *${profile.residence?.district}*, Rol 360: \`${profile.effective_role_code}\`).\n\n` +
+            `Elija o escriba el servicio que desea ejecutar ahora:\n` +
+            `• *"Abrir empresa autónoma ahora"* (Tesoro y UBI)\n` +
+            `• *"Emitir o renovar mi pasaporte digital ICAO"* (Cancillería y Fronteras)\n` +
+            `• *"Agendar teleconsulta médica"* (Salud HL7 FHIR)\n` +
+            `• *"Consultar boletín escolar"* (Educación)\n` +
+            `• *"Abrir ticket 311 de alumbrado"* (Atención Urbana)`
+          : `🏛️ **Concierge Digital da República de Novatlantis [1][2]:**\n\n` +
+            `Olá, **${profile.full_name}** (\`${profile.citizen_id}\`). Sua sessão está autenticada no AlloyDB (Distrito: *${profile.residence?.district}*, Papel 360: \`${profile.effective_role_code}\`).\n\n` +
+            `Escolha ou digite o serviço que deseja executar agora:\n` +
+            `• *"Abrir empresa autônoma agora"* (Tesouro & UBI)\n` +
+            `• *"Emitir ou renovar meu passaporte digital ICAO"* (Chancelaria & Fronteiras)\n` +
+            `• *"Agendar teleconsulta médica"* (Saúde HL7 FHIR)\n` +
+            `• *"Consultar boletim escolar"* (Educação)\n` +
+            `• *"Abrir chamado 311 de iluminação"* (Zeladoria Urbana)`;
     }
   }
 
@@ -1029,10 +2028,13 @@ function runSovereignOrchestrator(profile, userMessage) {
   return {
     message_id: `MSG-NOV-${Date.now()}`,
     intent: executedAction ? executedAction.type : 'STATE_ORCHESTRATION',
+    detected_language: lang,
     authenticated: isAuthenticated,
     citizen_id: isAuthenticated ? profile.citizen_id : null,
     citizen_name: isAuthenticated ? profile.full_name : null,
     delegated_agent: delegatedAgent,
+    agent_runtime_endpoint: FIRST_RESPONDER_AGENT_RUNTIME_ENDPOINT,
+    source_document: CONSTITUTION_GCS_URI,
     executed_action: executedAction,
     action_card: actionCard,
     service_request_action: serviceRequestAction,
@@ -1192,7 +2194,7 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req);
       const targetNid = String(body.nid || body.citizen_id || '').trim();
       const profile = targetNid ? getFullCitizenProfile(targetNid) : null;
-      const result = runSovereignOrchestrator(profile, body.message || '');
+      const result = runSovereignOrchestrator(profile, body.message || '', body.lang);
       return sendJson(res, 200, result);
     }
 

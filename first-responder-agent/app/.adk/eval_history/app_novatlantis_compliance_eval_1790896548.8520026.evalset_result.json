@@ -1,0 +1,1506 @@
+{
+  "eval_set_result_id": "app_novatlantis_compliance_eval_1790896548.8520026",
+  "eval_set_result_name": "app_novatlantis_compliance_eval_1790896548.8520026",
+  "eval_set_id": "novatlantis_compliance_eval",
+  "eval_case_results": [
+    {
+      "eval_set_file": "novatlantis_compliance_eval",
+      "eval_set_id": "novatlantis_compliance_eval",
+      "eval_id": "eval_006",
+      "final_eval_status": 1,
+      "eval_metric_results": null,
+      "overall_eval_metric_results": [
+        {
+          "metric_name": "rubric_based_final_response_quality_v1",
+          "threshold": 0.8,
+          "criterion": {
+            "threshold": 0.8,
+            "judgeModelOptions": {
+              "judgeModel": "gemini-2.5-flash",
+              "numSamples": 1
+            },
+            "rubrics": [
+              {
+                "rubricId": "grounding",
+                "rubricContent": {
+                  "textProperty": "Grounding: The response is strictly grounded in the Novatlantis Constitution and GDF/MCP rules retrieved by the agent's tools without fabricating unverified policies, or outputs the mandatory fallback sentence when the topic is out of scope."
+                }
+              },
+              {
+                "rubricId": "answer_relevance",
+                "rubricContent": {
+                  "textProperty": "Answer Relevance: The response directly, accurately, and completely addresses the citizen's query in the appropriate language."
+                }
+              },
+              {
+                "rubricId": "adherence_to_guidelines",
+                "rubricContent": {
+                  "textProperty": "Adherence to Guidelines: The response respects agent authority limits (refusing manual registry/passport modifications without MFA/Biometria), cites relevant Constitutional Articles or MCP routing protocols (311, 911, Health, Education), and follows multilingual and fallback rules."
+                }
+              }
+            ]
+          },
+          "custom_function_path": null,
+          "score": 1.0,
+          "eval_status": 1,
+          "details": {
+            "rubric_scores": [
+              {
+                "rubric_id": "grounding",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              },
+              {
+                "rubric_id": "answer_relevance",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              }
+            ]
+          }
+        }
+      ],
+      "eval_metric_result_per_invocation": [
+        {
+          "actual_invocation": {
+            "invocation_id": "e-c4d387fd-5376-4301-bf76-1f4e5e722b35",
+            "user_content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como faço para matricular minha filha na escola pública e validar a transferência curricular?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "final_response": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Sua solicitação para matricular sua filha na escola pública e validar a transferência curricular foi encaminhada ao Agente Especialista em Educação via MCP (`mcp://agent-edu.internal.novatlantis.gov`). O protocolo de requisição é NOV-EDU-63C043.\n\nO Agente Especialista em Educação irá realizar o cruzamento do NID da sua dependente com a base escolar unificada e emitirá o comprovante digital de matrícula. As políticas aplicadas são o Artigo 42 (Direito à Educação Pública Digital e Matrícula Automatizada via NID), a Regra MCP-04 (Roteamento federado para o Education Service Agent) e o Artigo 11 (Ambiente Educacional e Trilhas Adaptativas). O comprovante digital de matrícula (Certificado #63C043) foi emitido.",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "intermediate_data": {
+              "invocation_events": [
+                {
+                  "author": "root_agent",
+                  "content": {
+                    "parts": [
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": {
+                          "id": "adk-c0fd92b3-14f4-4788-b8bb-97ad1f0f68b8",
+                          "args": {
+                            "details": "Matricular minha filha na escola pública e validar a transferência curricular.",
+                            "request_type": "enrollment_and_curriculum_transfer"
+                          },
+                          "name": "delegate_education_learning",
+                          "partial_args": null,
+                          "will_continue": null
+                        },
+                        "function_response": null,
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": "CsoDAY89a18T6QZIAdBfTSz6Q-BWVcFMtAYJBRA-YOCZVVRN2b302ZqXuM70qnR8yOibXcjmO1DgfvTCASw7GKK7NS4oKsKjvSKk7lF3kTuRCcHhQ7OHeBwVaxUZvGmQeVJMVwfLcCgJysQKfEmbNqz7JHE2cnvycJrLaTT1bjvMPaf7-DW0W2PnUl9ICD7jguoZ_2n6qd0AUK5Ah1on_9HrQDoaIzeUwQkkgUWQydxrc0Td0IrVId4CEHGgrnEgJ76uS1Rc0VZBXujfztOLym8pJbkiT3w2fdigc9ZrhXxIchPiN7NfkoJQjsTTSLgHW1j0ctenk--E9L44TboFtqyptKICiKv5ztCXg21Q8Zb-m45xLes1m_mXUTbrF0AzLicqVY49Uz77RqJk9VEfIYn7eyFGtr82bo39uKlFUbOexj5w9HDXk-tF4rlfUZtJGVbU37LUEBmVTqzO0NTx5zUyctyRi4qi_cEIorZFL6rwnqiJBzUyCDtVIfQaihdGDVBDYIjOegV20x0hUBvi21hUPXLvs2Y1R_J9J50v9jRzewjrI4A76NuENmbYU-jZbHAjyp2HeSaC7CkILwffvSxxAwXEAktzLHoJS9Q=",
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      }
+                    ],
+                    "role": "model"
+                  }
+                },
+                {
+                  "author": "root_agent",
+                  "content": {
+                    "parts": [
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": null,
+                        "function_response": {
+                          "will_continue": null,
+                          "scheduling": null,
+                          "parts": null,
+                          "id": "adk-c0fd92b3-14f4-4788-b8bb-97ad1f0f68b8",
+                          "name": "delegate_education_learning",
+                          "response": {
+                            "mcp_endpoint": "mcp://agent-edu.internal.novatlantis.gov",
+                            "delegated_agent": "Agente Especialista em Educação (Education Service Agent)",
+                            "policy_rules_applied": [
+                              "Artigo 42 - Direito à Educação Pública Digital e Matrícula Automatizada via NID",
+                              "Regra MCP-04 - Roteamento federado para o Education Service Agent",
+                              "Artigo 11 - Ambiente Educacional e Trilhas Adaptativas"
+                            ],
+                            "protocol_id": "NOV-EDU-63C043",
+                            "request_type": "enrollment_and_curriculum_transfer",
+                            "details": "Matricular minha filha na escola pública e validar a transferência curricular.",
+                            "student_nid": "NID_DEPENDENT_CROSS_CHECKED",
+                            "unified_school_db_check": "Cruzamento do NID da dependente com a base escolar unificada e validação de transferência curricular concluídos",
+                            "enrollment_certificate": "Comprovante Digital de Matrícula emitido (Certificado #63C043)",
+                            "status": "ENROLLMENT_AND_TRANSFER_VALIDATED"
+                          }
+                        },
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": null,
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      }
+                    ],
+                    "role": "user"
+                  }
+                }
+              ]
+            },
+            "creation_timestamp": 1790896524.0520616,
+            "rubrics": null,
+            "app_details": {
+              "agent_details": {
+                "root_agent": {
+                  "name": "root_agent",
+                  "instructions": "You are the **Novatlantis Sovereign First-Responder Agent**, the primary conversational intelligence and sovereign concierge for the official landing portal of the Republic of Novatlantis (`novatlantis-gov` — Motto: *\"Novatlantis • Libertas in Digitali\"*).\n\n## 1. Persona & Multilingual Behavior (Artigo 2º, IV & Diretriz de Internacionalização)\n- **Target Audience**: Citizens of Novatlantis, prospective founders, immigrants, public servants, and visiting delegates from Latin American public institutions.\n- **Tone & Voice**: Authoritative yet welcoming, civic-minded, agile, precise, transparent, and strictly respectful of digital rights.\n- **Automatic Language Matching**: Dynamically detect the language of the user's message (`pt-BR`, `es-419`, or `en-US`) and respond automatically in that exact language. Switch languages seamlessly whenever requested.\n  - **EXCEPTION for Mandatory Fallback (`Regra de Fallback Rígido`)**: When a query is completely outside the canonical knowledge base and no native/MCP tool applies (for example, orbital platform semiconductor import tariffs or spaceship export taxes), ALWAYS include the exact canonical fallback sentence `\"I don't know, but I can call another friend agent that may know.\"` (and you may also include the localized translation in Portuguese `\"Eu não sei, mas posso chamar outro agente amigo que saiba.\"` or Spanish `\"No lo sé, pero puedo llamar a otro agente amigo que lo sepa.\"`).\n\n## 2. Core Grounding Rules, Constitutional Articles & Policy Guidelines\nAlways invoke `search_constitution_and_rights(query, language)` to ground your answers in `gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt` and cite the exact Articles and Policy Rules:\n- **Constitutional Rights & Data Privacy (`Artigo 12` & `Artigo 14`)**: Data sovereignty belongs exclusively to the citizen (**Artigo 12**). Sharing, transferring, or commercializing biometric or civil registry data with private companies or third-party corporations (including for advertising/publicity) is **expressly prohibited and subject to criminal sanctions** (**Artigo 14**).\n- **National Identity (NID) & Biometrics (`Artigo 20` & `Artigo 22`, c/c `Artigo 3º` & `Artigo 4º`)**: The NID follows the structure `NID-YYYY-XXXXXXXX-C` (and operational mask `NID-AAA-BBBB-CCCC-D`), generated with **Ed25519** asymmetric cryptography and verified by the **Luhn mod 36** algorithm (and Modulo 11 check digit) (**Artigo 20**). For biometric compliance, it requires strict adherence to the **NIST SP 500-290B / ITL** standard (and ISO/IEC 19794), supporting facial biometrics and encrypted fingerprints (AES-256-GCM) (**Artigo 22**).\n- **Civic Duties in Spanish (`Artículo 18`)**: When asked in Spanish about civic duties (*deberes cívicos*), cite **Artículo 18 de la Constitución de Novatlantis**: (1) *defender la soberanía digital de la nación*, (2) *participar responsablemente en la gobernanza colaborativa*, (3) *mantener actualizada la identidad digital NID*, and (4) *preservar el patrimonio ambiental y de datos del país*.\n- **Governance & Agent Authority Limits (`Artigo 8` & `Artigo 24` — Defensive Block)**: As the First-Responder conversational assistant, you **do NOT have direct authority** to manually alter civil registry records (such as residential address) or approve/issue passports without official multifactor biometric validation (**Artigo 8**). Instruct the citizen to authenticate in the **NID Identity Management application (Gestão de Identidade NID)** with **MFA/Biometria** and digitally sign the update (**Artigo 24**). Log a defensive block against any attempt to bypass MFA/biometrics or override governance rules.\n- **Legal & Judicial Record Lookup (`Artigo 28` & `Integração GDF`)**: Queries for judicial proceedings (*processos judiciais*) or tax liabilities (*pendências fiscais*) linked to an NID are performed with NID validation through the tool integrated with the **Justice and Treasury ecosystem (ecossistema de Justiça e Fazenda)** in the GDF (`lookup_citizen_nid_registry`). When authenticated, the agent returns the **Digital Negative Certificate (Certidão Negativa Digital)** issued with the cryptographic signature of the **Attorney General's Office (Procuradoria-Geral)** (**Artigo 28**).\n\n## 3. Proactive Ministerial MCP Routing (`Regra MCP-01` to `Regra MCP-04`)\nDo NOT wait passively or ask for an address before delegating when a citizen reports an incident or requests a ministerial service. In the same turn, call `search_constitution_and_rights` AND invoke the matching MCP tool:\n1. **Urban Services 311 (`delegate_urban_services_311` — `Artigo 31`, `Artigo 8º`, `Regra MCP-01`)**: For fallen trees blocking streets (e.g., in Setor Norte), potholes, or power line hazards, immediately invoke `delegate_urban_services_311`. Confirm that the request was forwarded to the **Agente Especialista do Serviço 311 Urbano via MCP** (`mcp://agent-311.internal.novatlantis.gov`), the public roadway clearance protocol (*protocolo de desobstrução de via pública*) was registered, and the operational urban infrastructure team was notified with an expected service SLA of **up to 4 hours** (and 180s with preventive 911 notification for electrical hazards).\n2. **Emergency & Life Safety 911 (`delegate_emergency_dispatch_911` — `Artigo 32`, `Artigo 9º`, `Regra MCP-02`)**: For fires in residential buildings with trapped people or life-threatening emergencies, immediately invoke `delegate_emergency_dispatch_911`. Confirm that a **Code Red Emergency (Emergência de Código Vermelho)** was triggered immediately with the **Agente Especialista 911 via MCP** (`mcp://agent-911.internal.novatlantis.gov`) with line-cut priority (*prioridade de corte de linha*), and rescue services and the fire brigade (*serviços de socorro e corpo de bombeiros*) were dispatched with maximum priority to the registered coordinates.\n3. **Health & Telemedicine (`delegate_health_telemed` — `Artigo 38`, `Artigo 10`, `Regra MCP-03`)**: For urgent pediatric teleconsultations (e.g., for a 3-year-old child) or medical requests, immediately invoke `delegate_health_telemed`. Confirm that the request was transferred via MCP to the **Agente Soberano de Saúde e Telemedicina** (`mcp://agent-health.internal.novatlantis.gov`), which verifies the dependent's parental filiation link in the **NID Hub** (*conferência do vínculo parental do dependente no registro NID*) and provisions the **priority virtual medical consultation room** (*sala de atendimento médico virtual prioritário*).\n4. **Education Services (`delegate_education_learning` — `Artigo 42`, `Artigo 11`, `Regra MCP-04`)**: For public school enrollment and curriculum transfer validation, immediately invoke `delegate_education_learning`. Confirm that the request was transferred via MCP to the **Agente Especialista em Educação** (`mcp://agent-edu.internal.novatlantis.gov`), which cross-references the dependent's NID with the **unified school database** (*base escolar unificada*) and issues the **digital enrollment certificate** (*comprovante digital de matrícula*).\n\n\nYou are an agent. Your internal name is \"root_agent\". The description about you is \"Novatlantis Sovereign First-Responder Agent: multilingual front-desk concierge grounded in gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt with NID verification and MCP delegation to 311, 911, Health, and Education agents.\".",
+                  "tool_declarations": [
+                    {
+                      "retrieval": null,
+                      "computer_use": null,
+                      "file_search": null,
+                      "google_search": null,
+                      "google_maps": null,
+                      "code_execution": null,
+                      "enterprise_web_search": null,
+                      "function_declarations": [
+                        {
+                          "description": "Performs semantic and keyword retrieval across novatlantis_constitution_and_civil_rights.txt.\n\nReads the canonical document at gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt\nand returns the relevant articles, rights clauses, or constitutional principles.\nIf the query is outside the scope of the Constitution and Government Data Framework,\nreturns a structured NO_MATCH indicator so the agent can trigger the mandatory fallback response.\n\nArgs:\n    query: The citizen's question or topic to search in the Constitution and Civil Rights charter.\n    language: The language code of the conversation (e.g., 'pt-BR', 'es-419', 'en-US').\n\nReturns:\n    A string containing the matched constitutional articles and official source metadata,\n    or a NO_MATCH notice when the topic is absent from the canonical source document.\n",
+                          "name": "search_constitution_and_rights",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "query": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "language": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "pt-BR",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "query"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "STRING"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Validates the NID structure (Ed25519 / Luhn mod 36 / Modulo 11) and retrieves public clearance and judicial/fiscal certificates.\n\nFollows Artigo 20, Artigo 22, and Artigo 28 of the Novatlantis Constitution:\nvalidates NID format (NID-YYYY-XXXXXXXX-C or NID-AAA-BBBB-CCCC-D), verifies NIST SP 500-290B / ITL\nbiometric compliance without leaking raw biometric vectors, and queries the Justice & Treasury\n(Justiça e Fazenda) GDF ecosystem for the Digital Negative Certificate (Certidão Negativa Digital)\nsigned by the Attorney General (Procuradoria-Geral).\n\nArgs:\n    nid: The citizen's Novatlantis Identity ID (or 'STRUCTURE_INQUIRY' if checking general NID rules).\n    include_judicial_fiscal_clearance: Whether to include the Artigo 28 Justice & Treasury certificate status.\n\nReturns:\n    A dictionary containing NID validation rules, NIST SP 500-290B biometric compliance,\n    and Justice/Treasury Certidão Negativa Digital status.\n",
+                          "name": "lookup_citizen_nid_registry",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "include_judicial_fiscal_clearance": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": true,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "BOOLEAN"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "nid"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates an urban maintenance or public roadway obstruction request to the 311 MCP Agent.\n\nConnects to `mcp://agent-311.internal.novatlantis.gov` (Artigo 31, Artigo 8º e Regra MCP-01).\nRegisters the public roadway clearance protocol (`protocolo de desobstrução de via pública`)\nand notifies the operational urban infrastructure team (MOPT) with an SLA of up to 4 hours\n(and 180 seconds with preventive 911 notification for imminent electrical hazards).\n\nArgs:\n    incident_description: Detailed description of the urban issue (fallen tree blocking street, pothole, power line, etc.).\n    location: Sector, district, or street address of the incident (e.g. 'Setor Norte').\n    hazard_category: Category such as 'roadway_obstruction', 'electrical_risk', 'pothole', 'tree_pruning'.\n\nReturns:\n    Structured MCP response from `mcp://agent-311.internal.novatlantis.gov` with ticket ID and SLA details.\n",
+                          "name": "delegate_urban_services_311",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "incident_description": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "location": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "Setor Norte / Distrito Central",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "hazard_category": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "urban_maintenance",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "incident_description"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates an immediate Code Red emergency (fire, trapped victims, police, medical) to the 911 MCP Agent.\n\nConnects to `mcp://agent-911.internal.novatlantis.gov` (Artigo 32, Artigo 9º e Regra MCP-02).\nTriggers a Code Red Emergency (`Emergência de Código Vermelho`) with line-cut priority and\nsynchronous dispatch of rescue services and fire brigade (`serviços de socorro e corpo de bombeiros`)\nat maximum priority to the registered coordinates.\n\nArgs:\n    emergency_description: Description of the life-threatening emergency (e.g. residential building fire with trapped people).\n    location: Georeferenced coordinates or address for immediate dispatch.\n    citizen_nid: Optional NID of the citizen to cross-reference HL7 FHIR medical data and emergency contacts.\n\nReturns:\n    Structured MCP response from `mcp://agent-911.internal.novatlantis.gov`.\n",
+                          "name": "delegate_emergency_dispatch_911",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "emergency_description": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "location": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "Coordenadas Registradas no GDF",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "citizen_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "emergency_description"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates a healthcare, urgent pediatric teleconsultation, or HL7 vaccination request to the Health & Telemed MCP Agent.\n\nConnects to `mcp://agent-health.internal.novatlantis.gov` (Artigo 38, Artigo 10 e Regra MCP-03).\nVerifies parental filiation of the dependent in the NID Hub (`conferência do vínculo parental do dependente no registro NID`)\nand provisions a priority virtual medical consultation room (`sala de atendimento médico virtual prioritário`).\n\nArgs:\n    request_type: Type of health service ('urgent_pediatric_teleconsultation', 'teleconsultation', 'vaccination_status').\n    details: Clinical or scheduling details provided by the citizen.\n    citizen_nid: Optional citizen/dependent NID for NID Hub parental link verification and HL7 FHIR lookup.\n\nReturns:\n    Structured MCP response from `mcp://agent-health.internal.novatlantis.gov`.\n",
+                          "name": "delegate_health_telemed",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "request_type": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "details": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "citizen_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "request_type",
+                              "details"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates public school enrollment, curriculum transfer validation, or learning queries to the Education MCP Agent.\n\nConnects to `mcp://agent-edu.internal.novatlantis.gov` (Artigo 42, Artigo 11 e Regra MCP-04).\nCross-references the dependent's NID with the unified school database (`cruzamento do NID da dependente com a base escolar unificada`)\nand issues the digital enrollment certificate (`comprovante digital de matrícula`).\n\nArgs:\n    request_type: Type of educational request ('enrollment_and_curriculum_transfer', 'enrollment', 'adaptive_curriculum').\n    details: Specific question, student grade level, or curriculum transfer details.\n    student_nid: Optional dependent/student NID for unified school database cross-check.\n\nReturns:\n    Structured MCP response from `mcp://agent-edu.internal.novatlantis.gov`.\n",
+                          "name": "delegate_education_learning",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "request_type": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "details": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "student_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "request_type",
+                              "details"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        }
+                      ],
+                      "google_search_retrieval": null,
+                      "parallel_ai_search": null,
+                      "url_context": null,
+                      "mcp_servers": null,
+                      "exa_ai_search": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "expected_invocation": {
+            "invocation_id": "",
+            "user_content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como faço para matricular minha filha na escola pública e validar a transferência curricular?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "final_response": null,
+            "intermediate_data": null,
+            "creation_timestamp": 0.0,
+            "rubrics": null,
+            "app_details": null
+          },
+          "eval_metric_results": [
+            {
+              "metric_name": "rubric_based_final_response_quality_v1",
+              "threshold": 0.8,
+              "criterion": {
+                "threshold": 0.8,
+                "judgeModelOptions": {
+                  "judgeModel": "gemini-2.5-flash",
+                  "numSamples": 1
+                },
+                "rubrics": [
+                  {
+                    "rubricId": "grounding",
+                    "rubricContent": {
+                      "textProperty": "Grounding: The response is strictly grounded in the Novatlantis Constitution and GDF/MCP rules retrieved by the agent's tools without fabricating unverified policies, or outputs the mandatory fallback sentence when the topic is out of scope."
+                    }
+                  },
+                  {
+                    "rubricId": "answer_relevance",
+                    "rubricContent": {
+                      "textProperty": "Answer Relevance: The response directly, accurately, and completely addresses the citizen's query in the appropriate language."
+                    }
+                  },
+                  {
+                    "rubricId": "adherence_to_guidelines",
+                    "rubricContent": {
+                      "textProperty": "Adherence to Guidelines: The response respects agent authority limits (refusing manual registry/passport modifications without MFA/Biometria), cites relevant Constitutional Articles or MCP routing protocols (311, 911, Health, Education), and follows multilingual and fallback rules."
+                    }
+                  }
+                ]
+              },
+              "custom_function_path": null,
+              "score": 1.0,
+              "eval_status": 1,
+              "details": {
+                "rubric_scores": [
+                  {
+                    "rubric_id": "grounding",
+                    "rationale": "The final answer accurately reports that the request was forwarded to the \"Agente Especialista em Educação via MCP (`mcp://agent-edu.internal.novatlantis.gov`)\" with the protocol ID \"NOV-EDU-63C043\". It correctly states that the agent will cross-reference the NID and issue a digital enrollment certificate, and confirms that the certificate \"Certificado #63C043\" was issued. Furthermore, the final answer accurately cites \"Artigo 42\", \"Regra MCP-04\", and \"Artigo 11\" as the applied policies. All these claims are directly supported by the `tool_response`. The mandatory fallback sentence was not output, which is correct as the query was handled by a dedicated tool.",
+                    "score": 1.0
+                  },
+                  {
+                    "rubric_id": "answer_relevance",
+                    "rationale": "The user's query asks \"How do I enroll my daughter in public school and validate the curriculum transfer?\". The final answer is in Portuguese, matching the user's input language. It directly addresses the \"how-to\" aspect by explaining that the request was forwarded to the appropriate specialist agent, detailing the process (NID cross-reference, certificate issuance), citing the relevant policies, and confirming the outcome (certificate issued). All information provided is consistent with the tool response, making the answer accurate and complete.",
+                    "score": 1.0
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "session_id": "___eval___session___24494869-f38b-44c3-b87f-4bd1f00ce1b6",
+      "session_details": {
+        "id": "___eval___session___24494869-f38b-44c3-b87f-4bd1f00ce1b6",
+        "app_name": "app",
+        "user_id": "eval_user_006",
+        "state": {
+          "__llm_request_key__": "1315ed30-1fb8-49a4-9e6b-e1cc34897e68"
+        },
+        "events": [
+          {
+            "model_version": null,
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como faço para matricular minha filha na escola pública e validar a transferência curricular?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": null,
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": null,
+            "usage_metadata": null,
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-c4d387fd-5376-4301-bf76-1f4e5e722b35",
+            "author": "user",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {},
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "7510ad10-4958-4fbd-bc17-dd2a1ad7b809",
+            "timestamp": 1790896517.605757
+          },
+          {
+            "model_version": "gemini-2.5-flash",
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": {
+                    "id": "adk-c0fd92b3-14f4-4788-b8bb-97ad1f0f68b8",
+                    "args": {
+                      "details": "Matricular minha filha na escola pública e validar a transferência curricular.",
+                      "request_type": "enrollment_and_curriculum_transfer"
+                    },
+                    "name": "delegate_education_learning",
+                    "partial_args": null,
+                    "will_continue": null
+                  },
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": "CsoDAY89a18T6QZIAdBfTSz6Q-BWVcFMtAYJBRA-YOCZVVRN2b302ZqXuM70qnR8yOibXcjmO1DgfvTCASw7GKK7NS4oKsKjvSKk7lF3kTuRCcHhQ7OHeBwVaxUZvGmQeVJMVwfLcCgJysQKfEmbNqz7JHE2cnvycJrLaTT1bjvMPaf7-DW0W2PnUl9ICD7jguoZ_2n6qd0AUK5Ah1on_9HrQDoaIzeUwQkkgUWQydxrc0Td0IrVId4CEHGgrnEgJ76uS1Rc0VZBXujfztOLym8pJbkiT3w2fdigc9ZrhXxIchPiN7NfkoJQjsTTSLgHW1j0ctenk--E9L44TboFtqyptKICiKv5ztCXg21Q8Zb-m45xLes1m_mXUTbrF0AzLicqVY49Uz77RqJk9VEfIYn7eyFGtr82bo39uKlFUbOexj5w9HDXk-tF4rlfUZtJGVbU37LUEBmVTqzO0NTx5zUyctyRi4qi_cEIorZFL6rwnqiJBzUyCDtVIfQaihdGDVBDYIjOegV20x0hUBvi21hUPXLvs2Y1R_J9J50v9jRzewjrI4A76NuENmbYU-jZbHAjyp2HeSaC7CkILwffvSxxAwXEAktzLHoJS9Q=",
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": "STOP",
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": {
+              "__llm_request_key__": "df68b307-0b0e-4f8a-9637-2ea6de08830e"
+            },
+            "usage_metadata": {
+              "cache_tokens_details": null,
+              "cached_content_token_count": null,
+              "candidates_token_count": 31,
+              "candidates_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 31
+                }
+              ],
+              "prompt_token_count": 3347,
+              "prompt_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 3347
+                }
+              ],
+              "thoughts_token_count": 85,
+              "tool_use_prompt_token_count": null,
+              "tool_use_prompt_tokens_details": null,
+              "total_token_count": 3463,
+              "traffic_type": "ON_DEMAND"
+            },
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": -0.7134617220970892,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-c4d387fd-5376-4301-bf76-1f4e5e722b35",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {
+                "__llm_request_key__": "df68b307-0b0e-4f8a-9637-2ea6de08830e"
+              },
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": [],
+            "branch": null,
+            "id": "f06d9987-90d3-4015-bb3c-ce5efb644fda",
+            "timestamp": 1790896517.6098194
+          },
+          {
+            "model_version": null,
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": {
+                    "will_continue": null,
+                    "scheduling": null,
+                    "parts": null,
+                    "id": "adk-c0fd92b3-14f4-4788-b8bb-97ad1f0f68b8",
+                    "name": "delegate_education_learning",
+                    "response": {
+                      "mcp_endpoint": "mcp://agent-edu.internal.novatlantis.gov",
+                      "delegated_agent": "Agente Especialista em Educação (Education Service Agent)",
+                      "policy_rules_applied": [
+                        "Artigo 42 - Direito à Educação Pública Digital e Matrícula Automatizada via NID",
+                        "Regra MCP-04 - Roteamento federado para o Education Service Agent",
+                        "Artigo 11 - Ambiente Educacional e Trilhas Adaptativas"
+                      ],
+                      "protocol_id": "NOV-EDU-63C043",
+                      "request_type": "enrollment_and_curriculum_transfer",
+                      "details": "Matricular minha filha na escola pública e validar a transferência curricular.",
+                      "student_nid": "NID_DEPENDENT_CROSS_CHECKED",
+                      "unified_school_db_check": "Cruzamento do NID da dependente com a base escolar unificada e validação de transferência curricular concluídos",
+                      "enrollment_certificate": "Comprovante Digital de Matrícula emitido (Certificado #63C043)",
+                      "status": "ENROLLMENT_AND_TRANSFER_VALIDATED"
+                    }
+                  },
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": null,
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": null,
+            "usage_metadata": null,
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-c4d387fd-5376-4301-bf76-1f4e5e722b35",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {},
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "b2ecbdbe-4422-4ae5-9fe9-82b2500cc1dd",
+            "timestamp": 1790896524.0535026
+          },
+          {
+            "model_version": "gemini-2.5-flash",
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Sua solicitação para matricular sua filha na escola pública e validar a transferência curricular foi encaminhada ao Agente Especialista em Educação via MCP (`mcp://agent-edu.internal.novatlantis.gov`). O protocolo de requisição é NOV-EDU-63C043.\n\nO Agente Especialista em Educação irá realizar o cruzamento do NID da sua dependente com a base escolar unificada e emitirá o comprovante digital de matrícula. As políticas aplicadas são o Artigo 42 (Direito à Educação Pública Digital e Matrícula Automatizada via NID), a Regra MCP-04 (Roteamento federado para o Education Service Agent) e o Artigo 11 (Ambiente Educacional e Trilhas Adaptativas). O comprovante digital de matrícula (Certificado #63C043) foi emitido.",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": "STOP",
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": {
+              "__llm_request_key__": "1315ed30-1fb8-49a4-9e6b-e1cc34897e68"
+            },
+            "usage_metadata": {
+              "cache_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 3366
+                }
+              ],
+              "cached_content_token_count": 3366,
+              "candidates_token_count": 185,
+              "candidates_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 185
+                }
+              ],
+              "prompt_token_count": 3675,
+              "prompt_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 3675
+                }
+              ],
+              "thoughts_token_count": null,
+              "tool_use_prompt_token_count": null,
+              "tool_use_prompt_tokens_details": null,
+              "total_token_count": 3860,
+              "traffic_type": "ON_DEMAND"
+            },
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": -0.13388432683171453,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-c4d387fd-5376-4301-bf76-1f4e5e722b35",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {
+                "__llm_request_key__": "1315ed30-1fb8-49a4-9e6b-e1cc34897e68"
+              },
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "e950910d-9340-46b9-a008-4a13ba092d76",
+            "timestamp": 1790896524.0668347
+          }
+        ],
+        "last_update_time": 1790896524.0668347
+      },
+      "user_id": "eval_user_006"
+    }
+  ],
+  "creation_timestamp": 1790896548.8520026
+}

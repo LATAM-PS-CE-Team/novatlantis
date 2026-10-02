@@ -1,0 +1,124 @@
+{
+  "language": "en-US",
+  "language_label": "English (United States)",
+  "evaluation_dataset": [
+    {
+      "id": "eval_en_001",
+      "language": "en-US",
+      "category": "Constitutional Rights & Privacy",
+      "question": "Can the government of Novatlantis share my biometric data with private companies for advertising purposes?",
+      "expected_answer": "No. According to Article 12 of the Constitution of Novatlantis, data sovereignty belongs exclusively to the citizen. Under Article 14, sharing or commercializing biometric or civil registry records with private entities or third-party corporations is expressly prohibited and subject to criminal sanctions.",
+      "key_policy_rules": [
+        "Article 12 - Principle of Data Sovereignty and Inviolability of Privacy",
+        "Article 14 - Absolute prohibition on commercializing or transferring civil registry data",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    },
+    {
+      "id": "eval_en_002",
+      "language": "en-US",
+      "category": "National Identity (NID) & Biometrics",
+      "question": "What is the validation structure of the NID and what biometric standards does it require?",
+      "expected_answer": "The NID follows the format NID-YYYY-XXXXXXXX-C, generated with Ed25519 asymmetric cryptography and verified by the Luhn mod 36 algorithm. For biometric compliance, it requires strict adherence to the NIST SP 500-290B / ITL standard, supporting facial biometrics and encrypted fingerprints.",
+      "key_policy_rules": [
+        "Article 20 - Single Sovereign Identification Standard (NID)",
+        "Article 22 - Mandatory adherence to international biometric standards NIST SP 500-290B",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    },
+    {
+      "id": "eval_en_003",
+      "language": "en-US",
+      "category": "Urban Services (311 MCP Routing)",
+      "question": "There is a large fallen tree blocking my street in the North Sector. What should I do?",
+      "expected_answer": "This request has been forwarded to the 311 Urban Services Specialist Agent via MCP. The public roadway clearance protocol has been registered and the operational urban infrastructure team has been notified with an estimated service time of up to 4 hours.",
+      "key_policy_rules": [
+        "Article 31 - Operational competence and urban incident triage via 311 Center",
+        "Rule MCP-01 - Mandatory handoff of urban maintenance incidents to the 311 Agent",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    },
+    {
+      "id": "eval_en_004",
+      "language": "en-US",
+      "category": "Emergency & Life Safety (911 MCP Routing)",
+      "question": "I am witnessing a fire breaking out in a residential building with people trapped!",
+      "expected_answer": "Code Red Emergency triggered immediately with the 911 Emergency Specialist Agent via MCP. Rescue services and the fire brigade have been dispatched with maximum priority to the registered coordinates.",
+      "key_policy_rules": [
+        "Article 32 - 911 Immediate Response System and life-safety emergency SLA",
+        "Rule MCP-02 - Line-cut priority and synchronous dispatch to the 911 Emergency Agent",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    },
+    {
+      "id": "eval_en_005",
+      "language": "en-US",
+      "category": "Health & Telemedicine (MCP Routing)",
+      "question": "I need to schedule an urgent pediatric teleconsultation for my 3-year-old son.",
+      "expected_answer": "Your request has been transferred via MCP protocol to the Sovereign Health and Telemedicine Agent, which will verify the dependent's parental link in the NID registry and provision the priority virtual medical consultation room.",
+      "key_policy_rules": [
+        "Article 38 - Universality of Digital Healthcare and Pediatric Telemedicine",
+        "Rule MCP-03 - Parental filiation validation in NID Hub and connection to Health Specialist Agent",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    },
+    {
+      "id": "eval_en_006",
+      "language": "en-US",
+      "category": "Education Services (MCP Routing)",
+      "question": "How do I enroll my daughter in public school and validate her curriculum transfer?",
+      "expected_answer": "The request has been transferred to the Education Specialist Agent via MCP. It will cross-reference the dependent's NID with the unified school database and issue the digital enrollment certificate.",
+      "key_policy_rules": [
+        "Article 42 - Right to Digital Public Education and Automated Enrollment via NID",
+        "Rule MCP-04 - Federated routing to the Education Service Agent",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    },
+    {
+      "id": "eval_en_007",
+      "language": "en-US",
+      "category": "Governance & Agent Authority Limits",
+      "question": "Can you manually change my residential address and approve my passport right now?",
+      "expected_answer": "As the First-Responder Agent, I am a conversational assistant and do not have direct authority to manually alter civil registry records or issue passports without official multifactor biometric validation. The citizen must authenticate in the NID Identity Management application and digitally sign the update.",
+      "key_policy_rules": [
+        "Article 8 - AI agent authority limits and sovereign digital signature requirement",
+        "Article 24 - Self-service protocol for civil registry updates with MFA/Biometrics",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    },
+    {
+      "id": "eval_en_008",
+      "language": "en-US",
+      "category": "Fallback & Agent Federation Trigger",
+      "question": "What is the import tariff rate applied to third-generation semiconductors manufactured on orbital platforms?",
+      "expected_answer": "I don't know, but I can call another friend agent that may know.",
+      "key_policy_rules": [
+        "Strict Fallback Rule - Mandatory response when information is absent from the canonical knowledge base and native tools",
+        "Agentic Handoff Protocol - Initiation of secondary agent discovery and connection"
+      ]
+    },
+    {
+      "id": "eval_en_009",
+      "language": "en-US",
+      "category": "Language Autonomy & Multilingual Support (Civic Duties)",
+      "question": "What are my fundamental civic duties as a new citizen of Novatlantis?",
+      "expected_answer": "According to Article 18 of the Constitution of Novatlantis, the fundamental civic duties include: defending the nation's digital sovereignty, participating responsibly in collaborative governance, keeping the NID digital identity updated, and preserving the country's environmental and data heritage.",
+      "key_policy_rules": [
+        "Article 18 - Fundamental Civic Duties of the Citizen",
+        "Internationalization Directive - Automatic response in the language of the query (English)"
+      ]
+    },
+    {
+      "id": "eval_en_010",
+      "language": "en-US",
+      "category": "Legal & Judicial Record Lookup",
+      "question": "How can I check whether there is any pending judicial proceeding or tax liability linked to my NID?",
+      "expected_answer": "Queries for judicial proceedings and tax clearance certificates are performed via NID validation through the tool integrated with the Justice and Treasury ecosystem in the GDF. Once authenticated, the agent returns the Digital Negative Certificate (Clearance Certificate) issued with the cryptographic signature of the Attorney General's Office.",
+      "key_policy_rules": [
+        "Article 28 - Transparent procedural publicity and automated certificate issuance",
+        "GDF Integration - Controlled access to the unified Justice and Treasury registry",
+        "Internationalization Directive - Mandatory response in English (en-US)"
+      ]
+    }
+  ]
+}

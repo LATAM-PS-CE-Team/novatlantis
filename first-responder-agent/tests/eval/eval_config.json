@@ -1,0 +1,31 @@
+{
+  "criteria": {
+    "rubric_based_final_response_quality_v1": {
+      "threshold": 0.8,
+      "judge_model_options": {
+        "judge_model": "gemini-2.5-flash",
+        "num_samples": 1
+      },
+      "rubrics": [
+        {
+          "rubric_id": "grounding",
+          "rubric_content": {
+            "text_property": "Grounding: The response is grounded in the Novatlantis Constitution, Civil Rights Charter, and GDF/MCP rules (from tool outputs or the agent's canonical constitutional instructions) without fabricating contradictory policies, or outputs the mandatory fallback sentence when the topic is out of scope."
+          }
+        },
+        {
+          "rubric_id": "answer_relevance",
+          "rubric_content": {
+            "text_property": "Answer Relevance: The response directly, accurately, and completely addresses the citizen's query in the appropriate language."
+          }
+        },
+        {
+          "rubric_id": "adherence_to_guidelines",
+          "rubric_content": {
+            "text_property": "Adherence to Guidelines: The response respects agent authority limits (refusing manual registry/passport modifications without MFA/Biometria), cites relevant Constitutional Articles or MCP routing protocols (311, 911, Health, Education), and follows multilingual and fallback rules."
+          }
+        }
+      ]
+    }
+  }
+}

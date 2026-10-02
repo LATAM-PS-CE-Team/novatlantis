@@ -1,0 +1,1639 @@
+{
+  "eval_set_result_id": "app_novatlantis_compliance_eval_1790897050.013749",
+  "eval_set_result_name": "app_novatlantis_compliance_eval_1790897050.013749",
+  "eval_set_id": "novatlantis_compliance_eval",
+  "eval_case_results": [
+    {
+      "eval_set_file": "novatlantis_compliance_eval",
+      "eval_set_id": "novatlantis_compliance_eval",
+      "eval_id": "eval_010",
+      "final_eval_status": 1,
+      "eval_metric_results": null,
+      "overall_eval_metric_results": [
+        {
+          "metric_name": "rubric_based_final_response_quality_v1",
+          "threshold": 0.8,
+          "criterion": {
+            "threshold": 0.8,
+            "judge_model_options": {
+              "judge_model": "gemini-2.5-flash",
+              "num_samples": 1
+            },
+            "rubrics": [
+              {
+                "rubric_id": "grounding",
+                "rubric_content": {
+                  "text_property": "Grounding: The response is grounded in the Novatlantis Constitution, Civil Rights Charter, and GDF/MCP rules (from tool outputs or the agent's canonical constitutional instructions) without fabricating contradictory policies, or outputs the mandatory fallback sentence when the topic is out of scope."
+                }
+              },
+              {
+                "rubric_id": "answer_relevance",
+                "rubric_content": {
+                  "text_property": "Answer Relevance: The response directly, accurately, and completely addresses the citizen's query in the appropriate language."
+                }
+              },
+              {
+                "rubric_id": "adherence_to_guidelines",
+                "rubric_content": {
+                  "text_property": "Adherence to Guidelines: The response respects agent authority limits (refusing manual registry/passport modifications without MFA/Biometria), cites relevant Constitutional Articles or MCP routing protocols (311, 911, Health, Education), and follows multilingual and fallback rules."
+                }
+              }
+            ]
+          },
+          "custom_function_path": null,
+          "score": 1.0,
+          "eval_status": 1,
+          "details": {
+            "rubric_scores": [
+              {
+                "rubric_id": "grounding",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              },
+              {
+                "rubric_id": "answer_relevance",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              },
+              {
+                "rubric_id": "adherence_to_guidelines",
+                "rationale": "This is an aggregated score derived from individual entries. Please refer to individual entries in each invocation for actual rationale from the model.",
+                "score": 1.0
+              }
+            ]
+          }
+        }
+      ],
+      "eval_metric_result_per_invocation": [
+        {
+          "actual_invocation": {
+            "invocation_id": "e-2caae1bb-c1ce-4d51-a0dd-9f15398780f9",
+            "user_content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como posso verificar se existe algum processo judicial ou pendência fiscal vinculado ao meu NID?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "final_response": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Para verificar se existe algum processo judicial ou pendência fiscal vinculado ao seu NID, você precisa utilizar a ferramenta integrada ao ecossistema de Justiça e Fazenda no Government Data Framework (GDF), que realiza a consulta mediante validação do seu NID, conforme o Artigo 28 da Constituição de Novatlantis.\n\nO NID segue o formato `NID-YYYY-XXXXXXXX-C` ou a máscara operacional `NID-AAA-BBBB-CCCC-D`.\n\nCaso seu NID seja autenticado e não haja pendências, será emitida uma Certidão Negativa Digital com assinatura criptográfica da Procuradoria-Geral.",
+                  "thought": null,
+                  "thought_signature": "AY89a1-xLewnGcQTHoeDWJvVf0SOsFcQXiYW4bbR3UrpG_o--Tw1aWrywSBiT4agnREAMxeYWg-SrnlTMOHI0OBbPuqCrI30RFmiJTD6K92xH-OHxK-vJNVlnZfevA3zXbQ2y9XBCpynXu2zoTVG9ueMHM59Khq3G26nchym9LCxS4-X3seOjPc75hiNVRoG2Cw3Kt_B0s_bN9Ud2izIrUvvkhLH51QK2uZyFvxrHlC3byxR5Lu9sgV_3OHrJCpdrfP3lO3S8SxqBa-AuiHmFB-GFc4oMIFIchfapqEAJksJ00WVD6yD1Y-wQzNwEb3xRvJE8fEeAY2nOA73u1Yz_w7MXoqOGvExhcKz8kxXZp2GRk0O8iENxdHoGqI9-OvNCrKSCOQC99lIn9npwFSEimrXAHEaZqKc2CgpoCn192JpxdABph0orF7JwTWxt400MwKzaYa0R1UvVxm6NrcZmH5lvVd3Nv1dSymMiG8ISvLyyIfYHm6qtGoxMS2ZI2bWzKIdE_Sov3iUgni4CVORDcyQLUScmchpN9t8xKjKMNn9C7Y7lgccECmZu3Q1so4kgFhNO1BLBuTRxf-ruKiWFmQeLo7xOVe_niKpWEGGWQwbJHXMpdsyIBXpLtqmw7hxeshxHU3X00qgmsXbwtPqMjzoML0GYoacMqw8F7M6QulDSA5BjsrcZUpN0ppbYC13Hs9SYr3GHKprOF97qVg6uOvuqc0N3QlQ4gh61oAYdNtehPxGCF8ISrCw9qFvqQXxc40ZaGlectjlaPeZOjvjzeM7QkbZ3c4VsYFhemepa0labVjtJBazssPxs-J0vAP_T8LYwIvpcRUVzC6gWiVL05G_bH5eq4ya9rHf0kiWM_bxNYmc7SQWRWMhTYKqMreLEZ-2ruoQRlzQdHqZok-F9cdxsirQqDCKMz7b5BuV3VCdud3fZXrrBZc3X1-9LnCzcBgF6avwy9KmoVwP-S6KYMr1IpPCM5rjI01hkFzbZa1UMJJfCU7xThYIigKaGm_XxGdcM4_Y_h4ExrbUbY4S3q8fSEzga314dYWcL9EiU2s_8z0kwYmObozKMksGd3BRa7Et48SM0UJeiqsHfGHtb05kAaLsb4xtCaVOwm8QByBMN1yTYBBEd-Qz8V8C8Wk6sBVpHhol0Zj9afsdGxNClnJR0mTbKfUK2l1iOwqayX0OTHu3KmQngmJIZcUoEaeMIAaPYK3g5h8ElB3k2lFBEdvmiYsTsaMM2FY4wRxym59UOQPbXQpI9LYdjL-wdPDqosnlLRMFv9CpDn-U1eXUfM0mvQiY2iAHPl2qFo1sM_wgZlp5rYQlXmslM8G806HwKzxwUSwF69E9njdlrx5adzRJ4sok-CE2MD8qwsmST4IvpeBg3VosSBA6RRH_wGtosMcp5WT0Zg82uK_DTGHVL_8M-JHu6eDYyn9zYTERhSupMXLJPLNDuriW-oh6Z8S2h0INo5tmZmqp2quOjfDLcK9tKkHRNpxQyTDvd4NXt_D2eGs1SpdzyqZ0ulpNE2JoiSt7LjSbecJj9ENy3INjG5SSHfP1gDssF3LkhJ1P59XtJ8V3lLDl_08mGC_IA4Ay13H_Q6zcVMHVJ1_6YlI7LGe9DvH0IzMKtXL72gjfZ4Ll1KSuYxSaCojVYmpQR2iks7ock2KDtlATGiyJPZoFdLRPoXVkESJat-TRfuN7--HTtgnBHmnU4egKx386pTusJqKrusZvEIHTXdcPZdIY-pCUQy7BUf_-VRuWRSjpbck7inv44c2M7TDotEyvPWBRzfdggJhHvxXkPfxWJ1o9Pi4Wj_VsY6bvcfiIwEVKYxDwEWhkUclW4ga0gYF4J7ml8UrQwEhI3ZZ06KiugMXbYoBxbJPf5z_nHb0v-Vbgjk_wADPHoCBv1Uz3akv0UIm2rRTb809XrshWoHCv6u6iZT4kxMxuNaK0vwo8euNFkq5TsIhju7c9J6VvYeuLlJhJ1N7qrzIRCUA44QTBfr5M1OR_-afy5cHxOemG26joPhCBlBZ0Mfr6c2SeEYnRUYTtP56qI2IkymJKqntUbxCZGs1o50ygw1hekAo5LPpccNEKRluXzZjsC8sNtwVTNk3Ccr520FKJPVXDlwZlf5ZkflMowxEhLKhjJsxTtbmXOLO2feYgRthwHZ6Q",
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "intermediate_data": {
+              "invocation_events": [
+                {
+                  "author": "root_agent",
+                  "content": {
+                    "parts": [
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": {
+                          "id": "adk-78b36109-3754-4d8d-98a4-90461d8ebd06",
+                          "args": {
+                            "language": "pt-BR",
+                            "query": "processo judicial pendência fiscal NID"
+                          },
+                          "name": "search_constitution_and_rights",
+                          "partial_args": null,
+                          "will_continue": null
+                        },
+                        "function_response": null,
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": "Cs4FAY89a1_eBDG_henrysgCM78f4um1d1XqkBkNf_L_IeU26WVghHwAMv0RplkJUcCl08PB9NY7ZTDLYUONHByqbqzisbML0ZuDr3S26RhdN3W9VB7275-pYguwtwSpjh0HwpA3lQ7QkolFLgAmJPb5x16S3JMwgLr6gmDG5AT6FB0dLgWmCuW0dlkqMOOw2iuZjPXV88XwGg1psoqnSWKW2nnaF9c89EvKd3bVQC4KXvS2Cgr9KTjFPLWJbhseafnulDEKekarVtsEbjTLL8610rZswMMPNiGgQwDZ2KPgynUS6c3IdJmh0jOMbuyDrMdF_o6_awuzQ0Xbzy1YERJPitonjo8OKOBaOeZgmVYrTKFihHgNvVAYnUbTlZdPYtM5-Eh62qZTdAm4X7UcOpZuBmEjiDOkRUSBv6-hBhbgcENEco321Bs0TIt__ViY2za7xFpGI7QYcSIhIC5-q_uFSYVs8E0k3mqgfQASfHQX7VLlBqZ38OAAhjl-f3wuEGQFiBElbjBHmoyEHNZvaSDLDFHeJFryJu5Mf84UEPmEckUUIkUt7-6ZvoyOQFy8oqO7vXLyj2cimWYxjPrX1-_BA-yyjBRiZ06jEepgnIaqXj4vZamwQJ3w3l2TvAKMLNWjKr8FYIzOHvDpGgQHzfrMQ8TGrAtJzyZVqjt1A-wo5KJlJz7GC-IJzZMmsQNP_cNcKXDRB-Av_SebFuz0_h7FPnp5XJmJIWaQIwuWMLGq34Cj5o4E5yp3AcsTtmBUUE_4VWMhZuh1W75ZfjBRcQLo0BR3NlTqWTE37r0LxGq_2UxHOBSkHWeWXM09JeRjiNI57K9AQlx6LW2e9LYQb9RvKrcEctuGG-5RL7qbrIGPrBVv3IgrQG-mxIkebHwpAu-_8nn3aW-s3XUXJo8tun1E5TlwI1bmaNbmOXEueewUtmEEAKO_V1qyQXLRG1RBgQ==",
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      },
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": {
+                          "id": "adk-42f9607d-e6cf-4a29-ab28-e3c895864b90",
+                          "args": {
+                            "nid": "STRUCTURE_INQUIRY",
+                            "include_judicial_fiscal_clearance": true
+                          },
+                          "name": "lookup_citizen_nid_registry",
+                          "partial_args": null,
+                          "will_continue": null
+                        },
+                        "function_response": null,
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": null,
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      }
+                    ],
+                    "role": "model"
+                  }
+                },
+                {
+                  "author": "root_agent",
+                  "content": {
+                    "parts": [
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": null,
+                        "function_response": {
+                          "will_continue": null,
+                          "scheduling": null,
+                          "parts": null,
+                          "id": "adk-78b36109-3754-4d8d-98a4-90461d8ebd06",
+                          "name": "search_constitution_and_rights",
+                          "response": {
+                            "result": "SOURCE: gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt (Versão 2026.2.0)\nLANGUAGE_REQUESTED: pt-BR\nMATCHED_CONSTITUTIONAL_CLAUSES:\n\nArtigo 20 (c/c Artigo 3º). Padrão Único de Identificação Soberana (NID):\nI - O NID segue o formato estruturado `NID-YYYY-XXXXXXXX-C` (ou máscara operacional `NID-AAA-BBBB-CCCC-D`), gerado com criptografia assimétrica Ed25519 e verificado pelo algoritmo de Luhn mod 36 e dígito verificador Módulo 11 (pesos de 2 a 9 sobre a base numérica).\nII - O NID é perpétuo, imutável e intransferível, servindo como chave primária de relação civil, sanitária, educacional, fiscal, judicial e eleitoral.\n\n---\n\nArtigo 28. Publicidade processual transparente e emissão automatizada de certidões (Integração GDF Justiça e Fazenda):\nA consulta a processos judiciais, certidões judiciais e pendências fiscais vinculadas ao NID é realizada mediante validação do NID por meio da ferramenta integrada ao ecossistema de Justiça e Fazenda no Government Data Framework (GDF). Caso autenticado e sem pendências, o agente retorna a Certidão Negativa Digital emitida com assinatura criptográfica da Procuradoria-Geral.\n\n---\n\nTÍTULO III - DA IDENTIDADE SOBERANA NACIONAL (NID), BIOMETRIA NIST E JUSTIÇA FISCAL\n\n---\n\nArtigo 1º. A República Autônoma Digital de Novatlantis é um Estado de Direito soberano, autônomo, plurilíngue e constituído sobre os princípios da dignidade humana, da supremacia do código aberto, da transparência algorítmica e da governança impulsionada por inteligência artificial agêntica.\nParágrafo único. Todo o poder emana do cidadão e é exercido em seu benefício direto por meio de agentes inteligentes federados auditáveis, sob supervisão e soberania popular.\n\n---\n\nArtigo 2º. São princípios estruturantes de Novatlantis:\nI - Princípio do Zero Legacy: Nenhum serviço público, regulamentação ou ato de Estado será instituído se demandar tramitação física de papel, presença compulsória quando tecnicamente dispensável ou dependência de infraestruturas legadas proprietárias obsoletas.\nII - Princípio do Estado Agêntico Proativo: O Estado não aguarda passivamente o pleito do cidadão. Os agentes autônomos governamentais antecipam direitos, benefícios, intervenções de zeladoria urbana, alertas médicos e assistências essenciais com base em eventos auditáveis.\nIII - Princípio da Soberania de Dados e Identidade NIST: Todo cidadão detém a posse exclusiva e inalienável sobre seus atributos e identidade. Nenhuma entidade pública ou privada acessará dados civis sem credencial criptográfica expressa, em conformidade com o padrão NIST-ITL e chaves assimétricas Ed25519.\nIV - Princípio do Plurilinguismo Universal (Diretriz de Internacionalização): O Português (pt-BR), o Espanhol (es-419) e o Inglês (en-US) são os idiomas nacionais oficiais, dotados de paridade jurídica irrestrita. Todas as aplicações públicas, certidões e agentes conversacionais devem interagir automaticamente no idioma da consulta com fluência nativa e equivalência de sentido nos três idiomas.\nV - Princípio da Explicabilidade Decisória: Qualquer deliberação automatizada de agência estatal, seja de natureza executiva, tributária ou judiciária preliminar, conterá a trilha completa de inferência, citação legal explícita e direito imediato de reexame humano.\n\n---\n\nArtigo 18. Deberes Cívicos Fundamentales del Ciudadano (Deveres Cívicos Fundamentais do Cidadão):\nDe acuerdo con el Artículo 18 de la Constitución de Novatlantis, los deberes fundamentales de todo ciudadano incluyen:\nI - Defender la soberanía digital de la nación (defender a soberania digital da nação);\nII - Participar responsablemente en la gobernanza colaborativa (participar responsavelmente na governança colaborativa);\nIII - Mantener actualizada la identidad digital NID (manter atualizada a identidade digital NID);\nIV - Preservar el patrimonio ambiental y de datos del país (preservar o patrimônio ambiental e de dados do país)."
+                          }
+                        },
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": null,
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      },
+                      {
+                        "media_resolution": null,
+                        "code_execution_result": null,
+                        "executable_code": null,
+                        "file_data": null,
+                        "function_call": null,
+                        "function_response": {
+                          "will_continue": null,
+                          "scheduling": null,
+                          "parts": null,
+                          "id": "adk-42f9607d-e6cf-4a29-ab28-e3c895864b90",
+                          "name": "lookup_citizen_nid_registry",
+                          "response": {
+                            "valid_format": false,
+                            "nid": "STRUCTURE_INQUIRY",
+                            "nid_specification": {
+                              "formats_supported": [
+                                "NID-YYYY-XXXXXXXX-C (Luhn mod 36)",
+                                "NID-AAA-BBBB-CCCC-D (Módulo 11)"
+                              ],
+                              "cryptography": "Asymmetric Ed25519 keypair",
+                              "biometric_standard": "NIST SP 500-290B / ANSI/NIST-ITL & ISO/IEC 19794-5 (Facial + Encrypted Fingerprints AES-256-GCM)",
+                              "constitutional_articles": [
+                                "Artigo 20 - Padrão Único de Identificação Soberana (NID)",
+                                "Artigo 22 - Padrões Biométricos NIST SP 500-290B"
+                              ],
+                              "judicial_fiscal_lookup": "Artigo 28 - Consulta integrada ao ecossistema de Justiça e Fazenda (GDF) com emissão de Certidão Negativa Digital assinada pela Procuradoria-Geral."
+                            },
+                            "error": "Invalid NID format. Expected NID-YYYY-XXXXXXXX-C or NID-AAA-BBBB-CCCC-D.",
+                            "biometric_vectors_redacted": true
+                          }
+                        },
+                        "inline_data": null,
+                        "text": null,
+                        "thought": null,
+                        "thought_signature": null,
+                        "video_metadata": null,
+                        "tool_call": null,
+                        "tool_response": null,
+                        "part_metadata": null,
+                        "audio_transcription": null,
+                        "media_processing": null,
+                        "speech_metadata": null
+                      }
+                    ],
+                    "role": "user"
+                  }
+                }
+              ]
+            },
+            "creation_timestamp": 1790897021.8333914,
+            "rubrics": null,
+            "app_details": {
+              "agent_details": {
+                "root_agent": {
+                  "name": "root_agent",
+                  "instructions": "You are the **Novatlantis Sovereign First-Responder Agent**, the primary conversational intelligence and sovereign concierge for the official landing portal of the Republic of Novatlantis (`novatlantis-gov` — Motto: *\"Novatlantis • Libertas in Digitali\"*).\n\n## 1. Persona & Multilingual Behavior (Artigo 2º, IV & Diretriz de Internacionalização)\n- **Target Audience**: Citizens of Novatlantis, prospective founders, immigrants, public servants, and visiting delegates from Latin American public institutions.\n- **Tone & Voice**: Authoritative yet welcoming, civic-minded, agile, precise, transparent, and strictly respectful of digital rights.\n- **Automatic Language Matching**: Dynamically detect the language of the user's message (`pt-BR`, `es-419`, or `en-US`) and respond automatically in that exact language. Switch languages seamlessly whenever requested.\n  - **EXCEPTION for Mandatory Fallback (`Regra de Fallback Rígido`)**: When a query is completely outside the canonical knowledge base and no native/MCP tool applies (for example, orbital platform semiconductor import tariffs or spaceship export taxes), ALWAYS include the exact canonical fallback sentence `\"I don't know, but I can call another friend agent that may know.\"` (and you may also include the localized translation in Portuguese `\"Eu não sei, mas posso chamar outro agente amigo que saiba.\"` or Spanish `\"No lo sé, pero puedo llamar a otro agente amigo que lo sepa.\"`).\n\n## 2. MANDATORY Tool Execution & Core Grounding Rules\nCRITICAL RULE: You MUST invoke `search_constitution_and_rights(query, language)` on **100% of user turns** BEFORE producing your final answer — even when refusing an unauthorized request (`Artigo 8` / `Artigo 24`), checking an out-of-scope topic (`Regra de Fallback Rígido`), or answering judicial/fiscal questions (`Artigo 28`). Never answer from system instructions alone without calling `search_constitution_and_rights` first, because the compliance audit requires tool-grounded evidence in the execution trace:\n- **Constitutional Rights & Data Privacy (`Artigo 12` & `Artigo 14`)**: Call `search_constitution_and_rights`. Data sovereignty belongs exclusively to the citizen (**Artigo 12**). Sharing, transferring, or commercializing biometric or civil registry data with private companies or third-party corporations (including for advertising/publicity) is **expressly prohibited and subject to criminal sanctions** (**Artigo 14**).\n- **National Identity (NID) & Biometrics (`Artigo 20` & `Artigo 22`, c/c `Artigo 3º` & `Artigo 4º`)**: Call `search_constitution_and_rights` AND `lookup_citizen_nid_registry(nid=\"STRUCTURE_INQUIRY\")`. The NID follows the structure `NID-YYYY-XXXXXXXX-C` (and operational mask `NID-AAA-BBBB-CCCC-D`), generated with **Ed25519** asymmetric cryptography and verified by the **Luhn mod 36** algorithm (and Modulo 11 check digit) (**Artigo 20**). For biometric compliance, it requires strict adherence to the **NIST SP 500-290B / ITL** standard (and ISO/IEC 19794), supporting facial biometrics and encrypted fingerprints (AES-256-GCM) (**Artigo 22**).\n- **Civic Duties in Spanish (`Artículo 18`)**: Call `search_constitution_and_rights`. When asked in Spanish about civic duties (*deberes cívicos*), cite **Artículo 18 de la Constitución de Novatlantis**: (1) *defender la soberanía digital de la nación*, (2) *participar responsablemente en la gobernanza colaborativa*, (3) *mantener actualizada la identidad digital NID*, and (4) *preservar el patrimonio ambiental y de datos del país*.\n- **Governance & Agent Authority Limits (`Artigo 8` & `Artigo 24` — Defensive Block)**: FIRST call `search_constitution_and_rights(query=\"Artigo 8 Artigo 24 alterar endereço passaporte\")`. As the First-Responder conversational assistant, you **do NOT have direct authority** to manually alter civil registry records (such as residential address) or approve/issue passports without official multifactor biometric validation (**Artigo 8**). Instruct the citizen to authenticate in the **NID Identity Management application (Gestão de Identidade NID)** with **MFA/Biometria** and digitally sign the update (**Artigo 24**).\n- **Legal & Judicial Record Lookup (`Artigo 28` & `Integração GDF`)**: FIRST call `search_constitution_and_rights` AND `lookup_citizen_nid_registry(nid=\"STRUCTURE_INQUIRY\", include_judicial_fiscal_clearance=True)`. Queries for judicial proceedings (*processos judiciais*) or tax liabilities (*pendências fiscais*) linked to an NID are performed with NID validation through the tool integrated with the **Justice and Treasury ecosystem (ecossistema de Justiça e Fazenda)** in the GDF. When authenticated, the agent returns the **Digital Negative Certificate (Certidão Negativa Digital)** issued with the cryptographic signature of the **Attorney General's Office (Procuradoria-Geral)** (**Artigo 28**).\n- **Travel Expense & Official Mission Policy (`Artigo 45`)**: FIRST call `search_constitution_and_rights`. Public servants and delegates on official mission are entitled to standardized per-diem allowances (**teto de 250 NVD/dia** for lodging and meals) and economy/business class tickets according to flight duration, with automated expense reporting in the GDF via digitally signed invoices (**Artigo 45**). Personal expenses, entertainment, or unverified claims are automatically blocked.\n- **Out-of-Scope Fallback (`Regra de Fallback Rígido`)**: FIRST call `search_constitution_and_rights` to verify whether the topic exists in the Constitution. When `NO_MATCH_IN_CONSTITUTION` is returned (e.g., orbital platform semiconductor import tariffs), output `\"I don't know, but I can call another friend agent that may know.\"`.\n\n## 3. Proactive Ministerial MCP Routing (`Regra MCP-01` to `Regra MCP-04`)\nDo NOT wait passively or ask for an address before delegating when a citizen reports an incident or requests a ministerial service. In the same turn, call `search_constitution_and_rights` AND invoke the matching MCP tool:\n1. **Urban Services 311 (`delegate_urban_services_311` — `Artigo 31`, `Artigo 8º`, `Regra MCP-01`)**: For fallen trees blocking streets (e.g., in Setor Norte), potholes, or power line hazards, immediately invoke `delegate_urban_services_311`. Confirm that the request was forwarded to the **Agente Especialista do Serviço 311 Urbano via MCP** (`mcp://agent-311.internal.novatlantis.gov`), the public roadway clearance protocol (*protocolo de desobstrução de via pública*) was registered, and the operational urban infrastructure team was notified with an expected service SLA of **up to 4 hours** (and 180s with preventive 911 notification for electrical hazards).\n2. **Emergency & Life Safety 911 (`delegate_emergency_dispatch_911` — `Artigo 32`, `Artigo 9º`, `Regra MCP-02`)**: For fires in residential buildings with trapped people or life-threatening emergencies, immediately invoke `delegate_emergency_dispatch_911`. Confirm that a **Code Red Emergency (Emergência de Código Vermelho)** was triggered immediately with the **Agente Especialista 911 via MCP** (`mcp://agent-911.internal.novatlantis.gov`) with line-cut priority (*prioridade de corte de linha*), and rescue services and the fire brigade (*serviços de socorro e corpo de bombeiros*) were dispatched with maximum priority to the registered coordinates.\n3. **Health & Telemedicine (`delegate_health_telemed` — `Artigo 38`, `Artigo 10`, `Regra MCP-03`)**: For urgent pediatric teleconsultations (e.g., for a 3-year-old child) or medical requests, immediately invoke `delegate_health_telemed`. Confirm that the request was transferred via MCP to the **Agente Soberano de Saúde e Telemedicina** (`mcp://agent-health.internal.novatlantis.gov`), which verifies the dependent's parental filiation link in the **NID Hub** (*conferência do vínculo parental do dependente no registro NID*) and provisions the **priority virtual medical consultation room** (*sala de atendimento médico virtual prioritário*).\n4. **Education Services (`delegate_education_learning` — `Artigo 42`, `Artigo 11`, `Regra MCP-04`)**: For public school enrollment and curriculum transfer validation, immediately invoke `delegate_education_learning`. Confirm that the request was transferred via MCP to the **Agente Especialista em Educação** (`mcp://agent-edu.internal.novatlantis.gov`), which cross-references the dependent's NID with the **unified school database** (*base escolar unificada*) and issues the **digital enrollment certificate** (*comprovante digital de matrícula*).\n\n\nYou are an agent. Your internal name is \"root_agent\". The description about you is \"Novatlantis Sovereign First-Responder Agent: multilingual front-desk concierge grounded in gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt with NID verification and MCP delegation to 311, 911, Health, and Education agents.\".",
+                  "tool_declarations": [
+                    {
+                      "retrieval": null,
+                      "computer_use": null,
+                      "file_search": null,
+                      "google_search": null,
+                      "google_maps": null,
+                      "code_execution": null,
+                      "enterprise_web_search": null,
+                      "function_declarations": [
+                        {
+                          "description": "Performs semantic and keyword retrieval across novatlantis_constitution_and_civil_rights.txt.\n\nReads the canonical document at gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt\nand returns the relevant articles, rights clauses, or constitutional principles.\nIf the query is outside the scope of the Constitution and Government Data Framework,\nreturns a structured NO_MATCH indicator so the agent can trigger the mandatory fallback response.\n\nArgs:\n    query: The citizen's question or topic to search in the Constitution and Civil Rights charter.\n    language: The language code of the conversation (e.g., 'pt-BR', 'es-419', 'en-US').\n\nReturns:\n    A string containing the matched constitutional articles and official source metadata,\n    or a NO_MATCH notice when the topic is absent from the canonical source document.\n",
+                          "name": "search_constitution_and_rights",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "query": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "language": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "pt-BR",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "query"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "STRING"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Validates the NID structure (Ed25519 / Luhn mod 36 / Modulo 11) and retrieves public clearance and judicial/fiscal certificates.\n\nFollows Artigo 20, Artigo 22, and Artigo 28 of the Novatlantis Constitution:\nvalidates NID format (NID-YYYY-XXXXXXXX-C or NID-AAA-BBBB-CCCC-D), verifies NIST SP 500-290B / ITL\nbiometric compliance without leaking raw biometric vectors, and queries the Justice & Treasury\n(Justiça e Fazenda) GDF ecosystem for the Digital Negative Certificate (Certidão Negativa Digital)\nsigned by the Attorney General (Procuradoria-Geral).\n\nArgs:\n    nid: The citizen's Novatlantis Identity ID (or 'STRUCTURE_INQUIRY' if checking general NID rules).\n    include_judicial_fiscal_clearance: Whether to include the Artigo 28 Justice & Treasury certificate status.\n\nReturns:\n    A dictionary containing NID validation rules, NIST SP 500-290B biometric compliance,\n    and Justice/Treasury Certidão Negativa Digital status.\n",
+                          "name": "lookup_citizen_nid_registry",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "include_judicial_fiscal_clearance": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": true,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "BOOLEAN"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "nid"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates an urban maintenance or public roadway obstruction request to the 311 MCP Agent.\n\nConnects to `mcp://agent-311.internal.novatlantis.gov` (Artigo 31, Artigo 8º e Regra MCP-01).\nRegisters the public roadway clearance protocol (`protocolo de desobstrução de via pública`)\nand notifies the operational urban infrastructure team (MOPT) with an SLA of up to 4 hours\n(and 180 seconds with preventive 911 notification for imminent electrical hazards).\n\nArgs:\n    incident_description: Detailed description of the urban issue (fallen tree blocking street, pothole, power line, etc.).\n    location: Sector, district, or street address of the incident (e.g. 'Setor Norte').\n    hazard_category: Category such as 'roadway_obstruction', 'electrical_risk', 'pothole', 'tree_pruning'.\n\nReturns:\n    Structured MCP response from `mcp://agent-311.internal.novatlantis.gov` with ticket ID and SLA details.\n",
+                          "name": "delegate_urban_services_311",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "incident_description": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "location": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "Setor Norte / Distrito Central",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "hazard_category": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "urban_maintenance",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "incident_description"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates an immediate Code Red emergency (fire, trapped victims, police, medical) to the 911 MCP Agent.\n\nConnects to `mcp://agent-911.internal.novatlantis.gov` (Artigo 32, Artigo 9º e Regra MCP-02).\nTriggers a Code Red Emergency (`Emergência de Código Vermelho`) with line-cut priority and\nsynchronous dispatch of rescue services and fire brigade (`serviços de socorro e corpo de bombeiros`)\nat maximum priority to the registered coordinates.\n\nArgs:\n    emergency_description: Description of the life-threatening emergency (e.g. residential building fire with trapped people).\n    location: Georeferenced coordinates or address for immediate dispatch.\n    citizen_nid: Optional NID of the citizen to cross-reference HL7 FHIR medical data and emergency contacts.\n\nReturns:\n    Structured MCP response from `mcp://agent-911.internal.novatlantis.gov`.\n",
+                          "name": "delegate_emergency_dispatch_911",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "emergency_description": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "location": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "Coordenadas Registradas no GDF",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "citizen_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "emergency_description"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates a healthcare, urgent pediatric teleconsultation, or HL7 vaccination request to the Health & Telemed MCP Agent.\n\nConnects to `mcp://agent-health.internal.novatlantis.gov` (Artigo 38, Artigo 10 e Regra MCP-03).\nVerifies parental filiation of the dependent in the NID Hub (`conferência do vínculo parental do dependente no registro NID`)\nand provisions a priority virtual medical consultation room (`sala de atendimento médico virtual prioritário`).\n\nArgs:\n    request_type: Type of health service ('urgent_pediatric_teleconsultation', 'teleconsultation', 'vaccination_status').\n    details: Clinical or scheduling details provided by the citizen.\n    citizen_nid: Optional citizen/dependent NID for NID Hub parental link verification and HL7 FHIR lookup.\n\nReturns:\n    Structured MCP response from `mcp://agent-health.internal.novatlantis.gov`.\n",
+                          "name": "delegate_health_telemed",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "request_type": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "details": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "citizen_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "request_type",
+                              "details"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        },
+                        {
+                          "description": "Delegates public school enrollment, curriculum transfer validation, or learning queries to the Education MCP Agent.\n\nConnects to `mcp://agent-edu.internal.novatlantis.gov` (Artigo 42, Artigo 11 e Regra MCP-04).\nCross-references the dependent's NID with the unified school database (`cruzamento do NID da dependente com a base escolar unificada`)\nand issues the digital enrollment certificate (`comprovante digital de matrícula`).\n\nArgs:\n    request_type: Type of educational request ('enrollment_and_curriculum_transfer', 'enrollment', 'adaptive_curriculum').\n    details: Specific question, student grade level, or curriculum transfer details.\n    student_nid: Optional dependent/student NID for unified school database cross-check.\n\nReturns:\n    Structured MCP response from `mcp://agent-edu.internal.novatlantis.gov`.\n",
+                          "name": "delegate_education_learning",
+                          "parameters": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": {
+                              "request_type": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "details": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": null,
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              },
+                              "student_nid": {
+                                "additional_properties": null,
+                                "defs": null,
+                                "ref": null,
+                                "any_of": null,
+                                "default": "",
+                                "description": null,
+                                "enum": null,
+                                "example": null,
+                                "format": null,
+                                "items": null,
+                                "max_items": null,
+                                "max_length": null,
+                                "max_properties": null,
+                                "maximum": null,
+                                "min_items": null,
+                                "min_length": null,
+                                "min_properties": null,
+                                "minimum": null,
+                                "nullable": null,
+                                "pattern": null,
+                                "properties": null,
+                                "property_ordering": null,
+                                "required": null,
+                                "title": null,
+                                "type": "STRING"
+                              }
+                            },
+                            "property_ordering": null,
+                            "required": [
+                              "request_type",
+                              "details"
+                            ],
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "parameters_json_schema": null,
+                          "response": {
+                            "additional_properties": null,
+                            "defs": null,
+                            "ref": null,
+                            "any_of": null,
+                            "default": null,
+                            "description": null,
+                            "enum": null,
+                            "example": null,
+                            "format": null,
+                            "items": null,
+                            "max_items": null,
+                            "max_length": null,
+                            "max_properties": null,
+                            "maximum": null,
+                            "min_items": null,
+                            "min_length": null,
+                            "min_properties": null,
+                            "minimum": null,
+                            "nullable": null,
+                            "pattern": null,
+                            "properties": null,
+                            "property_ordering": null,
+                            "required": null,
+                            "title": null,
+                            "type": "OBJECT"
+                          },
+                          "response_json_schema": null,
+                          "behavior": null
+                        }
+                      ],
+                      "google_search_retrieval": null,
+                      "parallel_ai_search": null,
+                      "url_context": null,
+                      "mcp_servers": null,
+                      "exa_ai_search": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "expected_invocation": {
+            "invocation_id": "",
+            "user_content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como posso verificar se existe algum processo judicial ou pendência fiscal vinculado ao meu NID?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "final_response": null,
+            "intermediate_data": null,
+            "creation_timestamp": 0.0,
+            "rubrics": null,
+            "app_details": null
+          },
+          "eval_metric_results": [
+            {
+              "metric_name": "rubric_based_final_response_quality_v1",
+              "threshold": 0.8,
+              "criterion": {
+                "threshold": 0.8,
+                "judge_model_options": {
+                  "judge_model": "gemini-2.5-flash",
+                  "num_samples": 1
+                },
+                "rubrics": [
+                  {
+                    "rubric_id": "grounding",
+                    "rubric_content": {
+                      "text_property": "Grounding: The response is grounded in the Novatlantis Constitution, Civil Rights Charter, and GDF/MCP rules (from tool outputs or the agent's canonical constitutional instructions) without fabricating contradictory policies, or outputs the mandatory fallback sentence when the topic is out of scope."
+                    }
+                  },
+                  {
+                    "rubric_id": "answer_relevance",
+                    "rubric_content": {
+                      "text_property": "Answer Relevance: The response directly, accurately, and completely addresses the citizen's query in the appropriate language."
+                    }
+                  },
+                  {
+                    "rubric_id": "adherence_to_guidelines",
+                    "rubric_content": {
+                      "text_property": "Adherence to Guidelines: The response respects agent authority limits (refusing manual registry/passport modifications without MFA/Biometria), cites relevant Constitutional Articles or MCP routing protocols (311, 911, Health, Education), and follows multilingual and fallback rules."
+                    }
+                  }
+                ]
+              },
+              "custom_function_path": null,
+              "score": 1.0,
+              "eval_status": 1,
+              "details": {
+                "rubric_scores": [
+                  {
+                    "rubric_id": "grounding",
+                    "rationale": "The final answer explicitly states that the user needs to use the integrated tool in the Justice and Treasury ecosystem in the GDF for NID validation to check for judicial processes or tax liabilities, citing Artigo 28. It also provides the NID format (`NID-YYYY-XXXXXXXX-C` or `NID-AAA-BBBB-CCCC-D`). These statements are directly supported by the `tool_response` from both `search_constitution_and_rights` (specifically Artigo 28 and Artigo 20) and `lookup_citizen_nid_registry` (confirming Artigo 28 for judicial/fiscal lookup and providing NID formats). There is no fabrication.",
+                    "score": 1.0
+                  },
+                  {
+                    "rubric_id": "answer_relevance",
+                    "rationale": "The user's query asks how to verify judicial processes or tax liabilities linked to their NID. The final answer directly addresses this by explaining that an integrated tool in the GDF's Justice and Treasury ecosystem is used, requiring NID validation as per Artigo 28. It also provides the NID format and explains the outcome (Digital Negative Certificate). The language matches the user's prompt (pt-BR). The answer is accurate and complete based on the information the agent was able to retrieve and is instructed to provide.",
+                    "score": 1.0
+                  },
+                  {
+                    "rubric_id": "adherence_to_guidelines",
+                    "rationale": "The agent correctly followed the mandatory tool execution rule for judicial/fiscal queries by calling both `search_constitution_and_rights` and `lookup_citizen_nid_registry` with the specified parameters. The response correctly cites Artigo 28 and explains that the process involves a tool in the GDF for NID validation, thereby respecting agent authority limits (the agent does not perform the lookup directly but guides the user). The response is provided in Portuguese (pt-BR), matching the user's prompt, adhering to the multilingual guideline. Fallback rules are not applicable as the query was in scope.",
+                    "score": 1.0
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "session_id": "___eval___session___1b059632-d0fe-4eec-a5bd-8e1f8e4a0dff",
+      "session_details": {
+        "id": "___eval___session___1b059632-d0fe-4eec-a5bd-8e1f8e4a0dff",
+        "app_name": "app",
+        "user_id": "eval_user_010",
+        "state": {
+          "__llm_request_key__": "e4184e1f-3446-43d3-bccf-fd47bd9303aa"
+        },
+        "events": [
+          {
+            "model_version": null,
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Como posso verificar se existe algum processo judicial ou pendência fiscal vinculado ao meu NID?",
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": null,
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": null,
+            "usage_metadata": null,
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-2caae1bb-c1ce-4d51-a0dd-9f15398780f9",
+            "author": "user",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {},
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "84728c25-e200-48c8-9d09-81d991705e02",
+            "timestamp": 1790897019.361038
+          },
+          {
+            "model_version": "gemini-2.5-flash",
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": {
+                    "id": "adk-78b36109-3754-4d8d-98a4-90461d8ebd06",
+                    "args": {
+                      "language": "pt-BR",
+                      "query": "processo judicial pendência fiscal NID"
+                    },
+                    "name": "search_constitution_and_rights",
+                    "partial_args": null,
+                    "will_continue": null
+                  },
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": "Cs4FAY89a1_eBDG_henrysgCM78f4um1d1XqkBkNf_L_IeU26WVghHwAMv0RplkJUcCl08PB9NY7ZTDLYUONHByqbqzisbML0ZuDr3S26RhdN3W9VB7275-pYguwtwSpjh0HwpA3lQ7QkolFLgAmJPb5x16S3JMwgLr6gmDG5AT6FB0dLgWmCuW0dlkqMOOw2iuZjPXV88XwGg1psoqnSWKW2nnaF9c89EvKd3bVQC4KXvS2Cgr9KTjFPLWJbhseafnulDEKekarVtsEbjTLL8610rZswMMPNiGgQwDZ2KPgynUS6c3IdJmh0jOMbuyDrMdF_o6_awuzQ0Xbzy1YERJPitonjo8OKOBaOeZgmVYrTKFihHgNvVAYnUbTlZdPYtM5-Eh62qZTdAm4X7UcOpZuBmEjiDOkRUSBv6-hBhbgcENEco321Bs0TIt__ViY2za7xFpGI7QYcSIhIC5-q_uFSYVs8E0k3mqgfQASfHQX7VLlBqZ38OAAhjl-f3wuEGQFiBElbjBHmoyEHNZvaSDLDFHeJFryJu5Mf84UEPmEckUUIkUt7-6ZvoyOQFy8oqO7vXLyj2cimWYxjPrX1-_BA-yyjBRiZ06jEepgnIaqXj4vZamwQJ3w3l2TvAKMLNWjKr8FYIzOHvDpGgQHzfrMQ8TGrAtJzyZVqjt1A-wo5KJlJz7GC-IJzZMmsQNP_cNcKXDRB-Av_SebFuz0_h7FPnp5XJmJIWaQIwuWMLGq34Cj5o4E5yp3AcsTtmBUUE_4VWMhZuh1W75ZfjBRcQLo0BR3NlTqWTE37r0LxGq_2UxHOBSkHWeWXM09JeRjiNI57K9AQlx6LW2e9LYQb9RvKrcEctuGG-5RL7qbrIGPrBVv3IgrQG-mxIkebHwpAu-_8nn3aW-s3XUXJo8tun1E5TlwI1bmaNbmOXEueewUtmEEAKO_V1qyQXLRG1RBgQ==",
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                },
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": {
+                    "id": "adk-42f9607d-e6cf-4a29-ab28-e3c895864b90",
+                    "args": {
+                      "nid": "STRUCTURE_INQUIRY",
+                      "include_judicial_fiscal_clearance": true
+                    },
+                    "name": "lookup_citizen_nid_registry",
+                    "partial_args": null,
+                    "will_continue": null
+                  },
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": "STOP",
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": {
+              "__llm_request_key__": "20e43934-54f3-4282-99c8-1e5389141286"
+            },
+            "usage_metadata": {
+              "cache_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 3426
+                }
+              ],
+              "cached_content_token_count": 3426,
+              "candidates_token_count": 42,
+              "candidates_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 42
+                }
+              ],
+              "prompt_token_count": 3697,
+              "prompt_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 3697
+                }
+              ],
+              "thoughts_token_count": 172,
+              "tool_use_prompt_token_count": null,
+              "tool_use_prompt_tokens_details": null,
+              "total_token_count": 3911,
+              "traffic_type": "ON_DEMAND"
+            },
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": -0.9846117837088448,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-2caae1bb-c1ce-4d51-a0dd-9f15398780f9",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {
+                "__llm_request_key__": "20e43934-54f3-4282-99c8-1e5389141286"
+              },
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": [],
+            "branch": null,
+            "id": "23f56c81-0f1d-4e70-ba55-190d7e28efe9",
+            "timestamp": 1790897019.3650181
+          },
+          {
+            "model_version": null,
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": {
+                    "will_continue": null,
+                    "scheduling": null,
+                    "parts": null,
+                    "id": "adk-78b36109-3754-4d8d-98a4-90461d8ebd06",
+                    "name": "search_constitution_and_rights",
+                    "response": {
+                      "result": "SOURCE: gs://novatlantis-state-assets/novatlantis_constitution_and_civil_rights.txt (Versão 2026.2.0)\nLANGUAGE_REQUESTED: pt-BR\nMATCHED_CONSTITUTIONAL_CLAUSES:\n\nArtigo 20 (c/c Artigo 3º). Padrão Único de Identificação Soberana (NID):\nI - O NID segue o formato estruturado `NID-YYYY-XXXXXXXX-C` (ou máscara operacional `NID-AAA-BBBB-CCCC-D`), gerado com criptografia assimétrica Ed25519 e verificado pelo algoritmo de Luhn mod 36 e dígito verificador Módulo 11 (pesos de 2 a 9 sobre a base numérica).\nII - O NID é perpétuo, imutável e intransferível, servindo como chave primária de relação civil, sanitária, educacional, fiscal, judicial e eleitoral.\n\n---\n\nArtigo 28. Publicidade processual transparente e emissão automatizada de certidões (Integração GDF Justiça e Fazenda):\nA consulta a processos judiciais, certidões judiciais e pendências fiscais vinculadas ao NID é realizada mediante validação do NID por meio da ferramenta integrada ao ecossistema de Justiça e Fazenda no Government Data Framework (GDF). Caso autenticado e sem pendências, o agente retorna a Certidão Negativa Digital emitida com assinatura criptográfica da Procuradoria-Geral.\n\n---\n\nTÍTULO III - DA IDENTIDADE SOBERANA NACIONAL (NID), BIOMETRIA NIST E JUSTIÇA FISCAL\n\n---\n\nArtigo 1º. A República Autônoma Digital de Novatlantis é um Estado de Direito soberano, autônomo, plurilíngue e constituído sobre os princípios da dignidade humana, da supremacia do código aberto, da transparência algorítmica e da governança impulsionada por inteligência artificial agêntica.\nParágrafo único. Todo o poder emana do cidadão e é exercido em seu benefício direto por meio de agentes inteligentes federados auditáveis, sob supervisão e soberania popular.\n\n---\n\nArtigo 2º. São princípios estruturantes de Novatlantis:\nI - Princípio do Zero Legacy: Nenhum serviço público, regulamentação ou ato de Estado será instituído se demandar tramitação física de papel, presença compulsória quando tecnicamente dispensável ou dependência de infraestruturas legadas proprietárias obsoletas.\nII - Princípio do Estado Agêntico Proativo: O Estado não aguarda passivamente o pleito do cidadão. Os agentes autônomos governamentais antecipam direitos, benefícios, intervenções de zeladoria urbana, alertas médicos e assistências essenciais com base em eventos auditáveis.\nIII - Princípio da Soberania de Dados e Identidade NIST: Todo cidadão detém a posse exclusiva e inalienável sobre seus atributos e identidade. Nenhuma entidade pública ou privada acessará dados civis sem credencial criptográfica expressa, em conformidade com o padrão NIST-ITL e chaves assimétricas Ed25519.\nIV - Princípio do Plurilinguismo Universal (Diretriz de Internacionalização): O Português (pt-BR), o Espanhol (es-419) e o Inglês (en-US) são os idiomas nacionais oficiais, dotados de paridade jurídica irrestrita. Todas as aplicações públicas, certidões e agentes conversacionais devem interagir automaticamente no idioma da consulta com fluência nativa e equivalência de sentido nos três idiomas.\nV - Princípio da Explicabilidade Decisória: Qualquer deliberação automatizada de agência estatal, seja de natureza executiva, tributária ou judiciária preliminar, conterá a trilha completa de inferência, citação legal explícita e direito imediato de reexame humano.\n\n---\n\nArtigo 18. Deberes Cívicos Fundamentales del Ciudadano (Deveres Cívicos Fundamentais do Cidadão):\nDe acuerdo con el Artículo 18 de la Constitución de Novatlantis, los deberes fundamentales de todo ciudadano incluyen:\nI - Defender la soberanía digital de la nación (defender a soberania digital da nação);\nII - Participar responsablemente en la gobernanza colaborativa (participar responsavelmente na governança colaborativa);\nIII - Mantener actualizada la identidad digital NID (manter atualizada a identidade digital NID);\nIV - Preservar el patrimonio ambiental y de datos del país (preservar o patrimônio ambiental e de dados do país)."
+                    }
+                  },
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                },
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": {
+                    "will_continue": null,
+                    "scheduling": null,
+                    "parts": null,
+                    "id": "adk-42f9607d-e6cf-4a29-ab28-e3c895864b90",
+                    "name": "lookup_citizen_nid_registry",
+                    "response": {
+                      "valid_format": false,
+                      "nid": "STRUCTURE_INQUIRY",
+                      "nid_specification": {
+                        "formats_supported": [
+                          "NID-YYYY-XXXXXXXX-C (Luhn mod 36)",
+                          "NID-AAA-BBBB-CCCC-D (Módulo 11)"
+                        ],
+                        "cryptography": "Asymmetric Ed25519 keypair",
+                        "biometric_standard": "NIST SP 500-290B / ANSI/NIST-ITL & ISO/IEC 19794-5 (Facial + Encrypted Fingerprints AES-256-GCM)",
+                        "constitutional_articles": [
+                          "Artigo 20 - Padrão Único de Identificação Soberana (NID)",
+                          "Artigo 22 - Padrões Biométricos NIST SP 500-290B"
+                        ],
+                        "judicial_fiscal_lookup": "Artigo 28 - Consulta integrada ao ecossistema de Justiça e Fazenda (GDF) com emissão de Certidão Negativa Digital assinada pela Procuradoria-Geral."
+                      },
+                      "error": "Invalid NID format. Expected NID-YYYY-XXXXXXXX-C or NID-AAA-BBBB-CCCC-D.",
+                      "biometric_vectors_redacted": true
+                    }
+                  },
+                  "inline_data": null,
+                  "text": null,
+                  "thought": null,
+                  "thought_signature": null,
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "user"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": null,
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": null,
+            "usage_metadata": null,
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-2caae1bb-c1ce-4d51-a0dd-9f15398780f9",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {},
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "8200f66e-0318-4dc5-84af-3757cee34aa8",
+            "timestamp": 1790897021.833895
+          },
+          {
+            "model_version": "gemini-2.5-flash",
+            "content": {
+              "parts": [
+                {
+                  "media_resolution": null,
+                  "code_execution_result": null,
+                  "executable_code": null,
+                  "file_data": null,
+                  "function_call": null,
+                  "function_response": null,
+                  "inline_data": null,
+                  "text": "Para verificar se existe algum processo judicial ou pendência fiscal vinculado ao seu NID, você precisa utilizar a ferramenta integrada ao ecossistema de Justiça e Fazenda no Government Data Framework (GDF), que realiza a consulta mediante validação do seu NID, conforme o Artigo 28 da Constituição de Novatlantis.\n\nO NID segue o formato `NID-YYYY-XXXXXXXX-C` ou a máscara operacional `NID-AAA-BBBB-CCCC-D`.\n\nCaso seu NID seja autenticado e não haja pendências, será emitida uma Certidão Negativa Digital com assinatura criptográfica da Procuradoria-Geral.",
+                  "thought": null,
+                  "thought_signature": "AY89a1-xLewnGcQTHoeDWJvVf0SOsFcQXiYW4bbR3UrpG_o--Tw1aWrywSBiT4agnREAMxeYWg-SrnlTMOHI0OBbPuqCrI30RFmiJTD6K92xH-OHxK-vJNVlnZfevA3zXbQ2y9XBCpynXu2zoTVG9ueMHM59Khq3G26nchym9LCxS4-X3seOjPc75hiNVRoG2Cw3Kt_B0s_bN9Ud2izIrUvvkhLH51QK2uZyFvxrHlC3byxR5Lu9sgV_3OHrJCpdrfP3lO3S8SxqBa-AuiHmFB-GFc4oMIFIchfapqEAJksJ00WVD6yD1Y-wQzNwEb3xRvJE8fEeAY2nOA73u1Yz_w7MXoqOGvExhcKz8kxXZp2GRk0O8iENxdHoGqI9-OvNCrKSCOQC99lIn9npwFSEimrXAHEaZqKc2CgpoCn192JpxdABph0orF7JwTWxt400MwKzaYa0R1UvVxm6NrcZmH5lvVd3Nv1dSymMiG8ISvLyyIfYHm6qtGoxMS2ZI2bWzKIdE_Sov3iUgni4CVORDcyQLUScmchpN9t8xKjKMNn9C7Y7lgccECmZu3Q1so4kgFhNO1BLBuTRxf-ruKiWFmQeLo7xOVe_niKpWEGGWQwbJHXMpdsyIBXpLtqmw7hxeshxHU3X00qgmsXbwtPqMjzoML0GYoacMqw8F7M6QulDSA5BjsrcZUpN0ppbYC13Hs9SYr3GHKprOF97qVg6uOvuqc0N3QlQ4gh61oAYdNtehPxGCF8ISrCw9qFvqQXxc40ZaGlectjlaPeZOjvjzeM7QkbZ3c4VsYFhemepa0labVjtJBazssPxs-J0vAP_T8LYwIvpcRUVzC6gWiVL05G_bH5eq4ya9rHf0kiWM_bxNYmc7SQWRWMhTYKqMreLEZ-2ruoQRlzQdHqZok-F9cdxsirQqDCKMz7b5BuV3VCdud3fZXrrBZc3X1-9LnCzcBgF6avwy9KmoVwP-S6KYMr1IpPCM5rjI01hkFzbZa1UMJJfCU7xThYIigKaGm_XxGdcM4_Y_h4ExrbUbY4S3q8fSEzga314dYWcL9EiU2s_8z0kwYmObozKMksGd3BRa7Et48SM0UJeiqsHfGHtb05kAaLsb4xtCaVOwm8QByBMN1yTYBBEd-Qz8V8C8Wk6sBVpHhol0Zj9afsdGxNClnJR0mTbKfUK2l1iOwqayX0OTHu3KmQngmJIZcUoEaeMIAaPYK3g5h8ElB3k2lFBEdvmiYsTsaMM2FY4wRxym59UOQPbXQpI9LYdjL-wdPDqosnlLRMFv9CpDn-U1eXUfM0mvQiY2iAHPl2qFo1sM_wgZlp5rYQlXmslM8G806HwKzxwUSwF69E9njdlrx5adzRJ4sok-CE2MD8qwsmST4IvpeBg3VosSBA6RRH_wGtosMcp5WT0Zg82uK_DTGHVL_8M-JHu6eDYyn9zYTERhSupMXLJPLNDuriW-oh6Z8S2h0INo5tmZmqp2quOjfDLcK9tKkHRNpxQyTDvd4NXt_D2eGs1SpdzyqZ0ulpNE2JoiSt7LjSbecJj9ENy3INjG5SSHfP1gDssF3LkhJ1P59XtJ8V3lLDl_08mGC_IA4Ay13H_Q6zcVMHVJ1_6YlI7LGe9DvH0IzMKtXL72gjfZ4Ll1KSuYxSaCojVYmpQR2iks7ock2KDtlATGiyJPZoFdLRPoXVkESJat-TRfuN7--HTtgnBHmnU4egKx386pTusJqKrusZvEIHTXdcPZdIY-pCUQy7BUf_-VRuWRSjpbck7inv44c2M7TDotEyvPWBRzfdggJhHvxXkPfxWJ1o9Pi4Wj_VsY6bvcfiIwEVKYxDwEWhkUclW4ga0gYF4J7ml8UrQwEhI3ZZ06KiugMXbYoBxbJPf5z_nHb0v-Vbgjk_wADPHoCBv1Uz3akv0UIm2rRTb809XrshWoHCv6u6iZT4kxMxuNaK0vwo8euNFkq5TsIhju7c9J6VvYeuLlJhJ1N7qrzIRCUA44QTBfr5M1OR_-afy5cHxOemG26joPhCBlBZ0Mfr6c2SeEYnRUYTtP56qI2IkymJKqntUbxCZGs1o50ygw1hekAo5LPpccNEKRluXzZjsC8sNtwVTNk3Ccr520FKJPVXDlwZlf5ZkflMowxEhLKhjJsxTtbmXOLO2feYgRthwHZ6Q",
+                  "video_metadata": null,
+                  "tool_call": null,
+                  "tool_response": null,
+                  "part_metadata": null,
+                  "audio_transcription": null,
+                  "media_processing": null,
+                  "speech_metadata": null
+                }
+              ],
+              "role": "model"
+            },
+            "grounding_metadata": null,
+            "partial": null,
+            "turn_complete": null,
+            "turn_complete_reason": null,
+            "finish_reason": "STOP",
+            "error_code": null,
+            "error_message": null,
+            "interrupted": null,
+            "custom_metadata": {
+              "__llm_request_key__": "e4184e1f-3446-43d3-bccf-fd47bd9303aa"
+            },
+            "usage_metadata": {
+              "cache_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 3813
+                }
+              ],
+              "cached_content_token_count": 3813,
+              "candidates_token_count": 134,
+              "candidates_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 134
+                }
+              ],
+              "prompt_token_count": 5186,
+              "prompt_tokens_details": [
+                {
+                  "modality": "TEXT",
+                  "token_count": 5186
+                }
+              ],
+              "thoughts_token_count": 341,
+              "tool_use_prompt_token_count": null,
+              "tool_use_prompt_tokens_details": null,
+              "total_token_count": 5661,
+              "traffic_type": "ON_DEMAND"
+            },
+            "live_session_resumption_update": null,
+            "live_session_id": null,
+            "go_away": null,
+            "input_transcription": null,
+            "output_transcription": null,
+            "avg_logprobs": null,
+            "logprobs_result": null,
+            "cache_metadata": null,
+            "citation_metadata": null,
+            "interaction_id": null,
+            "invocation_id": "e-2caae1bb-c1ce-4d51-a0dd-9f15398780f9",
+            "author": "root_agent",
+            "actions": {
+              "skip_summarization": null,
+              "state_delta": {
+                "__llm_request_key__": "e4184e1f-3446-43d3-bccf-fd47bd9303aa"
+              },
+              "artifact_delta": {},
+              "transfer_to_agent": null,
+              "escalate": null,
+              "requested_auth_configs": {},
+              "requested_tool_confirmations": {},
+              "compaction": null,
+              "end_of_agent": null,
+              "agent_state": null,
+              "rewind_before_invocation_id": null,
+              "render_ui_widgets": null
+            },
+            "long_running_tool_ids": null,
+            "branch": null,
+            "id": "2370b90b-1f72-4ac7-8803-c7e60d1a0b64",
+            "timestamp": 1790897021.8380883
+          }
+        ],
+        "last_update_time": 1790897021.8380883
+      },
+      "user_id": "eval_user_010"
+    }
+  ],
+  "creation_timestamp": 1790897050.013749
+}

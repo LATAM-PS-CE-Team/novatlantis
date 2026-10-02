@@ -615,11 +615,14 @@ export function App() {
   const [loginReasonMessage, setLoginReasonMessage] = useState<string | null>(null);
   const pendingServicePromptRef = useRef<string | null>(null);
 
-  // Estado do Concierge AI (america.gov Prompt & Conversation Stream)
+  // Estado do Concierge AI (Sidebar Persistente à Esquerda + Prompt Box)
   const [promptInput, setPromptInput] = useState('');
+  const [sidebarPromptInput, setSidebarPromptInput] = useState('');
+  const [chatSidebarOpen, setChatSidebarOpen] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const chatSectionRef = useRef<HTMLDivElement | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
   const handleLanguageChange = (newLang: SupportedLanguage) => {
     setLang(newLang);
@@ -657,13 +660,16 @@ export function App() {
       timestamp: new Date().toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })
     };
 
+    // Ao clicar em Perguntar, muda o modo do agente para Sidebar Persistente à Esquerda
+    setChatSidebarOpen(true);
     setChatMessages((prev) => [...prev, userMsg]);
     setPromptInput('');
+    setSidebarPromptInput('');
     setChatLoading(true);
 
     setTimeout(() => {
-      chatSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 80);
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 90);
 
     try {
       const res = await fetch('/api/orchestrator/chat', {
@@ -691,6 +697,9 @@ export function App() {
       };
 
       setChatMessages((prev) => [...prev, agentMsg]);
+      setTimeout(() => {
+        chatBottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
     } catch {
       // ignore network error
     } finally {
@@ -1106,6 +1115,348 @@ export function App() {
           </Box>
         </Box>
 
+        {/* SIDEBAR PERSISTENTE À ESQUERDA DO AGENTE CONCIERGE (Abre ao clicar em Perguntar e persiste durante a navegação) */}
+        <Box
+          component="aside"
+          data-testid="agent-left-sidebar"
+          sx={{
+            width: chatSidebarOpen ? { xs: 340, sm: 420, md: 450 } : 0,
+            flexShrink: 0,
+            bgcolor: '#ffffff',
+            borderRight: chatSidebarOpen ? '1.5px solid #d1d5db' : 'none',
+            boxShadow: chatSidebarOpen ? '8px 0 28px rgba(10, 34, 64, 0.07)' : 'none',
+            transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            overflowX: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'sticky',
+            top: 76,
+            height: chatSidebarOpen ? 'calc(100vh - 76px)' : 'auto',
+            alignSelf: 'flex-start',
+            zIndex: 20
+          }}
+        >
+          {chatSidebarOpen && (
+            <Box sx={{ minWidth: { xs: 340, sm: 420, md: 450 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {/* Cabeçalho Fixo da Sidebar do Agente */}
+              <Box
+                sx={{
+                  px: 2.25,
+                  py: 1.75,
+                  bgcolor: '#0a2240',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  borderBottom: '3px solid #b91c1c'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <VerifiedUserIcon sx={{ color: '#93c5fd', fontSize: 20 }} />
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+                      {t.conciergeHeader}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#cbd5e1', fontSize: '0.7rem', display: 'block' }}>
+                      {lang === 'en-US'
+                        ? 'Persistent Left Sidebar • Auto-detects PT / ES / EN'
+                        : lang === 'es-419'
+                        ? 'Barra Lateral Persistente • Detecta PT / ES / EN'
+                        : 'Barra Lateral Persistente • Detecta PT / ES / EN'}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {chatMessages.length > 0 && (
+                    <Button
+                      size="small"
+                      onClick={() => setChatMessages([])}
+                      sx={{
+                        textTransform: 'none',
+                        color: '#e2e8f0',
+                        fontSize: '0.73rem',
+                        minWidth: 'auto',
+                        px: 1,
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }
+                      }}
+                    >
+                      {t.clearChat}
+                    </Button>
+                  )}
+                  <IconButton
+                    size="small"
+                    onClick={() => setChatSidebarOpen(false)}
+                    sx={{ color: '#ffffff' }}
+                    aria-label="Fechar barra lateral do agente"
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              {/* Área de Mensagens Rolável da Sidebar à Esquerda */}
+              <Box
+                sx={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  p: 2.25,
+                  bgcolor: '#fcfbf9',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2.25
+                }}
+              >
+                {chatMessages.map((msg) => (
+                  <Box key={msg.id}>
+                    {msg.sender === 'user' ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            px: 2,
+                            py: 1.25,
+                            bgcolor: '#0a2240',
+                            color: '#ffffff',
+                            borderRadius: '16px 16px 4px 16px',
+                            maxWidth: '88%'
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.92rem' }}>
+                            {msg.text}
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    ) : (
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderRadius: 2.5,
+                          bgcolor: '#ffffff',
+                          border: '1px solid #e5e4dc',
+                          boxShadow: '0 4px 14px rgba(10, 34, 64, 0.04)'
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            whiteSpace: 'pre-line',
+                            color: '#111827',
+                            lineHeight: 1.62,
+                            fontSize: '0.91rem'
+                          }}
+                        >
+                          {msg.text}
+                        </Typography>
+
+                        {/* Citações Oficiais de Agências do Governo */}
+                        {msg.citations && msg.citations.length > 0 && (
+                          <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid #e5e4dc' }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 800,
+                                color: '#4b5563',
+                                display: 'block',
+                                mb: 0.75,
+                                letterSpacing: '0.04em',
+                                fontSize: '0.68rem'
+                              }}
+                            >
+                              {t.officialCitations}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                              {msg.citations.map((cit) => (
+                                <Chip
+                                  key={cit.id}
+                                  label={`[${cit.id}] ${cit.agency}: ${cit.title}`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#f3f4f6',
+                                    color: '#1f2937',
+                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                    height: 'auto',
+                                    py: 0.35,
+                                    '& .MuiChip-label': { whiteSpace: 'normal' }
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+
+                        {/* Recibo Oficial de Transação Executada */}
+                        {msg.action_card && (
+                          <Alert
+                            severity="success"
+                            icon={<CheckCircleIcon fontSize="small" />}
+                            sx={{ mt: 2, borderRadius: 2, border: '1px solid #86efac', bgcolor: '#f0fdf4' }}
+                          >
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#14532d', fontSize: '0.84rem' }}>
+                              {msg.action_card.title}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{ fontFamily: 'monospace', display: 'block', color: '#166534', mt: 0.5, mb: 1 }}
+                            >
+                              Protocolo AlloyDB: {msg.action_card.reference_id} • Status: {msg.action_card.status}
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="success"
+                              endIcon={<LaunchIcon fontSize="small" />}
+                              onClick={() => handleNavigateToPortal('citizen', msg.service_request_action?.target_tab)}
+                              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.78rem' }}
+                            >
+                              {t.trackInCitizenPortal}
+                            </Button>
+                          </Alert>
+                        )}
+
+                        {/* Card de Solicitação de Serviço */}
+                        {msg.service_request_action && !msg.action_card && (
+                          <Paper
+                            variant="outlined"
+                            sx={{
+                              mt: 2,
+                              p: 1.5,
+                              borderRadius: 2,
+                              bgcolor: '#f8fafc',
+                              borderColor: '#cbd5e1',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 1.25
+                            }}
+                          >
+                            <Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
+                                {currentUser ? (
+                                  <CheckCircleIcon color="success" fontSize="small" />
+                                ) : (
+                                  <LockIcon sx={{ color: '#b45309', fontSize: 16 }} />
+                                )}
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240', fontSize: '0.83rem' }}>
+                                  {msg.service_request_action.service_title}
+                                </Typography>
+                              </Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.35 }}>
+                                {msg.service_request_action.service_description}
+                              </Typography>
+                            </Box>
+
+                            <Button
+                              fullWidth
+                              size="small"
+                              variant="contained"
+                              endIcon={<ArrowForwardIcon fontSize="small" />}
+                              onClick={() =>
+                                handleRequestService(
+                                  msg.service_request_action!.service_prompt,
+                                  msg.service_request_action!.service_title
+                                )
+                              }
+                              sx={{
+                                bgcolor: '#0a2240',
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                borderRadius: 1.75,
+                                py: 0.85,
+                                fontSize: '0.8rem',
+                                '&:hover': { bgcolor: '#163a66' }
+                              }}
+                            >
+                              {currentUser ? t.executeServiceNow : t.requestServiceLogin}
+                            </Button>
+                          </Paper>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                ))}
+
+                {chatLoading && (
+                  <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f1f5f9', border: '1px dashed #cbd5e1' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#0a2240' }}>
+                      {t.askingBtn}
+                    </Typography>
+                  </Box>
+                )}
+
+                <Box ref={chatBottomRef} />
+              </Box>
+
+              {/* Caixa de Pergunta Persistente no Rodapé da Sidebar à Esquerda */}
+              <Box
+                component="form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendToConcierge(sidebarPromptInput);
+                }}
+                sx={{
+                  p: 1.75,
+                  bgcolor: '#ffffff',
+                  borderTop: '1px solid #e5e4dc',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1
+                }}
+              >
+                <TextField
+                  fullWidth
+                  size="small"
+                  multiline
+                  maxRows={3}
+                  value={sidebarPromptInput}
+                  onChange={(e) => setSidebarPromptInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendToConcierge(sidebarPromptInput);
+                    }
+                  }}
+                  placeholder={t.promptPlaceholder}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      bgcolor: '#f8fafc',
+                      fontSize: '0.86rem'
+                    }
+                  }}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                    {lang === 'en-US'
+                      ? 'Ask in English, Español, or Português'
+                      : lang === 'es-419'
+                      ? 'Pregunte en Español, Português o English'
+                      : 'Pergunte em Português, Español ou English'}
+                  </Typography>
+                  <Button
+                    type="submit"
+                    size="small"
+                    variant="contained"
+                    disabled={chatLoading || !sidebarPromptInput.trim()}
+                    endIcon={<SendIcon sx={{ fontSize: 14 }} />}
+                    sx={{
+                      borderRadius: 999,
+                      px: 2,
+                      bgcolor: '#0a2240',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      fontSize: '0.8rem',
+                      '&:hover': { bgcolor: '#163a66' }
+                    }}
+                  >
+                    {chatLoading ? t.askingBtn : t.askBtn}
+                  </Button>
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </Box>
+
         <Box component="main" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           {/* 3. HERO PRINCIPAL INSPIRADO EM HTTPS://AMERICA.GOV/ ("Whatever you need from government, start here") */}
       <Box
@@ -1340,201 +1691,36 @@ export function App() {
             ))}
           </Box>
 
-          {/* 4. STREAM DE RESPOSTAS DO CONCIERGE IA (Com Citações Oficiais e Botão "Solicitar Serviço") */}
-          <Box ref={chatSectionRef} sx={{ mt: chatMessages.length > 0 ? 4 : 0 }}>
+          {/* Indicador compacto da Barra Lateral Persistente à Esquerda */}
+          <Box ref={chatSectionRef} sx={{ mt: chatMessages.length > 0 ? 2.5 : 0, textAlign: 'center' }}>
             {chatMessages.length > 0 && (
-              <Paper
-                elevation={0}
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<VerifiedUserIcon fontSize="small" />}
+                onClick={() => setChatSidebarOpen((prev) => !prev)}
                 sx={{
-                  p: { xs: 2.5, md: 3.5 },
-                  borderRadius: 3.5,
+                  borderRadius: 999,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  borderColor: '#0a2240',
+                  color: '#0a2240',
                   bgcolor: '#ffffff',
-                  border: '1px solid #e5e4dc',
-                  boxShadow: '0 10px 30px rgba(10, 34, 64, 0.06)'
+                  px: 2.5
                 }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <VerifiedUserIcon sx={{ color: '#0a2240', fontSize: 20 }} />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
-                      {t.conciergeHeader}
-                    </Typography>
-                  </Box>
-                  <Button
-                    size="small"
-                    onClick={() => setChatMessages([])}
-                    sx={{ textTransform: 'none', color: '#6b7280', fontSize: '0.78rem' }}
-                  >
-                    {t.clearChat}
-                  </Button>
-                </Box>
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {chatMessages.map((msg) => (
-                    <Box key={msg.id}>
-                      {msg.sender === 'user' ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <Paper
-                            elevation={0}
-                            sx={{
-                              px: 2.5,
-                              py: 1.5,
-                              bgcolor: '#0a2240',
-                              color: '#ffffff',
-                              borderRadius: '18px 18px 4px 18px',
-                              maxWidth: '85%'
-                            }}
-                          >
-                            <Typography variant="body1" sx={{ fontWeight: 500, fontSize: '0.96rem' }}>
-                              {msg.text}
-                            </Typography>
-                          </Paper>
-                        </Box>
-                      ) : (
-                        <Box
-                          sx={{
-                            p: 2.5,
-                            borderRadius: 3,
-                            bgcolor: '#fcfbf9',
-                            border: '1px solid #e5e4dc'
-                          }}
-                        >
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              whiteSpace: 'pre-line',
-                              color: '#111827',
-                              lineHeight: 1.68,
-                              fontSize: '0.97rem'
-                            }}
-                          >
-                            {msg.text}
-                          </Typography>
-
-                          {/* Citações Oficiais de Agências do Governo (Estilo america.gov) */}
-                          {msg.citations && msg.citations.length > 0 && (
-                            <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid #e5e4dc' }}>
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  fontWeight: 800,
-                                  color: '#4b5563',
-                                  display: 'block',
-                                  mb: 1,
-                                  letterSpacing: '0.04em'
-                                }}
-                              >
-                                {t.officialCitations}
-                              </Typography>
-                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {msg.citations.map((cit) => (
-                                  <Chip
-                                    key={cit.id}
-                                    label={`[${cit.id}] ${cit.agency}: ${cit.title}`}
-                                    size="small"
-                                    sx={{
-                                      bgcolor: '#f3f4f6',
-                                      color: '#1f2937',
-                                      fontWeight: 600,
-                                      fontSize: '0.74rem'
-                                    }}
-                                  />
-                                ))}
-                              </Box>
-                            </Box>
-                          )}
-
-                          {/* Recibo Oficial de Transação Executada (quando já autenticado) */}
-                          {msg.action_card && (
-                            <Alert
-                              severity="success"
-                              icon={<CheckCircleIcon />}
-                              sx={{ mt: 2.5, borderRadius: 2, border: '1px solid #86efac', bgcolor: '#f0fdf4' }}
-                            >
-                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#14532d' }}>
-                                {msg.action_card.title}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{ fontFamily: 'monospace', display: 'block', color: '#166534', mt: 0.5, mb: 1.25 }}
-                              >
-                                Protocolo AlloyDB: {msg.action_card.reference_id} • Status: {msg.action_card.status}
-                              </Typography>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="success"
-                                endIcon={<LaunchIcon fontSize="small" />}
-                                onClick={() => handleNavigateToPortal('citizen', msg.service_request_action?.target_tab)}
-                                sx={{ textTransform: 'none', fontWeight: 700 }}
-                              >
-                                {t.trackInCitizenPortal}
-                              </Button>
-                            </Alert>
-                          )}
-
-                          {/* Card de Solicitação de Serviço (Exige Login se não autenticado, ou executa se autenticado) */}
-                          {msg.service_request_action && !msg.action_card && (
-                            <Paper
-                              variant="outlined"
-                              sx={{
-                                mt: 2.5,
-                                p: 2,
-                                borderRadius: 2.5,
-                                bgcolor: '#ffffff',
-                                borderColor: '#cbd5e1',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                flexWrap: 'wrap',
-                                gap: 2
-                              }}
-                            >
-                              <Box sx={{ flex: 1, minWidth: 240 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                  {currentUser ? (
-                                    <CheckCircleIcon color="success" fontSize="small" />
-                                  ) : (
-                                    <LockIcon sx={{ color: '#b45309', fontSize: 18 }} />
-                                  )}
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0a2240' }}>
-                                    {msg.service_request_action.service_title}
-                                  </Typography>
-                                </Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                  {msg.service_request_action.service_description}
-                                </Typography>
-                              </Box>
-
-                              <Button
-                                variant="contained"
-                                endIcon={<ArrowForwardIcon />}
-                                onClick={() =>
-                                  handleRequestService(
-                                    msg.service_request_action!.service_prompt,
-                                    msg.service_request_action!.service_title
-                                  )
-                                }
-                                sx={{
-                                  bgcolor: '#0a2240',
-                                  fontWeight: 700,
-                                  textTransform: 'none',
-                                  borderRadius: 2,
-                                  px: 2.5,
-                                  py: 1,
-                                  '&:hover': { bgcolor: '#163a66' }
-                                }}
-                              >
-                                {currentUser ? t.executeServiceNow : t.requestServiceLogin}
-                              </Button>
-                            </Paper>
-                          )}
-                        </Box>
-                      )}
-                    </Box>
-                  ))}
-                </Box>
-              </Paper>
+                {chatSidebarOpen
+                  ? lang === 'en-US'
+                    ? `Agent Sidebar Active on Left (${chatMessages.length} messages) — Hide Sidebar`
+                    : lang === 'es-419'
+                    ? `Barra Lateral del Agente Activa a la Izquierda (${chatMessages.length} mensajes) — Ocultar`
+                    : `Conversa Persistente Ativa na Barra Lateral à Esquerda (${chatMessages.length} msgs) — Ocultar`
+                  : lang === 'en-US'
+                  ? `Reopen Agent Conversation in Left Sidebar (${chatMessages.length} messages)`
+                  : lang === 'es-419'
+                  ? `Reabrir Conversación en la Barra Lateral Izquierda (${chatMessages.length} mensajes)`
+                  : `Reabrir Conversa na Barra Lateral à Esquerda (${chatMessages.length} msgs)`}
+              </Button>
             )}
           </Box>
         </Container>
